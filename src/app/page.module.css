@@ -1,0 +1,20 @@
+.main {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+  background: #0b0f1a;
+  color: #eef2ff;
+}
+
+.title {
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  opacity: 0.85;
+}
+
