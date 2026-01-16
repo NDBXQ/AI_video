@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useState } from "react"
 import type { FormEvent, ReactElement } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import styles from "./LoginForm.module.css"
@@ -23,14 +23,8 @@ type LoginFormProps = {
 export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [account, setAccount] = useState("")
-  const [password, setPassword] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<LoginResult | null>(null)
-
-  const canSubmit = useMemo(() => {
-    return account.trim().length > 0 && password.length > 0 && !submitting
-  }, [account, password, submitting])
 
   /**
    * 提交登录请求
@@ -40,7 +34,14 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
   const onSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      if (!canSubmit) return
+      if (submitting) return
+
+      const form = e.currentTarget
+      const fd = new FormData(form)
+      const account = String(fd.get("account") ?? "").trim()
+      const password = String(fd.get("password") ?? "")
+
+      if (!account || !password) return
 
       setSubmitting(true)
       setResult(null)
@@ -69,7 +70,7 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
         setSubmitting(false)
       }
     },
-    [account, password, canSubmit, router, searchParams]
+    [router, searchParams, submitting]
   )
 
   const containerClassName = variant === "card" ? styles.card : styles.plain
@@ -84,11 +85,11 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
           </label>
           <input
             id="account"
+            name="account"
             className={styles.input}
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
             autoComplete="username"
-            placeholder="请输入用户名（任意内容）"
+            placeholder="请输入用户名（test）"
+            required
           />
         </div>
 
@@ -98,16 +99,16 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
           </label>
           <input
             id="password"
+            name="password"
             className={styles.input}
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
-            placeholder="请输入密码（任意内容）"
+            placeholder="请输入密码（test）"
+            required
           />
         </div>
 
-        <button className={styles.button} type="submit" disabled={!canSubmit}>
+        <button className={styles.button} type="submit" disabled={submitting}>
           {submitting ? "提交中..." : (buttonLabel ?? "登录 / 注册")}
         </button>
       </form>

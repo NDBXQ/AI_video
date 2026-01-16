@@ -110,7 +110,7 @@ export default function LoginPage(): ReactElement {
           <div className={styles.panelTop}>
             <div>
               <div className={styles.panelTitle}>欢迎回来</div>
-              <div className={styles.panelHint}>体验完整版：用户名/密码可随意输入</div>
+              <div className={styles.panelHint}>测试账号：用户名 test，密码 test</div>
             </div>
             <div className={styles.panelIconBtn} aria-hidden="true">
               <Sparkles size={18} />
