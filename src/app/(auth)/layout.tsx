@@ -1,5 +1,4 @@
 import type { ReactElement, ReactNode } from "react"
-import { AppHeader } from "@/components/app-header/AppHeader"
 import styles from "./layout.module.css"
 
 /**
@@ -13,10 +12,5 @@ export default function AuthLayout({
 }: Readonly<{
   children: ReactNode
 }>): ReactElement {
-  return (
-    <div className={styles.shell}>
-      <AppHeader />
-      <div className={styles.page}>{children}</div>
-    </div>
-  )
+  return <div className={styles.shell}>{children}</div>
 }

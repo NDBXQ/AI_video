@@ -9,11 +9,18 @@ type LoginResult =
   | { ok: true; data: { user: { id: string; account: string }; created: boolean }; traceId: string }
   | { ok: false; error: { code: string; message: string }; traceId: string }
 
+type LoginFormVariant = "card" | "plain"
+
+type LoginFormProps = {
+  variant?: LoginFormVariant
+  buttonLabel?: string
+}
+
 /**
  * 登录表单组件
  * @returns {ReactElement} 登录表单
  */
-export function LoginForm(): ReactElement {
+export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [account, setAccount] = useState("")
@@ -65,13 +72,15 @@ export function LoginForm(): ReactElement {
     [account, password, canSubmit, router, searchParams]
   )
 
+  const containerClassName = variant === "card" ? styles.card : styles.plain
+
   return (
-    <section className={styles.card}>
-      <h1 className={styles.title}>登录</h1>
+    <section className={containerClassName}>
+      {variant === "card" ? <h1 className={styles.title}>登录</h1> : null}
       <form className={styles.form} onSubmit={onSubmit}>
         <div className={styles.field}>
           <label className={styles.label} htmlFor="account">
-            账号
+            用户名
           </label>
           <input
             id="account"
@@ -79,7 +88,7 @@ export function LoginForm(): ReactElement {
             value={account}
             onChange={(e) => setAccount(e.target.value)}
             autoComplete="username"
-            placeholder="请输入账号"
+            placeholder="请输入用户名（任意内容）"
           />
         </div>
 
@@ -94,12 +103,12 @@ export function LoginForm(): ReactElement {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
-            placeholder="请输入密码"
+            placeholder="请输入密码（任意内容）"
           />
         </div>
 
         <button className={styles.button} type="submit" disabled={!canSubmit}>
-          {submitting ? "提交中..." : "登录 / 注册"}
+          {submitting ? "提交中..." : (buttonLabel ?? "登录 / 注册")}
         </button>
       </form>
 

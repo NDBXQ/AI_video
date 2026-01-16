@@ -18,6 +18,10 @@
   gap: 16px;
 }
 
+.innerNoNav {
+  grid-template-columns: 1fr auto;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;

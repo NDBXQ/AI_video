@@ -15,6 +15,12 @@ type MeResult =
   | { ok: true; data: { user: { id: string; account: string } }; traceId: string }
   | { ok: false; error: { code: string; message: string }; traceId: string }
 
+type AppHeaderVariant = "app" | "auth"
+
+type AppHeaderProps = {
+  variant?: AppHeaderVariant
+}
+
 const navItems: NavItem[] = [
   { href: "/", label: "首页" },
   { href: "/script", label: "脚本创作" },
@@ -26,7 +32,7 @@ const navItems: NavItem[] = [
  * 应用顶部导航栏
  * @returns {ReactElement} Header 组件
  */
-export function AppHeader(): ReactElement {
+export function AppHeader({ variant = "app" }: AppHeaderProps): ReactElement {
   const pathname = usePathname() ?? "/"
   const router = useRouter()
   const [me, setMe] = useState<MeResult | null>(null)
@@ -38,6 +44,8 @@ export function AppHeader(): ReactElement {
   }
 
   useEffect(() => {
+    if (variant === "auth") return
+
     let cancelled = false
 
     ;(async (): Promise<void> => {
@@ -58,7 +66,7 @@ export function AppHeader(): ReactElement {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [variant])
 
   const displayAccount = useMemo(() => {
     if (!me || !me.ok) return null
@@ -89,7 +97,7 @@ export function AppHeader(): ReactElement {
 
   return (
     <header className={styles.header}>
-      <div className={styles.inner}>
+      <div className={`${styles.inner} ${variant === "auth" ? styles.innerNoNav : ""}`}>
         <Link href="/" className={styles.brand} aria-label="AI 视频创作平台">
           <span className={styles.brandIcon} aria-hidden="true" />
           <span className={styles.brandText}>
@@ -98,44 +106,50 @@ export function AppHeader(): ReactElement {
           </span>
         </Link>
 
-        <nav className={styles.nav} aria-label="主导航">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ""}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {variant === "app" ? (
+          <nav className={styles.nav} aria-label="主导航">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ""}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
 
         <div className={styles.actions}>
           <Link href="/help" className={styles.actionLink}>
             帮助中心
           </Link>
-          {displayAccount ? (
+          {variant === "app" ? (
             <>
-              <span className={styles.account} aria-label="当前账号">
-                {displayAccount}
+              {displayAccount ? (
+                <>
+                  <span className={styles.account} aria-label="当前账号">
+                    {displayAccount}
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.actionButton} ${styles.logout}`}
+                    onClick={onLogout}
+                    disabled={loggingOut}
+                  >
+                    {loggingOut ? "退出中..." : "退出登录"}
+                  </button>
+                </>
+              ) : (
+                <Link href="/login" className={styles.actionLink}>
+                  去登录
+                </Link>
+              )}
+              <span className={styles.avatar} aria-label="用户头像">
+                {avatarText}
               </span>
-              <button
-                type="button"
-                className={`${styles.actionButton} ${styles.logout}`}
-                onClick={onLogout}
-                disabled={loggingOut}
-              >
-                {loggingOut ? "退出中..." : "退出登录"}
-              </button>
             </>
-          ) : (
-            <Link href="/login" className={styles.actionLink}>
-              去登录
-            </Link>
-          )}
-          <span className={styles.avatar} aria-label="用户头像">
-            {avatarText}
-          </span>
+          ) : null}
         </div>
       </div>
     </header>
