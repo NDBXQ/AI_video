@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { InvalidCredentialsError, userManager } from "@/features/auth/user-manager"
 import { logger } from "@/shared/logger"
+import { buildSessionSetCookie, createSessionToken } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
 
 const loginInputSchema = z.object({
@@ -71,6 +72,15 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const result = await userManager.loginOrCreate(account, password)
     const durationMs = Date.now() - start
+    const sessionTtlSeconds = 60 * 60 * 24 * 7
+    const token = await createSessionToken(
+      {
+        userId: result.user.id,
+        account: result.user.name,
+        ttlSeconds: sessionTtlSeconds
+      },
+      traceId
+    )
 
     logger.info({
       event: "auth_login_success",
@@ -93,7 +103,12 @@ export async function POST(req: Request): Promise<Response> {
       },
       traceId
     }
-    return NextResponse.json(body, { status: 200 })
+    const res = NextResponse.json(body, { status: 200 })
+    res.headers.set(
+      "set-cookie",
+      buildSessionSetCookie({ value: token, maxAgeSeconds: sessionTtlSeconds })
+    )
+    return res
   } catch (err) {
     const durationMs = Date.now() - start
 

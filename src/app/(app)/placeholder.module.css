@@ -1,0 +1,56 @@
+.card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  padding: 22px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.desc {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primary {
+  background: linear-gradient(135deg, #7b61ff 0%, #5b5ff5 100%);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(109, 94, 247, 0.22);
+}
+
+.secondary {
+  background: rgba(15, 23, 42, 0.03);
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(-1px);
+}
+

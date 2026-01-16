@@ -1,0 +1,158 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: saturate(180%) blur(10px);
+}
+
+.inner {
+  height: 64px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.brandIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7b61ff 0%, #5b5ff5 50%, #34d399 140%);
+  box-shadow: 0 8px 20px rgba(109, 94, 247, 0.25);
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.brandTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brandSubtitle {
+  font-size: 10px;
+  color: #6b7280;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.navItem {
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  color: #374151;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.navItem:hover {
+  background: rgba(109, 94, 247, 0.1);
+  color: #4f46e5;
+}
+
+.navItemActive {
+  background: rgba(109, 94, 247, 0.14);
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+
+.account {
+  font-size: 12px;
+  color: #64748b;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actionLink {
+  text-decoration: none;
+  font-size: 14px;
+  color: #374151;
+  transition: color 120ms ease;
+}
+
+.actionLink:hover {
+  color: #4f46e5;
+}
+
+.logout {
+  color: #ef4444;
+}
+
+.logout:hover {
+  color: #dc2626;
+}
+
+.actionButton {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  background: rgba(109, 94, 247, 0.12);
+  border: 1px solid rgba(109, 94, 247, 0.18);
+}
+
+@media (max-width: 860px) {
+  .inner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .nav {
+    display: none;
+  }
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { FormEvent, ReactElement } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import styles from "./LoginForm.module.css"
 
 type LoginResult =
@@ -13,6 +14,8 @@ type LoginResult =
  * @returns {ReactElement} 登录表单
  */
 export function LoginForm(): ReactElement {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [account, setAccount] = useState("")
   const [password, setPassword] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -44,6 +47,11 @@ export function LoginForm(): ReactElement {
 
         const json = (await res.json()) as LoginResult
         setResult(json)
+        if (json.ok) {
+          const next = searchParams?.get("next") ?? "/"
+          const safeNext = next.startsWith("/") ? next : "/"
+          router.replace(safeNext)
+        }
       } catch {
         setResult({
           ok: false,
@@ -54,7 +62,7 @@ export function LoginForm(): ReactElement {
         setSubmitting(false)
       }
     },
-    [account, password, canSubmit]
+    [account, password, canSubmit, router, searchParams]
   )
 
   return (
