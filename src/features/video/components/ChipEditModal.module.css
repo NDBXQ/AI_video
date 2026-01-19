@@ -1,0 +1,121 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 18px;
+}
+
+.modal {
+  width: min(520px, 100%);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: rgba(15, 23, 42, 0.8);
+}
+
+.body {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+}
+
+.segment {
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.segmentActive {
+  background: rgba(37, 99, 235, 0.14);
+  color: #0f172a;
+}
+
+.input {
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+}
+
+.btnGhost {
+  background: rgba(15, 23, 42, 0.03);
+  color: #0f172a;
+}
+
+.btnPrimary {
+  background: #2563eb;
+  border-color: rgba(37, 99, 235, 0.85);
+  color: #fff;
+}
+

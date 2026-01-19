@@ -9,9 +9,9 @@
 
 .inner {
   height: 64px;
-  max-width: 1120px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
   display: grid;
   grid-template-columns: 260px 1fr 260px;
   align-items: center;

@@ -4,6 +4,14 @@ body {
   margin: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-y: scroll;
+}
+
 * {
   box-sizing: border-box;
 }

@@ -1,0 +1,67 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.38);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  padding: 18px;
+}
+
+.modal {
+  width: min(980px, 100%);
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: rgba(15, 23, 42, 0.8);
+}
+
+.body {
+  padding: 14px 16px 18px;
+}
+
+.frame {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+

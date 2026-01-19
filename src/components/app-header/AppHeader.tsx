@@ -4,12 +4,8 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { ReactElement } from "react"
+import { appNavItems } from "@/shared/navigation"
 import styles from "./AppHeader.module.css"
-
-type NavItem = {
-  href: string
-  label: string
-}
 
 type MeResult =
   | { ok: true; data: { user: { id: string; account: string } }; traceId: string }
@@ -20,13 +16,6 @@ type AppHeaderVariant = "app" | "auth"
 type AppHeaderProps = {
   variant?: AppHeaderVariant
 }
-
-const navItems: NavItem[] = [
-  { href: "/", label: "首页" },
-  { href: "/script", label: "脚本创作" },
-  { href: "/video", label: "视频创作" },
-  { href: "/library", label: "内容库" }
-]
 
 /**
  * 应用顶部导航栏
@@ -108,7 +97,7 @@ export function AppHeader({ variant = "app" }: AppHeaderProps): ReactElement {
 
         {variant === "app" ? (
           <nav className={styles.nav} aria-label="主导航">
-            {navItems.map((item) => (
+            {appNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

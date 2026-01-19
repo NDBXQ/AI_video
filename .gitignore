@@ -20,6 +20,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# typescript incremental build
+*.tsbuildinfo
+
 # env files
 .env*
 !.env.example
