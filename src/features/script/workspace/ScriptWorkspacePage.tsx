@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { ReactElement } from "react"
 import styles from "./ScriptWorkspacePage.module.css"
+import { GenerateStoryboardTextLink } from "./GenerateStoryboardTextLink"
 
 type ScriptWorkspaceMode = "source" | "brief"
 
@@ -9,6 +10,7 @@ type ScriptWorkspacePageProps = Readonly<{
   storyId: string
   outline?: string
   outlines: ReadonlyArray<{
+    outlineId: string
     sequence: number
     outlineText: string
     originalText: string
@@ -97,14 +99,15 @@ export function ScriptWorkspacePage({
                   基于当前大纲生成更细的场景描述与镜头文本，准备进入视频创作。
                 </div>
               </div>
-              <Link
+              <GenerateStoryboardTextLink
                 className={styles.nextStepButton}
                 href={`/script/storyboard?mode=${mode}&outline=${activeOutline?.sequence ?? 1}&storyId=${encodeURIComponent(
                   storyId
                 )}`}
+                outlines={outlines}
               >
                 去生成分镜
-              </Link>
+              </GenerateStoryboardTextLink>
             </div>
           </div>
         </section>

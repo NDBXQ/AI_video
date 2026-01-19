@@ -55,6 +55,7 @@ export default async function ScriptWorkspaceStoryRoutePage({
 
   const outlines = rows.map((row) => {
     return {
+      outlineId: row.id,
       sequence: row.sequence,
       outlineText: row.outlineText,
       originalText: row.originalText

@@ -174,7 +174,7 @@ export function ScriptStartModal({
     } finally {
       setIsSubmitting(false)
     }
-  }, [canConfirm, content, isSubmitting, mode, onConfirm, ratio, resolution, title])
+  }, [canConfirm, content, isSubmitting, mode, onConfirm, ratio, resolution, shotStyle, title])
 
   if (!open) return null
 

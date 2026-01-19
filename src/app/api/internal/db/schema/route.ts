@@ -4,7 +4,7 @@ import { getDb } from "coze-coding-dev-sdk"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
-import { stories, storyOutlines } from "@/shared/schema"
+import { stories, storyOutlines, storyboards } from "@/shared/schema"
 
 /**
  * 获取 stories 与 story_outlines 表结构（列清单）
@@ -22,7 +22,7 @@ export async function GET(req: Request): Promise<Response> {
   })
 
   try {
-    const db = await getDb({ stories, storyOutlines })
+    const db = await getDb({ stories, storyOutlines, storyboards })
 
     const storiesCols = await db.execute(sql`
       SELECT column_name, data_type, is_nullable, column_default
@@ -38,6 +38,13 @@ export async function GET(req: Request): Promise<Response> {
       ORDER BY ordinal_position
     `)
 
+    const storyboardsCols = await db.execute(sql`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'storyboards'
+      ORDER BY ordinal_position
+    `)
+
     const durationMs = Date.now() - start
     logger.info({
       event: "db_schema_inspect_success",
@@ -50,7 +57,8 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json(
       makeApiOk(traceId, {
         stories: (storiesCols as unknown as { rows?: unknown[] }).rows ?? storiesCols,
-        story_outlines: (outlinesCols as unknown as { rows?: unknown[] }).rows ?? outlinesCols
+        story_outlines: (outlinesCols as unknown as { rows?: unknown[] }).rows ?? outlinesCols,
+        storyboards: (storyboardsCols as unknown as { rows?: unknown[] }).rows ?? storyboardsCols
       })
     )
   } catch (err) {
@@ -69,4 +77,3 @@ export async function GET(req: Request): Promise<Response> {
     )
   }
 }
-

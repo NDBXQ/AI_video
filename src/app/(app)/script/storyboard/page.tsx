@@ -6,6 +6,7 @@ type StoryboardRouteProps = Readonly<{
     mode?: string | string[]
     outline?: string | string[]
     storyId?: string | string[]
+    scene?: string | string[]
   }>
 }>
 
@@ -29,5 +30,8 @@ export default function StoryboardRoutePage({ searchParams }: StoryboardRoutePro
   const storyIdValue = searchParams?.storyId
   const storyId = Array.isArray(storyIdValue) ? storyIdValue[0] : storyIdValue
 
-  return <StoryboardPage mode={mode} outline={outline} storyId={storyId} />
+  const sceneValue = searchParams?.scene
+  const scene = Array.isArray(sceneValue) ? sceneValue[0] : sceneValue
+
+  return <StoryboardPage mode={mode} outline={outline} storyId={storyId} scene={scene} />
 }
