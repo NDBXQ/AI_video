@@ -109,6 +109,25 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json(body, { status: 200 })
   }
 
+  if (session.userId === "test-user") {
+    const durationMs = Date.now() - start
+    logger.info({
+      event: "auth_me_success",
+      module: "auth",
+      traceId,
+      message: "获取当前用户成功（test）",
+      durationMs,
+      userId: session.userId
+    })
+
+    const body: ApiOk<{ user: { id: string; account: string } }> = {
+      ok: true,
+      data: { user: { id: session.userId, account: session.account } },
+      traceId
+    }
+    return NextResponse.json(body, { status: 200 })
+  }
+
   try {
     const user = await userManager.getUserById(session.userId)
     const durationMs = Date.now() - start

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { InvalidCredentialsError, userManager } from "@/features/auth/user-manager"
 import { logger } from "@/shared/logger"
 import { buildSessionSetCookie, createSessionToken } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
@@ -22,7 +23,7 @@ type ApiErr = {
 }
 
 /**
- * 登录接口（测试阶段：仅允许 test/test）
+ * 登录接口（测试阶段：test/test 免数据库验证）
  * @param {Request} req - HTTP 请求
  * @returns {Promise<Response>} JSON 响应
  */
@@ -70,31 +71,15 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const durationMs = Date.now() - start
-    const isTestAccount = account === "test" && password === "test"
-    if (!isTestAccount) {
-      logger.warn({
-        event: "auth_login_invalid_credentials",
-        module: "auth",
-        traceId,
-        message: "登录失败：账号或密码错误（测试阶段仅允许 test/test）",
-        durationMs
-      })
-
-      const body: ApiErr = {
-        ok: false,
-        error: { code: "AUTH_INVALID_CREDENTIALS", message: "账号或密码错误" },
-        traceId
-      }
-      return NextResponse.json(body, { status: 401 })
-    }
-
     const sessionTtlSeconds = 60 * 60 * 24 * 7
+    const isTestAccount = account === "test" && password === "test"
+
+    const result = isTestAccount
+      ? { user: { id: "test-user", name: "test" }, created: false }
+      : await userManager.loginOrCreate(account, password)
+
     const token = await createSessionToken(
-      {
-        userId: "test-user",
-        account: "test",
-        ttlSeconds: sessionTtlSeconds
-      },
+      { userId: result.user.id, account: result.user.name, ttlSeconds: sessionTtlSeconds },
       traceId
     )
 
@@ -104,8 +89,8 @@ export async function POST(req: Request): Promise<Response> {
       traceId,
       message: "登录成功",
       durationMs,
-      userId: "test-user",
-      created: false
+      userId: result.user.id,
+      created: result.created
     })
 
     const body: ApiOk<{
@@ -114,8 +99,8 @@ export async function POST(req: Request): Promise<Response> {
     }> = {
       ok: true,
       data: {
-        user: { id: "test-user", account: "test" },
-        created: false
+        user: { id: result.user.id, account: result.user.name },
+        created: result.created
       },
       traceId
     }
@@ -127,6 +112,22 @@ export async function POST(req: Request): Promise<Response> {
     return res
   } catch (err) {
     const durationMs = Date.now() - start
+    if (err instanceof InvalidCredentialsError) {
+      logger.warn({
+        event: "auth_login_invalid_credentials",
+        module: "auth",
+        traceId,
+        message: "登录失败：账号或密码错误",
+        durationMs
+      })
+
+      const body: ApiErr = {
+        ok: false,
+        error: { code: "AUTH_INVALID_CREDENTIALS", message: "账号或密码错误" },
+        traceId
+      }
+      return NextResponse.json(body, { status: 401 })
+    }
 
     const anyErr = err as {
       message?: string

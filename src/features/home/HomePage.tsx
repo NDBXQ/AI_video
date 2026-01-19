@@ -2,7 +2,7 @@ import type { ReactElement } from "react"
 import styles from "./HomePage.module.css"
 import { WorkbenchHero } from "@/features/home/WorkbenchHero"
 import { ContinueWorkSection } from "@/features/home/ContinueWorkSection"
-import { FeatureCards } from "@/features/home/FeatureCards"
+import { AnalyticsOverview } from "@/features/home/AnalyticsOverview"
 
 /**
  * 首页内容（工作台）
@@ -13,8 +13,9 @@ export function HomePage(): ReactElement {
     <main className={styles.main}>
       <WorkbenchHero />
       <ContinueWorkSection />
-      <FeatureCards />
+      <div className={styles.fullRow}>
+        <AnalyticsOverview />
+      </div>
     </main>
   )
 }
-

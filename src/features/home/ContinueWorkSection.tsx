@@ -24,11 +24,11 @@ export function ContinueWorkSection(): ReactElement {
         <div className={styles.emptyIcon} aria-hidden="true" />
         <div className={styles.emptyTitle}>暂无最近项目</div>
         <div className={styles.emptySub}>
-          从脚本/分镜开始，或者先去内容库准备素材
+          从剧本创作开始，或者先去内容库准备素材
         </div>
         <div className={styles.buttons}>
           <Link href="/script" className={styles.primaryButton}>
-            去生成分镜
+            去创作剧本
           </Link>
           <Link href="/library" className={styles.secondaryButton}>
             打开内容库

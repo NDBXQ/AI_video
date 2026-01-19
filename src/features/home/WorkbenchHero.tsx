@@ -9,15 +9,9 @@ import styles from "./WorkbenchHero.module.css"
 export function WorkbenchHero(): ReactElement {
   return (
     <section className={styles.card} aria-label="工作台">
-      <div className={styles.left}>
-        <div className={styles.tag}>
-          <span className={styles.tagIcon} aria-hidden="true" />
-          工作台
-        </div>
-        <h1 className={styles.title}>今天从哪里开始创作？</h1>
-        <p className={styles.subtitle}>
-          推荐先生成分镜脚本，再进入视频制作合成成片。流程更顺畅，结果更稳定。
-        </p>
+      <div className={styles.tag}>
+        <span className={styles.tagIcon} aria-hidden="true" />
+        工作台
       </div>
 
       <div className={styles.actions}>
@@ -31,19 +25,7 @@ export function WorkbenchHero(): ReactElement {
             →
           </span>
         </Link>
-
-        <Link href="/video" className={`${styles.actionCard} ${styles.secondary}`}>
-          <div className={`${styles.actionIcon} ${styles.secondaryIcon}`} aria-hidden="true" />
-          <div className={styles.actionText}>
-            <div className={styles.actionTitle}>从分镜生成视频</div>
-            <div className={styles.actionSub}>进入视频制作，快速合成成片</div>
-          </div>
-          <span className={styles.chevron} aria-hidden="true">
-            →
-          </span>
-        </Link>
       </div>
     </section>
   )
 }
-

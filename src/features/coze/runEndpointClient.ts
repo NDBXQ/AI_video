@@ -1,4 +1,5 @@
 import { logger } from "@/shared/logger"
+import { readEnvInt } from "@/features/coze/env"
 
 type CallCozeRunEndpointInput = {
   traceId: string
@@ -31,10 +32,12 @@ export async function callCozeRunEndpoint(input: CallCozeRunEndpointInput): Prom
   data: unknown
   durationMs: number
 }> {
-  const { traceId, url, token, body, module, timeoutMs = 60_000 } = input
+  const timeoutFromEnv = readEnvInt("COZE_REQUEST_TIMEOUT_MS")
+  const resolvedTimeoutMs = input.timeoutMs ?? timeoutFromEnv ?? 60_000
+  const { traceId, url, token, body, module } = input
   const start = Date.now()
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const timer = setTimeout(() => controller.abort(), resolvedTimeoutMs)
 
   let host = "unknown"
   try {
@@ -46,7 +49,8 @@ export async function callCozeRunEndpoint(input: CallCozeRunEndpointInput): Prom
     module,
     traceId,
     message: "开始请求 Coze run endpoint",
-    host
+    host,
+    timeoutMs: resolvedTimeoutMs
   })
 
   try {
@@ -116,23 +120,24 @@ export async function callCozeRunEndpoint(input: CallCozeRunEndpointInput): Prom
   } catch (err) {
     const durationMs = Date.now() - start
     const anyErr = err as { name?: string; message?: string; stack?: string }
+    const isAbort = anyErr?.name === "AbortError"
 
     logger.error({
       event: "coze_run_request_error",
       module,
       traceId,
-      message: "Coze run endpoint 请求异常",
+      message: isAbort ? "Coze run endpoint 请求超时" : "Coze run endpoint 请求异常",
       host,
       durationMs,
+      timeoutMs: resolvedTimeoutMs,
       errorName: anyErr?.name,
       errorMessage: anyErr?.message,
       stack: anyErr?.stack
     })
 
     if (err instanceof CozeRunEndpointError) throw err
-    throw new CozeRunEndpointError("Coze run endpoint 请求异常")
+    throw new CozeRunEndpointError(isAbort ? "Coze run endpoint 请求超时" : "Coze run endpoint 请求异常")
   } finally {
     clearTimeout(timer)
   }
 }
-

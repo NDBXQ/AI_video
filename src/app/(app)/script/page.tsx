@@ -1,25 +1,35 @@
-import Link from "next/link"
 import type { ReactElement } from "react"
-import styles from "../placeholder.module.css"
+import { ScriptCreationPage } from "@/features/script/ScriptCreationPage"
+
+export const dynamic = "force-dynamic"
+
+type ScriptPageProps = Readonly<{
+  searchParams?:
+    | Readonly<{
+        mode?: string | string[]
+      }>
+    | Promise<
+        Readonly<{
+          mode?: string | string[]
+        }>
+      >
+}>
 
 /**
- * 脚本创作占位页
+ * 脚本创作页
+ * @param {ScriptPageProps} props - 页面属性
+ * @param {Object} [props.searchParams] - 查询参数
+ * @param {string} [props.searchParams.mode] - 进入模式（source/brief）
  * @returns {ReactElement} 页面内容
  */
-export default function ScriptPage(): ReactElement {
-  return (
-    <main className={styles.card}>
-      <h1 className={styles.title}>脚本创作</h1>
-      <p className={styles.desc}>这里将提供脚本/分镜的生成与编辑能力。</p>
-      <div className={styles.actions}>
-        <Link className={styles.primary} href="/">
-          返回首页
-        </Link>
-        <Link className={styles.secondary} href="/video">
-          去视频创作
-        </Link>
-      </div>
-    </main>
-  )
-}
+export default async function ScriptPage({ searchParams }: ScriptPageProps): Promise<ReactElement> {
+  const resolvedSearchParams = await Promise.resolve(searchParams)
+  const modeValue = resolvedSearchParams?.mode
+  const mode = Array.isArray(modeValue) ? modeValue[0] : modeValue
 
+  if (mode === "brief" || mode === "source") {
+    return <ScriptCreationPage initialMode={mode} />
+  }
+
+  return <ScriptCreationPage />
+}

@@ -1,0 +1,265 @@
+.main {
+  display: grid;
+  gap: 18px;
+}
+
+.heroCard {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  padding: 22px;
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.heroLeft {
+  min-width: 0;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4f46e5;
+  background: rgba(109, 94, 247, 0.12);
+  border: 1px solid rgba(109, 94, 247, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.tagIcon {
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #7b61ff 0%, #5b5ff5 60%);
+}
+
+.title {
+  margin: 12px 0 0;
+  font-size: 30px;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.chips {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  font-size: 12px;
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.heroActions {
+  display: grid;
+  gap: 12px;
+  justify-items: stretch;
+}
+
+.primaryAction {
+  background: linear-gradient(135deg, #7b61ff 0%, #5b5ff5 60%, #4f46e5 100%);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(109, 94, 247, 0.22);
+  text-align: center;
+}
+
+.secondaryAction {
+  background: rgba(15, 23, 42, 0.03);
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.inlineLink {
+  justify-self: center;
+  font-size: 12px;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+  color: #4f46e5;
+}
+
+.sectionCard {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  padding: 18px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.sectionHint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.flowGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.flowItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-radius: 14px;
+  padding: 16px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.flowArrow {
+  width: 52px;
+  height: 2px;
+  background: rgba(79, 70, 229, 0.45);
+  border-radius: 999px;
+  position: relative;
+}
+
+.flowArrow::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(79, 70, 229, 0.65);
+  border-top: 2px solid rgba(79, 70, 229, 0.65);
+  transform: translateY(-50%) rotate(45deg);
+  border-radius: 1px;
+}
+
+.flowItemLeft {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.flowText {
+  min-width: 0;
+}
+
+.flowTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.flowDesc {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.capabilityGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.capabilityItem {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 16px;
+}
+
+.capabilityTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+@media (max-width: 860px) {
+  .heroCard {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+
+  .flowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .capabilityGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .flowArrow {
+    display: none;
+  }
+}

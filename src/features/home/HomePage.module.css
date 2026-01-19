@@ -1,5 +1,15 @@
 .main {
   display: grid;
-  gap: 18px;
+  gap: 16px;
+  align-items: start;
 }
 
+@media (min-width: 980px) {
+  .main {
+    grid-template-columns: 0.9fr 1.1fr;
+  }
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
