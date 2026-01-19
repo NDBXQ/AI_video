@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { readEnv } from "@/features/coze/env"
+import { readEnv, readEnvInt } from "@/features/coze/env"
 import { callCozeRunEndpoint, CozeRunEndpointError } from "@/features/coze/runEndpointClient"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
@@ -85,13 +85,14 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
+    const timeoutMs = readEnvInt("COZE_VIDEO_REQUEST_TIMEOUT_MS") ?? 120_000
     const coze = await callCozeRunEndpoint({
       traceId,
       url,
       token,
       body: parsed.data,
       module: "coze",
-      timeoutMs: 120_000
+      timeoutMs
     })
 
     const durationMs = Date.now() - start
@@ -145,4 +146,3 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 }
-

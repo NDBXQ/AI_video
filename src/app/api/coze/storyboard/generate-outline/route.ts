@@ -15,7 +15,8 @@ const inputSchema = z.object({
   story_text: z.string().min(1).max(50_000),
   title: z.string().trim().max(100).optional(),
   ratio: z.string().trim().max(20).optional(),
-  resolution: z.string().trim().max(50).optional()
+  resolution: z.string().trim().max(50).optional(),
+  style: z.string().trim().max(50).optional()
 })
 
 export async function POST(req: Request): Promise<Response> {
@@ -101,6 +102,7 @@ export async function POST(req: Request): Promise<Response> {
     const title = parsed.data.title?.trim() || null
     const storyType = parsed.data.input_type
     const storyText = parsed.data.story_text
+    const shotStyle = parsed.data.style?.trim() || "cinema"
 
     const [story] = await db
       .insert(stories)
@@ -110,7 +112,8 @@ export async function POST(req: Request): Promise<Response> {
         storyType,
         resolution,
         aspectRatio,
-        storyText
+        storyText,
+        shotStyle
       })
       .returning()
 

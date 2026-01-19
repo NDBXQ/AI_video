@@ -32,6 +32,7 @@ export function ScriptStartModal({
   const [title, setTitle] = useState("")
   const [ratio, setRatio] = useState("16:9")
   const [resolution, setResolution] = useState("1080p")
+  const [shotStyle, setShotStyle] = useState("cinema")
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -104,7 +105,8 @@ export function ScriptStartModal({
           story_text: storyText,
           title: title.trim(),
           ratio,
-          resolution
+          resolution,
+          style: shotStyle
         })
       })
 
@@ -229,6 +231,22 @@ export function ScriptStartModal({
                 options={[
                   { value: "1080p", label: "1080p（高清）" },
                   { value: "720p", label: "720p（标清）" }
+                ]}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <div className={styles.labelRow}>
+                <div className={styles.label}>镜头风格</div>
+              </div>
+              <UiSelect
+                ariaLabel="镜头风格"
+                value={shotStyle}
+                onChange={setShotStyle}
+                options={[
+                  { value: "cinema", label: "电影感（推荐）" },
+                  { value: "tv", label: "电视剧（纪实）" },
+                  { value: "short", label: "短视频（快节奏）" }
                 ]}
               />
             </div>

@@ -37,6 +37,7 @@ export const stories = pgTable("stories", {
   storyType: text("story_type"),
   resolution: text("resolution").notNull(),
   aspectRatio: text("aspect_ratio").notNull().default("16:9"),
+  shotStyle: text("style").notNull().default("cinema"),
   storyText: text("story_text").notNull(),
   generatedText: text("generated_text"),
   status: text("status").notNull().default("draft"),
