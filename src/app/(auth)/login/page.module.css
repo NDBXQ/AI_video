@@ -3,11 +3,11 @@
 }
 
 .topBar {
-  padding: 18px 24px 0;
+  padding: 18px var(--app-gutter) 0;
 }
 
 .topInner {
-  max-width: 1200px;
+  max-width: var(--app-container-max);
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -68,9 +68,9 @@
   grid-template-columns: 1.15fr 0.85fr;
   gap: 32px;
   align-items: start;
-  max-width: 1200px;
+  max-width: var(--app-container-max);
   margin: 0 auto;
-  padding: 54px 24px;
+  padding: 54px var(--app-gutter);
 }
 
 .left {

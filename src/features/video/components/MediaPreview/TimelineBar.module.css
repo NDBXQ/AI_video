@@ -1,0 +1,221 @@
+
+.filmstrip {
+  padding: 6px 16px 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: center;
+  gap: 10px;
+  min-height: 96px;
+  align-content: start;
+}
+
+.filmstripEditor {
+  grid-template-columns: 1fr;
+  padding: 10px 16px 12px;
+  min-height: 220px;
+  align-items: stretch;
+}
+
+.editorOnly {
+  width: 100%;
+  min-width: 0;
+  display: block;
+}
+
+.timelineRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.timelineWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timelineBar {
+  flex: 1;
+  min-width: 240px;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.03);
+  display: flex;
+  position: relative;
+}
+
+.timelineSeg {
+  height: 100%;
+  border: 0;
+  background: rgba(109, 94, 247, 0.10);
+  color: rgba(15, 23, 42, 0.62);
+  cursor: pointer;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.05);
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.timelineSeg:hover {
+  background: rgba(109, 94, 247, 0.16);
+  color: rgba(15, 23, 42, 0.82);
+}
+
+.timelineSegMissing {
+  background: rgba(100, 116, 139, 0.14);
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.timelineSegMissing:hover {
+  background: rgba(100, 116, 139, 0.18);
+}
+
+.timelineSegActive {
+  background: rgba(79, 70, 229, 0.26);
+  color: rgba(15, 23, 42, 0.86);
+}
+
+.timelineSegText {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.timelineCursor {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 24px;
+  background: rgba(79, 70, 229, 0.95);
+  transform: translateX(-1px);
+}
+
+.timelineMeta {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+  white-space: nowrap;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.70);
+}
+
+.timelineActions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.previewAllBtn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(109, 94, 247, 0.65);
+  background: #4f46e5;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.previewAllBtn:hover {
+  background: #4338ca;
+}
+
+.previewAllBtnGhost {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.86);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.previewAllBtnGhost:hover {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.86);
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.thumbs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 120px;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: center;
+  justify-content: start;
+  scroll-behavior: smooth;
+}
+
+.thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.thumbs {
+  scrollbar-width: none;
+}
+
+.thumb {
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.80);
+  overflow: hidden;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 900;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.thumb:hover {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.thumbActive {
+  border-color: rgba(109, 94, 247, 0.55);
+  box-shadow: 0 0 0 3px rgba(109, 94, 247, 0.14);
+  background: rgba(109, 94, 247, 0.10);
+  color: rgba(15, 23, 42, 0.86);
+}

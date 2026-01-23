@@ -16,7 +16,7 @@ const inputSchema = z.object({
     )
     .min(1)
     .max(50),
-  prompt: z.string().min(1).max(20_000),
+  prompt: z.union([z.string().min(1).max(20_000), z.array(z.string().min(1).max(20_000)).min(1).max(20)]),
   aspect_ratio: z.string().trim().min(1).max(20)
 })
 
@@ -67,11 +67,15 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
+    const payload = {
+      ...parsed.data,
+      prompt: Array.isArray(parsed.data.prompt) ? parsed.data.prompt : [parsed.data.prompt]
+    }
     const coze = await callCozeRunEndpoint({
       traceId,
       url,
       token,
-      body: parsed.data,
+      body: payload,
       module: "coze"
     })
 
@@ -120,4 +124,3 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 }
-

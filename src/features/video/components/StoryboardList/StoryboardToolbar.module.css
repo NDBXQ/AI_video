@@ -1,0 +1,58 @@
+.toolbar {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.toolbarTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: #2563eb;
+  border-color: rgba(37, 99, 235, 0.85);
+  color: #fff;
+}
+
+.btnDanger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #991b1b;
+}
+
+.toolbarMeta {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}

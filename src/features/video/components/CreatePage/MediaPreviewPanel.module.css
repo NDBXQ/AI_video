@@ -1,0 +1,30 @@
+
+.main {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.topArea {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 12px;
+  padding: 6px 16px 8px;
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .topArea {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assetSidebarWrap {
+  min-width: 0;
+}

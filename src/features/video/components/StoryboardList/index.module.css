@@ -1,0 +1,41 @@
+.wrapper {
+  --border-color: #e5e7eb;
+  --bg-subtle: #f9fafb;
+  --text-main: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --blue-primary: #4f46e5;
+  --blue-light: rgba(109, 94, 247, 0.12);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.92);
+  min-width: 0;
+}
+
+.wrapper input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.wrapper button:focus-visible,
+.wrapper [role="button"]:focus-visible,
+.wrapper input:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.5);
+  outline-offset: 2px;
+}

@@ -1,31 +1,23 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { readEnv } from "@/features/coze/env"
-import { callCozeRunEndpoint, CozeRunEndpointError } from "@/features/coze/runEndpointClient"
+import { CozeRunEndpointError } from "@/features/coze/runEndpointClient"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
+import type { NextRequest } from "next/server"
+import { getSessionFromRequest } from "@/shared/session"
+import { enqueueCozeGenerateScriptJob, kickCozeStoryboardWorker } from "@/server/jobs/cozeStoryboardWorker"
+import { runGenerateScript } from "@/server/coze/storyboardTasks"
+import { and, eq } from "drizzle-orm"
+import { getDb } from "coze-coding-dev-sdk"
+import { stories, storyOutlines, storyboards } from "@/shared/schema"
 
 const inputSchema = z.object({
   raw_script: z.string().min(1).max(80_000),
-  demand: z.string().min(1).max(10_000)
+  storyboardId: z.string().min(1).optional(),
+  async: z.boolean().optional()
 })
-
-function hasVideoScriptField(data: unknown): boolean {
-  if (!data || typeof data !== "object") return false
-  const anyData = data as Record<string, unknown>
-  const direct = anyData["video_script"]
-  if (direct && typeof direct === "object") return true
-
-  const nested = anyData["data"]
-  if (nested && typeof nested === "object") {
-    const nestedAny = nested as Record<string, unknown>
-    const videoScript = nestedAny["video_script"]
-    if (videoScript && typeof videoScript === "object") return true
-  }
-
-  return false
-}
 
 export async function POST(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)
@@ -60,6 +52,62 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 
+  let effectiveDemand = "无其他需求"
+  const storyboardId = parsed.data.storyboardId?.trim() || undefined
+  if (storyboardId) {
+    const session = await getSessionFromRequest(req as unknown as NextRequest)
+    const userId = session?.userId
+    if (!userId) {
+      return NextResponse.json(makeApiErr(traceId, "AUTH_REQUIRED", "未登录或登录已过期"), {
+        status: 401
+      })
+    }
+
+    const db = await getDb({ stories, storyOutlines, storyboards })
+    const rows = await db
+      .select({ shotCut: storyboards.shotCut })
+      .from(storyboards)
+      .innerJoin(storyOutlines, eq(storyboards.outlineId, storyOutlines.id))
+      .innerJoin(stories, eq(storyOutlines.storyId, stories.id))
+      .where(and(eq(storyboards.id, storyboardId), eq(stories.userId, userId)))
+      .limit(1)
+
+    if (rows.length === 0) {
+      return NextResponse.json(makeApiErr(traceId, "STORYBOARD_NOT_FOUND", "未找到可用的分镜"), { status: 404 })
+    }
+    effectiveDemand = String(Boolean(rows[0]?.shotCut)) === "true" ? "需要切镜" : "无需切镜"
+  }
+
+  const asyncMode = parsed.data.async ?? false
+  if (asyncMode) {
+    const session = await getSessionFromRequest(req as unknown as NextRequest)
+    const userId = session?.userId
+    if (!userId) {
+      return NextResponse.json(makeApiErr(traceId, "AUTH_REQUIRED", "未登录或登录已过期"), {
+        status: 401
+      })
+    }
+
+    const { jobId, snapshot } = await enqueueCozeGenerateScriptJob({
+      userId,
+      traceId,
+      raw_script: parsed.data.raw_script,
+      demand: effectiveDemand,
+      storyboardId
+    })
+    kickCozeStoryboardWorker()
+
+    logger.info({
+      event: "coze_generate_script_async_queued",
+      module: "coze",
+      traceId,
+      message: "分镜脚本生成任务已入队",
+      jobId
+    })
+
+    return NextResponse.json(makeApiOk(traceId, { jobId, status: snapshot.status }), { status: 202 })
+  }
+
   const url = readEnv("COZE_SCRIPT_API_URL")
   const token = readEnv("COZE_SCRIPT_API_TOKEN")
   if (!url || !token) {
@@ -74,30 +122,12 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    const coze = await callCozeRunEndpoint({
+    const { coze, durationMs, cozeStatus } = await runGenerateScript({
       traceId,
-      url,
-      token,
-      body: parsed.data,
-      module: "coze"
+      raw_script: parsed.data.raw_script,
+      demand: effectiveDemand,
+      storyboardId
     })
-
-    const durationMs = Date.now() - start
-
-    if (!hasVideoScriptField(coze.data)) {
-      logger.error({
-        event: "coze_generate_script_response_invalid",
-        module: "coze",
-        traceId,
-        message: "Coze 回包缺少 video_script 字段",
-        durationMs,
-        cozeStatus: coze.status
-      })
-      return NextResponse.json(
-        makeApiErr(traceId, "COZE_RESPONSE_INVALID", "Coze 回包格式不符合预期"),
-        { status: 502 }
-      )
-    }
 
     logger.info({
       event: "coze_generate_script_success",
@@ -105,10 +135,10 @@ export async function POST(req: Request): Promise<Response> {
       traceId,
       message: "分镜脚本生成成功",
       durationMs,
-      cozeStatus: coze.status
+      cozeStatus
     })
 
-    return NextResponse.json(makeApiOk(traceId, coze.data), { status: 200 })
+    return NextResponse.json(makeApiOk(traceId, coze), { status: 200 })
   } catch (err) {
     const durationMs = Date.now() - start
     if (err instanceof CozeRunEndpointError) {
@@ -143,4 +173,3 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 }
-

@@ -4,6 +4,29 @@ body {
   margin: 0;
 }
 
+:root {
+  --app-gutter: clamp(16px, 2vw, 32px);
+  --app-container-max: 1200px;
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --app-container-max: 1360px;
+  }
+}
+
+@media (min-width: 1680px) {
+  :root {
+    --app-container-max: 1520px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --app-container-max: 1760px;
+  }
+}
+
 html {
   scrollbar-gutter: stable;
 }
@@ -15,4 +38,3 @@ body {
 * {
   box-sizing: border-box;
 }
-

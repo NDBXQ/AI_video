@@ -1,13 +1,15 @@
 .shell {
   min-height: 100vh;
-  background: #f6f7fb;
+  background: radial-gradient(1200px 700px at 12% 10%, rgba(123, 97, 255, 0.14) 0%, rgba(123, 97, 255, 0) 55%),
+    radial-gradient(900px 600px at 85% 30%, rgba(91, 95, 245, 0.1) 0%, rgba(91, 95, 245, 0) 55%),
+    #f6f7fb;
   color: #0f172a;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .page {
-  max-width: 1600px;
+  width: 100%;
+  max-width: var(--app-container-max);
   margin: 0 auto;
-  padding: 22px 24px 42px;
+  padding: 22px var(--app-gutter) 42px;
 }
-

@@ -58,7 +58,9 @@ export default async function ScriptWorkspaceStoryRoutePage({
       outlineId: row.id,
       sequence: row.sequence,
       outlineText: row.outlineText,
-      originalText: row.originalText
+      originalText: row.originalText,
+      outlineDrafts: (row as any).outlineDrafts ?? [],
+      activeOutlineDraftId: (row as any).activeOutlineDraftId ?? null
     }
   })
 

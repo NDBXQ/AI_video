@@ -1,26 +1,27 @@
-import { useState, type ReactElement } from "react"
+import { useMemo, useState, type ReactElement } from "react"
 import { useRouter } from "next/navigation"
-import type { Episode, StoryboardItem } from "@/features/video/types"
-import { MOCK_STORYBOARD_ITEMS } from "@/features/video/mock/storyboardMock"
+import type { StoryboardItem } from "@/features/video/types"
 import styles from "./StoryboardBoard.module.css"
-import listStyles from "./StoryboardList.module.css"
+import sidebarStyles from "./StoryboardList/StoryboardSidebar.module.css"
+import toolbarStyles from "./StoryboardList/StoryboardToolbar.module.css"
+import { useStoryboardData } from "../hooks/useStoryboardData"
 
 type StoryboardBoardProps = {
   initialItems?: StoryboardItem[]
   onGoToList?: () => void
+  storyId?: string
+  outlineId?: string
 }
 
-type DragState = {
-  draggingId: string | null
-}
-
-const MOCK_EPISODES: Episode[] = Array.from({ length: 10 }).map((_, i) => ({
-  id: `ep-${i + 1}`,
-  name: `第${i + 1}集`,
-  status: i === 0 || i === 1 ? "completed" : "pending"
-}))
+type DragState = { draggingId: string | null }
 
 function buildCardText(item: StoryboardItem): string {
+  const hasScriptView =
+    Boolean(item.shot_content.background.background_name) ||
+    item.shot_content.roles.length > 0 ||
+    Boolean(item.shot_content.bgm)
+  if (!hasScriptView) return item.storyboard_text?.trim() ?? ""
+
   const firstRole = item.shot_content.roles[0]
   const speak = item.shot_content.roles.find((r) => r.speak?.content)?.speak?.content
   const parts = [
@@ -89,11 +90,24 @@ function IconTrash(): ReactElement {
   )
 }
 
-export function StoryboardBoard({ initialItems = [], onGoToList }: StoryboardBoardProps): ReactElement {
+export function StoryboardBoard({
+  initialItems = [],
+  onGoToList,
+  storyId: initialStoryId,
+  outlineId: initialOutlineId
+}: StoryboardBoardProps): ReactElement {
   const router = useRouter()
-  const [items, setItems] = useState<StoryboardItem[]>(initialItems.length > 0 ? initialItems : MOCK_STORYBOARD_ITEMS)
-  const [activeEpisode, setActiveEpisode] = useState<string>(() => (MOCK_EPISODES[0]?.id ? MOCK_EPISODES[0].id : ""))
+  const { items, setItems, episodes, activeEpisode, reloadShots, storyId, isLoading, loadError } = useStoryboardData({
+    initialItems,
+    storyId: initialStoryId,
+    outlineId: initialOutlineId
+  })
   const [drag, setDrag] = useState<DragState>({ draggingId: null })
+
+  const safeActiveEpisode = useMemo(() => {
+    if (activeEpisode) return activeEpisode
+    return episodes[0]?.id ?? ""
+  }, [activeEpisode, episodes])
 
   const handleCopy = (id: string) => {
     setItems((prev) => {
@@ -137,18 +151,25 @@ export function StoryboardBoard({ initialItems = [], onGoToList }: StoryboardBoa
   return (
     <section className={styles.board} aria-label="分镜故事板">
       <div className={styles.content}>
-        <aside className={listStyles.sidebar} aria-label="剧集列表">
-          <div className={listStyles.sidebarHeader}>剧集列表</div>
-          <div className={listStyles.episodeList}>
-            {MOCK_EPISODES.map((ep) => (
+        <aside className={sidebarStyles.sidebar} aria-label="剧集列表">
+          <div className={sidebarStyles.sidebarHeader}>
+            {onGoToList ? (
+              <button type="button" className={sidebarStyles.backButton} onClick={onGoToList} aria-label="返回分镜表">
+                ←
+              </button>
+            ) : null}
+            <span>剧集列表</span>
+          </div>
+          <div className={sidebarStyles.episodeList}>
+            {episodes.map((ep) => (
               <div
                 key={ep.id}
-                className={`${listStyles.episodeItem} ${activeEpisode === ep.id ? listStyles.episodeActive : ""}`}
-                onClick={() => setActiveEpisode(ep.id)}
+                className={`${sidebarStyles.episodeItem} ${safeActiveEpisode === ep.id ? sidebarStyles.episodeActive : ""}`}
+                onClick={() => reloadShots(ep.id)}
               >
                 <span>{ep.name}</span>
                 <span
-                  className={`${listStyles.statusBadge} ${ep.status === "completed" ? listStyles.statusCompleted : listStyles.statusProcessing}`}
+                  className={`${sidebarStyles.statusBadge} ${ep.status === "completed" ? sidebarStyles.statusCompleted : sidebarStyles.statusProcessing}`}
                 >
                   {ep.status === "completed" ? "已完成" : "生成中"}
                 </span>
@@ -158,30 +179,38 @@ export function StoryboardBoard({ initialItems = [], onGoToList }: StoryboardBoa
         </aside>
 
         <div className={styles.main} aria-label="分镜卡片区">
-          <div className={listStyles.toolbar}>
-            <div className={listStyles.toolbarLeft}>
-              <h2 className={listStyles.toolbarTitle}>分镜脚本</h2>
-              <span className={listStyles.toolbarMeta}>共 {items.length} 个镜头</span>
+          <div className={toolbarStyles.toolbar}>
+            <div className={toolbarStyles.toolbarLeft}>
+              <h2 className={toolbarStyles.toolbarTitle}>分镜脚本</h2>
+              <span className={toolbarStyles.toolbarMeta}>共 {items.length} 个镜头</span>
             </div>
-            <div className={listStyles.toolbarActions}>
-              <button className={`${listStyles.btn} ${listStyles.btnPrimary}`}>
+            <div className={toolbarStyles.toolbarActions}>
+              <button className={`${toolbarStyles.btn} ${toolbarStyles.btnPrimary}`}>
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                AI 生成
+                AI 生成脚本
               </button>
             </div>
           </div>
           <div className={styles.mainInner}>
+            {isLoading ? <div className={styles.empty}>加载中…</div> : null}
+            {!isLoading && loadError ? <div className={styles.empty}>{loadError}</div> : null}
             <div className={styles.grid}>
             {items.map((it) => {
               const isDragging = drag.draggingId === it.id
               const disabled = false
               const handleGoToImage = () => {
-                router.push(`/video/image?sceneNo=${it.scene_no}`)
+                const qs = new URLSearchParams({ storyboardId: it.id })
+                if (storyId) qs.set("storyId", storyId)
+                if (safeActiveEpisode) qs.set("outlineId", safeActiveEpisode)
+                router.push(`/video/image?${qs.toString()}`)
               }
               const handleGoToVideo = () => {
-                router.push(`/video/video?sceneNo=${it.scene_no}`)
+                const qs = new URLSearchParams({ storyboardId: it.id })
+                if (storyId) qs.set("storyId", storyId)
+                if (safeActiveEpisode) qs.set("outlineId", safeActiveEpisode)
+                router.push(`/video/video?${qs.toString()}`)
               }
               return (
                 <article

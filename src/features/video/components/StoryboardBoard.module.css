@@ -5,17 +5,17 @@
   --text-main: #111827;
   --text-secondary: #6b7280;
   --text-tertiary: #9ca3af;
-  --blue-primary: #2563eb;
-  --blue-light: #eff6ff;
+  --blue-primary: #4f46e5;
+  --blue-light: rgba(109, 94, 247, 0.12);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 
   width: 100%;
   height: 100%;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   color: var(--text-main);
   display: grid;
   grid-template-rows: 1fr;
@@ -38,6 +38,13 @@
 
 .mainInner {
   padding: 16px 18px 22px;
+}
+
+.empty {
+  padding: 16px 2px 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .grid {

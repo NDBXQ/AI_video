@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { userManager } from "@/features/auth/user-manager"
 import { logger } from "@/shared/logger"
-import { SESSION_COOKIE_NAME, verifySessionToken } from "@/shared/session"
+import { SESSION_COOKIE_NAME } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
+import { AuthService } from "@/server/services/authService"
+import { ServiceError } from "@/server/services/errors"
 
 type ApiOk<T> = {
   ok: true
@@ -28,7 +29,6 @@ const querySchema = z.object({
  */
 export async function GET(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)
-  const start = Date.now()
 
   logger.info({
     event: "auth_me_start",
@@ -55,131 +55,40 @@ export async function GET(req: Request): Promise<Response> {
     .find((v) => v.startsWith(`${SESSION_COOKIE_NAME}=`))
     ?.slice(`${SESSION_COOKIE_NAME}=`.length)
 
-  if (!token) {
-    logger.warn({
-      event: "auth_me_unauthenticated",
-      module: "auth",
-      traceId,
-      message: "未登录：缺少会话 cookie"
-    })
-
-    const body: ApiErr = {
-      ok: false,
-      error: { code: "AUTH_UNAUTHENTICATED", message: "未登录" },
-      traceId
-    }
-    return NextResponse.json(body, { status: 401 })
-  }
-
-  const session = await verifySessionToken(token, traceId)
-  if (!session) {
-    logger.warn({
-      event: "auth_me_invalid_session",
-      module: "auth",
-      traceId,
-      message: "未登录：会话校验失败"
-    })
-
-    const body: ApiErr = {
-      ok: false,
-      error: { code: "AUTH_INVALID_SESSION", message: "登录已失效，请重新登录" },
-      traceId
-    }
-    return NextResponse.json(body, { status: 401 })
-  }
-
   const refresh = parsedQuery.data.refresh === "1"
-  const durationMsBeforeDb = Date.now() - start
-
-  if (!refresh) {
-    logger.info({
-      event: "auth_me_success",
-      module: "auth",
-      traceId,
-      message: "获取当前用户成功（cookie）",
-      durationMs: durationMsBeforeDb,
-      userId: session.userId
-    })
-
-    const body: ApiOk<{ user: { id: string; account: string } }> = {
-      ok: true,
-      data: { user: { id: session.userId, account: session.account } },
-      traceId
-    }
-    return NextResponse.json(body, { status: 200 })
-  }
-
-  if (session.userId === "test-user") {
-    const durationMs = Date.now() - start
-    logger.info({
-      event: "auth_me_success",
-      module: "auth",
-      traceId,
-      message: "获取当前用户成功（test）",
-      durationMs,
-      userId: session.userId
-    })
-
-    const body: ApiOk<{ user: { id: string; account: string } }> = {
-      ok: true,
-      data: { user: { id: session.userId, account: session.account } },
-      traceId
-    }
-    return NextResponse.json(body, { status: 200 })
-  }
 
   try {
-    const user = await userManager.getUserById(session.userId)
-    const durationMs = Date.now() - start
-
-    if (!user) {
-      logger.warn({
-        event: "auth_me_user_missing",
-        module: "auth",
-        traceId,
-        message: "会话对应用户不存在",
-        durationMs,
-        userId: session.userId
-      })
-
-      const body: ApiErr = {
-        ok: false,
-        error: { code: "AUTH_USER_NOT_FOUND", message: "用户不存在，请重新登录" },
-        traceId
-      }
-      return NextResponse.json(body, { status: 401 })
-    }
-
-    logger.info({
-      event: "auth_me_success",
-      module: "auth",
-      traceId,
-      message: "获取当前用户成功（db）",
-      durationMs,
-      userId: user.id
-    })
+    const user = await AuthService.getCurrentUser(token, refresh, traceId)
 
     const body: ApiOk<{ user: { id: string; account: string } }> = {
       ok: true,
-      data: { user: { id: user.id, account: user.name } },
+      data: { user },
       traceId
     }
     return NextResponse.json(body, { status: 200 })
   } catch (err) {
-    const durationMs = Date.now() - start
-    const anyErr = err as { name?: string; message?: string; stack?: string; code?: string }
+    if (err instanceof ServiceError) {
+      let status = 500
+      if (["AUTH_UNAUTHENTICATED", "AUTH_INVALID_SESSION", "AUTH_USER_NOT_FOUND"].includes(err.code)) {
+        status = 401
+      }
+      const body: ApiErr = {
+        ok: false,
+        error: { code: err.code, message: err.message },
+        traceId
+      }
+      return NextResponse.json(body, { status })
+    }
 
+    const anyErr = err as { name?: string; message?: string; stack?: string }
     logger.error({
       event: "auth_me_failed",
       module: "auth",
       traceId,
-      message: "获取当前用户失败",
-      durationMs,
-      userId: session.userId,
+      message: "获取当前用户失败（未知错误）",
       errorName: anyErr?.name,
       errorMessage: anyErr?.message,
-      stack: anyErr?.stack,
-      code: anyErr?.code
+      stack: anyErr?.stack
     })
 
     const body: ApiErr = {

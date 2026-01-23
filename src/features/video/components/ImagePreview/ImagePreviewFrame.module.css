@@ -1,0 +1,119 @@
+.container {
+  background: #0b1220;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.frame {
+  height: min(560px, calc(100vh - 130px));
+  width: auto;
+  max-width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.editButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.editButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.editOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  cursor: crosshair;
+}
+
+.selectionRect {
+  position: absolute;
+  border: 2px solid rgba(99, 102, 241, 0.95);
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  cursor: move;
+  touch-action: none;
+  z-index: 5;
+}
+
+.selectionHandle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.85);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.handleNw { left: -6px; top: -6px; cursor: nwse-resize; }
+.handleN { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+.handleNe { right: -6px; top: -6px; cursor: nesw-resize; }
+.handleE { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+.handleSe { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.handleS { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+.handleSw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.handleW { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+
+.editControls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  gap: 8px;
+  z-index: 6;
+}
+
+.editCtrlBtn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.editCtrlBtnPrimary {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.editCtrlBtnDanger {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.editCtrlBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .frame {
+    height: min(420px, calc(100vh - 220px));
+    max-width: 100%;
+  }
+}

@@ -44,12 +44,12 @@ const BASE_ITEMS: StoryboardItem[] = [
         shot_angle: "平视",
         angle: "0.0",
         camera_movement: "固定镜头",
-        composition: "中心构图",
-        light: "自然光",
-        color: "明亮"
+        composition: "中心构图"
       },
       bgm: "有鼓点的背景音乐"
     },
+    frames: {},
+    videoInfo: {},
     note: "anime插画，cel-shading上色，色彩明亮"
   },
   {
@@ -87,12 +87,12 @@ const BASE_ITEMS: StoryboardItem[] = [
         shot_angle: "仰视",
         angle: "15.0",
         camera_movement: "缓慢推镜头",
-        composition: "对角线",
-        light: "红色月光",
-        color: "高对比"
+        composition: "对角线"
       },
       bgm: "紧张的弦乐"
-    }
+    },
+    frames: {},
+    videoInfo: {}
   }
 ]
 

@@ -1,46 +1,43 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { readEnv, readEnvInt } from "@/features/coze/env"
-import { callCozeRunEndpoint, CozeRunEndpointError } from "@/features/coze/runEndpointClient"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
+import { VideoGenerationService } from "@/server/services/videoGenerationService"
+import { ServiceError } from "@/server/services/errors"
 
 const inputSchema = z.object({
+  storyId: z.string().trim().min(1).max(200).optional(),
   prompt: z.string().min(1).max(20_000),
   mode: z.string().trim().min(1).max(50),
-  generate_audio: z.boolean(),
   ratio: z.string().trim().min(1).max(20),
   duration: z.number().int().min(1).max(60),
   watermark: z.boolean(),
-  image: z.object({
-    url: z.string().trim().url().max(5_000),
-    file_type: z.string().trim().min(1).max(50)
-  })
+  generate_audio: z.boolean().optional(),
+  return_last_frame: z.boolean().optional(),
+  resolution: z.string().trim().min(1).max(50).nullable().optional(),
+  first_image: z
+    .object({
+      url: z.string().trim().url().max(5_000),
+      file_type: z.string().trim().min(1).max(50)
+    })
+    .optional(),
+  last_image: z
+    .object({
+      url: z.string().trim().url().max(5_000),
+      file_type: z.string().trim().min(1).max(50)
+    })
+    .optional(),
+  image: z
+    .object({
+      url: z.string().trim().url().max(5_000),
+      file_type: z.string().trim().min(1).max(50)
+    })
+    .optional()
 })
-
-const DEFAULT_VIDEO_GENERATE_URL = "https://3f47zmnfcb.coze.site/run"
-
-function extractVideoUrl(data: unknown): string | undefined {
-  if (!data || typeof data !== "object") return undefined
-  const anyData = data as Record<string, unknown>
-  const candidates = [
-    anyData["generated_video_url"],
-    anyData["video_url"],
-    anyData["data"],
-    anyData["url"]
-  ]
-
-  for (const value of candidates) {
-    if (typeof value === "string" && value.startsWith("http")) return value
-  }
-
-  return undefined
-}
 
 export async function POST(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)
-  const start = Date.now()
 
   logger.info({
     event: "coze_video_generate_start",
@@ -71,62 +68,21 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 
-  const url = readEnv("COZE_VIDEO_GENERATE_API_URL") ?? DEFAULT_VIDEO_GENERATE_URL
-  const token = readEnv("COZE_VIDEO_GENERATE_API_TOKEN")
-  if (!token) {
-    return NextResponse.json(
-      makeApiErr(
-        traceId,
-        "COZE_NOT_CONFIGURED",
-        "Coze 未配置，请设置 COZE_VIDEO_GENERATE_API_TOKEN（URL 可选）"
-      ),
-      { status: 500 }
-    )
-  }
-
   try {
-    const timeoutMs = readEnvInt("COZE_VIDEO_REQUEST_TIMEOUT_MS") ?? 120_000
-    const coze = await callCozeRunEndpoint({
-      traceId,
-      url,
-      token,
-      body: parsed.data,
-      module: "coze",
-      timeoutMs
-    })
-
-    const durationMs = Date.now() - start
-    const videoUrl = extractVideoUrl(coze.data)
-
-    logger.info({
-      event: "coze_video_generate_success",
-      module: "coze",
-      traceId,
-      message: "视频生成成功",
-      durationMs,
-      cozeStatus: coze.status,
-      hasVideoUrl: Boolean(videoUrl)
-    })
-
+    const normalized = { ...parsed.data, first_image: parsed.data.first_image ?? parsed.data.image }
+    if (!normalized.first_image) {
+      return NextResponse.json(makeApiErr(traceId, "COZE_VALIDATION_FAILED", "缺少首帧图片 first_image"), { status: 400 })
+    }
+    const result = await VideoGenerationService.generateVideoDirect(normalized as any, traceId)
+    
     return NextResponse.json(
-      makeApiOk(traceId, { ...((coze.data ?? {}) as Record<string, unknown>), extracted_video_url: videoUrl }),
+      makeApiOk(traceId, result),
       { status: 200 }
     )
   } catch (err) {
-    const durationMs = Date.now() - start
-    if (err instanceof CozeRunEndpointError) {
-      logger.error({
-        event: "coze_video_generate_failed",
-        module: "coze",
-        traceId,
-        message: "视频生成失败（Coze 调用失败）",
-        durationMs,
-        status: err.status
-      })
-      return NextResponse.json(
-        makeApiErr(traceId, "COZE_REQUEST_FAILED", "Coze 调用失败，请稍后重试"),
-        { status: 502 }
-      )
+    if (err instanceof ServiceError) {
+      const status = err.code === "COZE_REQUEST_FAILED" ? 502 : 500
+      return NextResponse.json(makeApiErr(traceId, err.code, err.message), { status })
     }
 
     const anyErr = err as { name?: string; message?: string; stack?: string }
@@ -135,7 +91,6 @@ export async function POST(req: Request): Promise<Response> {
       module: "coze",
       traceId,
       message: "视频生成异常",
-      durationMs,
       errorName: anyErr?.name,
       errorMessage: anyErr?.message,
       stack: anyErr?.stack

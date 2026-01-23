@@ -1,0 +1,339 @@
+.left {
+  min-width: 0;
+  overflow: auto;
+  padding: 14px 14px;
+  border-right: 1px solid rgba(15, 23, 42, 0.06);
+  background-color: rgba(248, 250, 252, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 10px 0;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.promptStack {
+  position: relative;
+  margin-bottom: 12px;
+  min-height: 210px;
+  padding-right: 18px;
+  padding-bottom: 18px;
+  overflow: visible;
+}
+
+.promptCard {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  box-sizing: border-box;
+  transform-origin: top left;
+}
+
+.promptCardFront {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+  transform: translate(18px, 18px) scale(0.92);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.10);
+}
+
+.promptCardBack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  cursor: pointer;
+  background: rgba(241, 245, 249, 0.95);
+  border-color: rgba(15, 23, 42, 0.18);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  transform: scale(0.92);
+}
+
+.promptCardBack:hover {
+  transform: translate(-1px, -1px) scale(0.92);
+  border-color: rgba(109, 94, 247, 0.35);
+}
+
+.promptCardBack:focus-visible {
+  outline: 2px solid rgba(109, 40, 217, 0.55);
+  outline-offset: 2px;
+}
+
+.promptPlaceholder {
+  width: 100%;
+  min-height: 140px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.counter {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+  padding: 10px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.textarea:focus {
+  border-color: rgba(109, 94, 247, 0.7);
+  box-shadow: 0 0 0 3px rgba(109, 94, 247, 0.18);
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.select,
+.input {
+  width: 100%;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+  padding: 0 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.staticText {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 20px;
+  word-break: break-word;
+}
+
+.select:focus,
+.input:focus {
+  border-color: rgba(109, 94, 247, 0.7);
+  box-shadow: 0 0 0 3px rgba(109, 94, 247, 0.18);
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.groupHeader + .chipList {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+}
+
+.addLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--blue-primary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addLink:hover {
+  background: #fff;
+  border-color: rgba(109, 94, 247, 0.35);
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chip:focus-visible {
+  outline: 2px solid rgba(109, 40, 217, 0.55);
+  outline-offset: 2px;
+}
+
+.chipThumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.04);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.chipThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chipThumbFallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(15, 23, 42, 0.06));
+}
+
+.chipText {
+  max-width: 184px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipMuted {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.chipRemove {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: var(--text-secondary);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chipRemove:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.modeTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+}
+
+.modeTab {
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.modeTab:hover {
+  color: var(--blue-primary);
+  background: rgba(109, 94, 247, 0.10);
+}
+
+.modeTabActive {
+  color: var(--text-main);
+  background: rgba(109, 94, 247, 0.16);
+}
+
+.primaryBtn {
+  width: 100%;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(109, 94, 247, 0.65);
+  background: #4f46e5;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  position: sticky;
+  bottom: 12px;
+}
+
+.primaryBtn:hover {
+  background: #4338ca;
+}
+
+.hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 10px;
+}
+
+@media (max-width: 1023px) {
+  .left {
+    display: none;
+  }
+}

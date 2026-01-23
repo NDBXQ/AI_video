@@ -1,0 +1,271 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+/* 列表视图模式 */
+.cardList {
+  display: flex;
+  flex-direction: row;
+  height: 96px;
+  align-items: center;
+}
+
+.cardList .preview {
+  width: 160px;
+  height: 100%;
+  aspect-ratio: auto;
+  flex-shrink: 0;
+  border-right: 1px solid #f1f5f9;
+}
+
+.cardList .info {
+  flex: 1;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardList .title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.cardList .meta {
+  width: 280px;
+  justify-content: flex-end;
+  gap: 24px;
+}
+
+.cardList .typeTag {
+  top: 8px;
+  left: 8px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.cardList .specTag {
+  top: 8px;
+  right: 8px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+/* 原始样式 */
+.preview {
+  aspect-ratio: 16/9;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.typeTag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  max-width: calc(100% - 20px);
+}
+
+.typeTagText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.specTag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.checkbox {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid rgba(15, 23, 42, 0.2);
+  background: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  accent-color: #2563eb;
+}
+
+.viewOriginalBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  color: #111827;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.viewOriginalBtnShift {
+  top: 44px;
+}
+
+.viewOriginalBtn:hover {
+  border-color: rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.preview:hover .viewOriginalBtn {
+  opacity: 1;
+}
+
+.card:hover .checkbox,
+.checkbox:checked {
+  opacity: 1;
+}
+
+.alwaysShowCheckbox {
+  opacity: 1;
+}
+
+.info {
+  padding: 14px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.metaPublic {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.action {
+  color: #64748b;
+  font-weight: 600;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.card:hover .action {
+  color: #2563eb;
+}
+
+.progressBarWrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 60%;
+}
+
+.progressBar {
+  flex: 1;
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+  min-width: 24px;
+}

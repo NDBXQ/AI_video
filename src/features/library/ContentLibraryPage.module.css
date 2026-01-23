@@ -1,0 +1,43 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.main {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+@media (max-width: 860px) {
+  .main {
+    flex-direction: column;
+  }
+  
+  .content {
+    width: 100%;
+  }
+}

@@ -58,7 +58,8 @@
 .empty {
   margin-top: 14px;
   border-radius: 14px;
-  border: 1px dashed rgba(15, 23, 42, 0.14);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(255, 255, 255, 0.6) 100%);
   padding: 26px 18px;
   display: grid;
   justify-items: center;
@@ -69,8 +70,8 @@
   width: 38px;
   height: 38px;
   border-radius: 14px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(109, 94, 247, 0.12);
+  border: 1px solid rgba(109, 94, 247, 0.16);
 }
 
 .emptyTitle {

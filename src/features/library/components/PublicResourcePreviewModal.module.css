@@ -1,0 +1,142 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 61;
+  width: calc(100% - 2rem);
+  max-width: 900px;
+  height: calc(100% - 4rem);
+  max-height: 680px;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  min-height: 0;
+}
+
+.imagePanel {
+  position: relative;
+  background: #0b1220;
+}
+
+.image {
+  object-fit: contain;
+}
+
+.side {
+  border-left: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rowLabel {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.rowValue {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.footer {
+  padding: 12px 18px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f9fafb;
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #f3f4f6;
+}
+
+.primaryBtn {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.primaryBtn:hover {
+  background: #000;
+  border-color: #000;
+}
+
+@media (max-width: 880px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+  .side {
+    display: none;
+  }
+}

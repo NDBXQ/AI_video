@@ -1,20 +1,22 @@
-import Link from "next/link"
-import type { ReactElement } from "react"
-import styles from "./ScriptWorkspacePage.module.css"
-import { GenerateStoryboardTextLink } from "./GenerateStoryboardTextLink"
 
-type ScriptWorkspaceMode = "source" | "brief"
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type { ReactElement } from "react"
+import { useRouter } from "next/navigation"
+import styles from "./ScriptWorkspacePage.module.css"
+import type { ScriptWorkspaceMode, OutlineItem } from "./utils"
+import { OutlineNav } from "./components/OutlineNav"
+import { PreviewPanel } from "./components/PreviewPanel"
+import { ChatSidebar } from "./components/ChatSidebar"
+import { useOutlineActions } from "./hooks/useOutlineActions"
+import { useScriptRewrite } from "./hooks/useScriptRewrite"
 
 type ScriptWorkspacePageProps = Readonly<{
   mode: ScriptWorkspaceMode
   storyId: string
   outline?: string
-  outlines: ReadonlyArray<{
-    outlineId: string
-    sequence: number
-    outlineText: string
-    originalText: string
-  }>
+  outlines: ReadonlyArray<OutlineItem>
 }>
 
 /**
@@ -24,18 +26,8 @@ type ScriptWorkspacePageProps = Readonly<{
  * @param {string} props.storyId - 故事 ID
  * @returns {ReactElement} 页面内容
  */
-export function ScriptWorkspacePage({
-  mode,
-  storyId,
-  outline,
-  outlines
-}: ScriptWorkspacePageProps): ReactElement {
-  const promptTitle = mode === "brief" ? "剧情简介" : "故事原文"
-  const promptPlaceholder =
-    mode === "brief"
-      ? "请输入剧情简介，生成剧本大纲…"
-      : "请输入故事原文，生成剧本大纲…"
-
+export function ScriptWorkspacePage({ mode, storyId, outline, outlines }: ScriptWorkspacePageProps): ReactElement {
+  const router = useRouter()
   const outlineIndex = (() => {
     const parsed = Number(outline)
     if (!Number.isFinite(parsed)) return 1
@@ -43,133 +35,151 @@ export function ScriptWorkspacePage({
     return Math.trunc(parsed)
   })()
 
-  const activeOutline = outlines.find((o) => o.sequence === outlineIndex) ?? outlines[0] ?? null
+  const [localOutlines, setLocalOutlines] = useState<ReadonlyArray<OutlineItem>>(() => outlines.slice())
+
+  useEffect(() => {
+    setLocalOutlines(outlines.slice())
+  }, [outlines])
+
+  const activeOutline = localOutlines.find((o) => o.sequence === outlineIndex) ?? localOutlines[0] ?? null
+
+  const activeDraft = useMemo(() => {
+    if (!activeOutline) return null
+    const drafts = Array.isArray(activeOutline.outlineDrafts) ? activeOutline.outlineDrafts : []
+    const activeId = (activeOutline.activeOutlineDraftId ?? "").trim()
+    if (activeId) return drafts.find((d) => d.id === activeId) ?? drafts[drafts.length - 1] ?? null
+    return drafts[drafts.length - 1] ?? null
+  }, [activeOutline])
+
+  const {
+    deletingOutlineId,
+    confirmDeleteOutlineId,
+    setConfirmDeleteOutlineId,
+    handleDeleteOutline,
+    persistOutlineDraft,
+    toast,
+    setToast
+  } = useOutlineActions(setLocalOutlines)
+
+  const {
+    rewriteRequirements,
+    setRewriteRequirements,
+    rewriteBySeq,
+    rewriteMessages,
+    previewMode,
+    setPreviewMode,
+    handleRewrite,
+    isRewriteStreaming,
+    activeRewrite,
+    threadRef,
+    shouldAutoScrollRef
+  } = useScriptRewrite({ storyId, activeOutline, persistOutlineDraft, setToast })
+
+  const hasPersistedRewrite = Boolean(activeDraft?.content?.trim())
+  const canShowRewrite = Boolean(
+    hasPersistedRewrite || (activeRewrite && (activeRewrite.status === "streaming" || activeRewrite.status === "done"))
+  )
+
+  const [generatingStoryboard, setGeneratingStoryboard] = useState(false)
+
+  const handleGenerateStoryboardText = useCallback(async () => {
+    if (!activeOutline) return
+    if (generatingStoryboard) return
+    setGeneratingStoryboard(true)
+    try {
+      const outlineId = activeOutline.outlineId
+      router.push(
+        `/video?tab=list&storyId=${encodeURIComponent(storyId)}&outlineId=${encodeURIComponent(outlineId)}&autoGenerate=true`
+      )
+    } catch (e) {
+      const anyErr = e as { message?: string }
+      setToast({ type: "error", message: anyErr?.message ?? "生成失败，请稍后重试" })
+    } finally {
+      setGeneratingStoryboard(false)
+    }
+  }, [activeOutline, generatingStoryboard, router, storyId, setToast])
 
   return (
     <main className={styles.main}>
       <section className={styles.grid}>
-        <nav className={styles.outlineNav} aria-label="选择剧本大纲章节">
-          <div className={styles.outlineNavHeader}>
-            <div className={styles.outlineNavTitle}>大纲章节</div>
-            <div className={styles.outlineNavHint}>选择后在右侧查看</div>
-          </div>
-          <div className={styles.outlineNavList}>
-            {outlines.length === 0 ? (
-              <div className={styles.outlineNavEmpty}>暂无大纲</div>
-            ) : null}
-            {outlines.map((item) => {
-              const isActive = item.sequence === activeOutline?.sequence
-              const href = `/script/workspace/${encodeURIComponent(storyId)}?mode=${mode}&outline=${item.sequence}`
-              const subtitle = item.outlineText.replaceAll("\n", " ").trim().slice(0, 42)
-              return (
-                <Link
-                  key={item.sequence}
-                  href={href}
-                  className={isActive ? styles.outlineNavItemActive : styles.outlineNavItem}
-                >
-                  <div className={styles.outlineNavItemTitle}>剧本大纲 {item.sequence}</div>
-                  <div className={styles.outlineNavItemSub}>{subtitle || "（无摘要）"}</div>
-                </Link>
-              )
-            })}
-          </div>
-        </nav>
+        <OutlineNav
+          outlines={localOutlines}
+          activeOutline={activeOutline}
+          rewriteBySeq={rewriteBySeq}
+          storyId={storyId}
+          mode={mode}
+          deletingOutlineId={deletingOutlineId}
+          setConfirmDeleteOutlineId={setConfirmDeleteOutlineId}
+        />
 
-        <section className={styles.preview}>
-          <div className={styles.previewHeader}>
-            <div className={styles.previewTitle}>
-              {activeOutline ? `剧本大纲 ${activeOutline.sequence}` : "暂无大纲"}
-            </div>
-            <div className={styles.previewHint}>可在此查看生成内容（展示版）</div>
-          </div>
+        <PreviewPanel
+          activeOutline={activeOutline}
+          previewMode={previewMode}
+          setPreviewMode={setPreviewMode}
+          canShowRewrite={canShowRewrite}
+          activeRewrite={activeRewrite}
+          activeDraft={activeDraft}
+          generatingStoryboard={generatingStoryboard}
+          handleGenerateStoryboardText={handleGenerateStoryboardText}
+        />
 
-          <article className={styles.markdown}>
-            {activeOutline ? (
-              <div className={styles.originalText}>{activeOutline.originalText}</div>
-            ) : (
-              <div className={styles.originalEmpty}>暂无可展示内容</div>
-            )}
-          </article>
+        <ChatSidebar
+          rewriteMessages={rewriteMessages}
+          rewriteRequirements={rewriteRequirements}
+          setRewriteRequirements={setRewriteRequirements}
+          handleRewrite={handleRewrite}
+          activeOutline={activeOutline}
+          isRewriteStreaming={isRewriteStreaming}
+          toast={toast}
+          threadRef={threadRef}
+          onScrollThread={() => {
+            const el = threadRef.current
+            if (!el) return
+            const threshold = 24
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - threshold
+            shouldAutoScrollRef.current = atBottom
+          }}
+        />
+      </section>
 
-          <div className={styles.nextStep}>
-            <div className={styles.nextStepCard}>
-              <div className={styles.nextStepText}>
-                <div className={styles.nextStepTitle}>下一步：生成分镜文本</div>
-                <div className={styles.nextStepDesc}>
-                  基于当前大纲生成更细的场景描述与镜头文本，准备进入视频创作。
-                </div>
-              </div>
-              <GenerateStoryboardTextLink
-                className={styles.nextStepButton}
-                href={`/script/storyboard?mode=${mode}&outline=${activeOutline?.sequence ?? 1}&storyId=${encodeURIComponent(
-                  storyId
-                )}`}
-                outlines={outlines}
+      {confirmDeleteOutlineId ? (
+        <div
+          className={styles.modalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="确认删除"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setConfirmDeleteOutlineId(null)
+          }}
+        >
+          <div className={styles.modal}>
+            <div className={styles.modalTitle}>删除该章节？</div>
+            <div className={styles.modalDesc}>将同时删除该章节的原文与分镜数据，且无法恢复。</div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.modalButton}
+                onClick={() => setConfirmDeleteOutlineId(null)}
+                disabled={Boolean(deletingOutlineId)}
               >
-                去生成分镜
-              </GenerateStoryboardTextLink>
-            </div>
-          </div>
-        </section>
-
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <div className={styles.sidebarTitle}>剧本创作</div>
-            <Link href="/script" className={styles.backLink}>
-              返回入口
-            </Link>
-          </div>
-
-          <div className={styles.thread}>
-            <div className={styles.message}>
-              <div className={styles.messageMeta}>助手</div>
-              <div className={styles.bubble}>
-                好呀，把你的{promptTitle}发我，我会先生成可编辑的剧本大纲。
-              </div>
-            </div>
-
-            <div className={styles.messageUser}>
-              <div className={styles.messageMeta}>你</div>
-              <div className={styles.bubbleUser}>
-                {promptTitle}：这里放用户输入内容（示例占位）。
-              </div>
-            </div>
-
-            <div className={styles.message}>
-              <div className={styles.messageMeta}>助手</div>
-              <div className={styles.bubble}>
-                好呀，这是根据你的要求生成的剧本大纲：
-                <div className={styles.outlineChips} aria-label="大纲条目">
-                  {outlines.map((item) => {
-                    const isActive = item.sequence === activeOutline?.sequence
-                    const href = `/script/workspace/${encodeURIComponent(storyId)}?mode=${mode}&outline=${item.sequence}`
-                    return (
-                      <Link
-                        key={item.sequence}
-                        href={href}
-                        className={isActive ? styles.outlineChipActive : styles.outlineChip}
-                      >
-                        <span className={styles.outlineChipIcon} aria-hidden="true" />
-                        剧本大纲 {item.sequence}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.composer}>
-            <div className={styles.composerHint}>输入{promptTitle}，可继续生成/优化大纲</div>
-            <div className={styles.composerRow}>
-              <textarea className={styles.textarea} placeholder={promptPlaceholder} rows={2} />
-              <button type="button" className={styles.sendButton}>
-                发送
+                取消
+              </button>
+              <button
+                type="button"
+                className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                onClick={() => {
+                  const id = confirmDeleteOutlineId
+                  setConfirmDeleteOutlineId(null)
+                  void handleDeleteOutline(id)
+                }}
+                disabled={Boolean(deletingOutlineId)}
+              >
+                删除
               </button>
             </div>
           </div>
-        </aside>
-      </section>
+        </div>
+      ) : null}
     </main>
   )
 }

@@ -1,8 +1,7 @@
 .container {
   width: 100%;
   height: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
   display: grid;
   gap: 18px;
@@ -10,13 +9,62 @@
 
 .headerCard {
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.03) 55%, rgba(255, 255, 255, 0.9) 100%);
+  background: radial-gradient(1200px 520px at 0% 0%, rgba(109, 94, 247, 0.16), rgba(255, 255, 255, 0) 45%),
+    radial-gradient(900px 520px at 100% 0%, rgba(37, 99, 235, 0.14), rgba(255, 255, 255, 0) 55%),
+    rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
   padding: 12px 14px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.headerCard::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 18px 18px, rgba(15, 23, 42, 0.05) 2px, transparent 2px);
+  background-size: 26px 26px;
+  opacity: 0.32;
+  mask-image: radial-gradient(circle at 0% 0%, rgba(0, 0, 0, 0.8), transparent 55%);
+}
+
+.headerLeft {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  position: relative;
+}
+
+.headerTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4f46e5;
+  background: rgba(109, 94, 247, 0.12);
+  border: 1px solid rgba(109, 94, 247, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+  width: fit-content;
+}
+
+.headerTitle {
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.headerSubtitle {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #64748b;
 }
 
 .tabs {
@@ -26,6 +74,7 @@
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
+  position: relative;
 }
 
 .tab {
@@ -41,16 +90,79 @@
 }
 
 .tab:hover {
-  color: #2563eb;
-  background: rgba(37, 99, 235, 0.08);
+  color: #4f46e5;
+  background: rgba(109, 94, 247, 0.10);
 }
 
 .activeTab {
   color: #0f172a;
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(109, 94, 247, 0.16);
 }
 
-.content {
-  min-height: calc(100vh - 240px);
+.contentCard {
+  min-height: calc(100vh - 260px);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  padding: 12px;
+  overflow: hidden;
 }
 
+.headerCardCompact {
+  padding: 10px 12px;
+  align-items: center;
+}
+
+.headerCardCompact::before {
+  opacity: 0.22;
+}
+
+.headerLeftCompact {
+  gap: 2px;
+}
+
+.headerLeftCompact .headerSubtitle {
+  display: none;
+}
+
+.headerTagCompact {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.headerTitleCompact {
+  font-size: 15px;
+}
+
+.tabsCompact {
+  padding: 3px;
+}
+
+.tabCompact {
+  padding: 7px 10px;
+}
+
+.contentCardCompact {
+  min-height: calc(100vh - 220px);
+  padding: 10px;
+}
+
+@media (max-width: 1023px) {
+  .headerCardCompact {
+    padding: 12px 14px;
+  }
+  .headerLeftCompact .headerSubtitle {
+    display: block;
+  }
+}
+
+@media (max-width: 860px) {
+  .headerCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tabs {
+    width: fit-content;
+  }
+}

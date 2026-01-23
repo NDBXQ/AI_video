@@ -26,8 +26,6 @@ export type Shoot = {
   angle: string
   camera_movement: string
   composition: string
-  light: string
-  color: string
 }
 
 export type ShotContent = {
@@ -45,11 +43,40 @@ export type ShotInfo = {
   shot_style: string
 }
 
+export type StoryboardFrameAsset = {
+  url?: string | null
+  thumbnailUrl?: string | null
+  prompt?: string | null
+}
+
+export type StoryboardFrames = {
+  first?: StoryboardFrameAsset
+  last?: StoryboardFrameAsset
+}
+
+export type StoryboardVideoSettings = {
+  mode?: string | null
+  generateAudio?: boolean | null
+  watermark?: boolean | null
+}
+
+export type StoryboardVideoInfo = {
+  url?: string | null
+  prompt?: string | null
+  storageKey?: string | null
+  durationSeconds?: number | null
+  settings?: StoryboardVideoSettings
+}
+
 export type StoryboardItem = {
   id: string
   scene_no: number
+  storyboard_text?: string
   shot_info: ShotInfo
   shot_content: ShotContent
+  scriptContent?: unknown
+  frames: StoryboardFrames
+  videoInfo: StoryboardVideoInfo
   note?: string
 }
 
@@ -63,3 +90,22 @@ export type StoryboardData = {
   items: StoryboardItem[]
 }
 
+export type ApiEpisode = Episode & { sequence?: number }
+export type ApiOutline = { id: string; sequence: number; outlineText: string; originalText: string }
+export type ApiShot = {
+  id: string
+  sequence: number
+  storyboardText: string
+  shotCut: boolean
+  scriptContent: unknown
+  frames: StoryboardFrames
+  videoInfo: StoryboardVideoInfo
+}
+
+export type VideoStoryboardsResponse = {
+  storyId: string
+  activeOutlineId: string | null
+  episodes: ApiEpisode[]
+  outlines: ApiOutline[]
+  shots: ApiShot[]
+}

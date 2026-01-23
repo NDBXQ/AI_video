@@ -1,0 +1,141 @@
+.editor {
+  width: 100%;
+  min-width: 0;
+}
+
+.timelineWrap {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  padding: 10px 10px 12px;
+  position: relative;
+}
+
+.timelineWrapDragOver {
+  border-color: rgba(79, 70, 229, 0.45);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.timelineScroll {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.timeline {
+  position: relative;
+  min-height: 168px;
+  padding: 0 0 10px;
+}
+
+.ruler {
+  position: sticky;
+  top: 0;
+  height: 26px;
+  background: rgba(248, 250, 252, 0.95);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  z-index: 3;
+  box-sizing: border-box;
+  padding-left: 72px;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  height: 26px;
+  width: 1px;
+}
+
+.tickLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(15, 23, 42, 0.10);
+}
+
+.tickLabel {
+  position: absolute;
+  top: 5px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.55);
+  white-space: nowrap;
+}
+
+.clip,
+.audioClip {
+  position: absolute;
+  top: 8px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(79, 70, 229, 0.14);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.clipActive {
+  background: rgba(79, 70, 229, 0.22);
+  border-color: rgba(79, 70, 229, 0.45);
+}
+
+.audioClip {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.clipTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(15, 23, 42, 0.82);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.clipHandleLeft,
+.clipHandleRight {
+  position: absolute;
+  top: -2px;
+  width: 10px;
+  height: 36px;
+  cursor: ew-resize;
+  background: rgba(15, 23, 42, 0.16);
+}
+
+.clipHandleLeft {
+  left: -1px;
+  border-radius: 10px 0 0 10px;
+}
+
+.clipHandleRight {
+  right: -1px;
+  border-radius: 0 10px 10px 0;
+}
+
+.dropHint {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+  margin-top: 10px;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 10px;
+  width: 2px;
+  background: rgba(79, 70, 229, 0.95);
+  transform: translateX(-1px);
+  z-index: 4;
+  pointer-events: none;
+}

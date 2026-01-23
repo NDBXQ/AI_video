@@ -1,23 +1,26 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { getDb } from "coze-coding-dev-sdk"
 import { readEnv } from "@/features/coze/env"
-import { callCozeRunEndpoint, CozeRunEndpointError } from "@/features/coze/runEndpointClient"
+import { CozeRunEndpointError } from "@/features/coze/runEndpointClient"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
-import { stories, storyOutlines } from "@/shared/schema"
 import { getTraceId } from "@/shared/trace"
 import { getSessionFromRequest } from "@/shared/session"
 import type { NextRequest } from "next/server"
 
 const inputSchema = z.object({
+  storyId: z.string().trim().min(1).max(200).optional(),
   input_type: z.string().trim().min(1).max(50),
   story_text: z.string().min(1).max(50_000),
   title: z.string().trim().max(100).optional(),
   ratio: z.string().trim().max(20).optional(),
   resolution: z.string().trim().max(50).optional(),
-  style: z.string().trim().max(50).optional()
+  style: z.string().trim().max(50).optional(),
+  async: z.boolean().optional()
 })
+
+import { enqueueCozeGenerateOutlineJob, kickCozeStoryboardWorker } from "@/server/jobs/cozeStoryboardWorker"
+import { runGenerateOutline } from "@/server/coze/storyboardTasks"
 
 export async function POST(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)
@@ -74,85 +77,59 @@ export async function POST(req: Request): Promise<Response> {
       })
     }
 
-    const db = await getDb({ stories, storyOutlines })
-    const coze = await callCozeRunEndpoint({
-      traceId,
-      url,
-      token,
-      body: {
+    const asyncMode = parsed.data.async ?? false
+    if (asyncMode) {
+      const { jobId, snapshot } = await enqueueCozeGenerateOutlineJob({
+        userId,
+        traceId,
+        storyId: parsed.data.storyId,
         input_type: parsed.data.input_type,
-        story_text: parsed.data.story_text
-      },
-      module: "coze"
+        story_text: parsed.data.story_text,
+        title: parsed.data.title,
+        ratio: parsed.data.ratio,
+        resolution: parsed.data.resolution,
+        style: parsed.data.style
+      })
+      kickCozeStoryboardWorker()
+      logger.info({
+        event: "storyboard_outline_async_queued",
+        module: "coze",
+        traceId,
+        message: "故事大纲生成任务已入队",
+        jobId
+      })
+      return NextResponse.json(makeApiOk(traceId, { jobId, status: snapshot.status }), { status: 202 })
+    }
+
+    const result = await runGenerateOutline({
+      traceId,
+      userId,
+      storyId: parsed.data.storyId,
+      input_type: parsed.data.input_type,
+      story_text: parsed.data.story_text,
+      title: parsed.data.title,
+      ratio: parsed.data.ratio,
+      resolution: parsed.data.resolution,
+      style: parsed.data.style
     })
 
-    const durationMs = Date.now() - start
     logger.info({
       event: "storyboard_outline_success",
       module: "coze",
       traceId,
       message: "故事大纲生成成功",
-      durationMs,
-      cozeStatus: coze.status
+      durationMs: result.durationMs,
+      cozeStatus: result.cozeStatus
     })
 
-    const ratio = parsed.data.ratio?.trim() || "16:9"
-    const aspectRatio = ratio
-    const resolution = parsed.data.resolution?.trim() || "1080p"
-    const title = parsed.data.title?.trim() || null
-    const storyType = parsed.data.input_type
-    const storyText = parsed.data.story_text
-    const shotStyle = parsed.data.style?.trim() || "cinema"
-
-    const [story] = await db
-      .insert(stories)
-      .values({
-        userId,
-        title,
-        storyType,
-        resolution,
-        aspectRatio,
-        storyText,
-        shotStyle
-      })
-      .returning()
-
-    const outlineData = coze.data as unknown
-    const list =
-      typeof outlineData === "object" &&
-      outlineData !== null &&
-      "outline_original_list" in outlineData &&
-      Array.isArray((outlineData as { outline_original_list?: unknown }).outline_original_list)
-        ? ((outlineData as { outline_original_list: Array<{ outline?: unknown; original?: unknown }> })
-            .outline_original_list as Array<{ outline?: unknown; original?: unknown }>)
-        : []
-
-    if (list.length === 0) {
-      logger.warn({
-        event: "storyboard_outline_empty_list",
-        module: "coze",
-        traceId,
-        message: "大纲返回列表为空或结构不符合预期"
-      })
-    }
-
-    if (list.length > 0) {
-      await db.insert(storyOutlines).values(
-        list.map((item, idx) => {
-          return {
-            storyId: story.id,
-            sequence: idx + 1,
-            outlineText: String(item.outline ?? ""),
-            originalText: String(item.original ?? "")
-          }
-        })
-      )
-    }
-
-    return NextResponse.json(makeApiOk(traceId, { storyId: story.id, coze: coze.data }), { status: 200 })
+    return NextResponse.json(makeApiOk(traceId, { storyId: result.storyId, coze: result.coze }), { status: 200 })
   } catch (err) {
     const durationMs = Date.now() - start
     if (err instanceof CozeRunEndpointError) {
+      // 3. Mark Outline Failed (Coze Error)
+      // Note: We don't have storyId easily accessible here if DB insert hasn't happened yet.
+      // But if we fail at Coze step, the story row hasn't been created yet (db insert is AFTER coze call).
+      // So we can't update story status. We just log error.
       logger.error({
         event: "storyboard_outline_failed",
         module: "coze",
@@ -178,6 +155,11 @@ export async function POST(req: Request): Promise<Response> {
       errorMessage: anyErr?.message,
       stack: anyErr?.stack
     })
+    
+    // We can't update story status because story hasn't been created if error happens before DB insert.
+    // If error happens AFTER DB insert (e.g. story_outlines insert fail), we could update story status if we had story variable scope.
+    // Given the current structure, `story` variable is inside try block. We can't access it here easily without refactoring.
+    // For now, assume failure before story creation means no story record to update.
 
     return NextResponse.json(makeApiErr(traceId, "COZE_UNKNOWN", "生成失败，请稍后重试"), {
       status: 500

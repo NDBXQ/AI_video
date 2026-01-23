@@ -1,0 +1,319 @@
+.previewStack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.previewThumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(248, 250, 252, 0.9);
+  overflow: hidden;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.previewThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.previewThumbEmpty {
+  border-style: dashed;
+  color: #94a3b8;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: default;
+}
+
+.previewThumbMore {
+  color: #475569;
+  font-weight: 900;
+  font-size: 12px;
+  cursor: default;
+}
+
+.sceneNo {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.visualContent {
+  display: grid;
+  gap: 6px;
+}
+
+.scriptHint {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.scriptHintInfo {
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.18);
+  color: #1e40af;
+}
+
+.scriptHintWarn {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+.scriptHintError {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.22);
+  color: #b91c1c;
+}
+
+.storyboardText {
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  word-break: break-word;
+}
+
+.characterList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.characterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.14);
+  display: inline-grid;
+  place-items: center;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.characterName {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.chipRemove {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+}
+
+.chipRemoveDanger:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  font-weight: 800;
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+.tagBlue {
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.18);
+  color: #1e40af;
+}
+
+.dialogueBox {
+  display: grid;
+  gap: 8px;
+}
+
+.dialogueItem {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(248, 250, 252, 0.55);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.dialogueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.dialogueRolePill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+}
+
+.dialogueText {
+  color: #334155;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.55;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.backgroundStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.simpleChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  color: #334155;
+  font-weight: 800;
+  font-size: 11px;
+  max-width: 100%;
+}
+
+.sceneItemText {
+  background: rgba(2, 132, 199, 0.06);
+  border-color: rgba(2, 132, 199, 0.18);
+  color: #075985;
+}
+
+.metaChip {
+  color: #64748b;
+}
+
+.chipClickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.chipClickable:hover {
+  background: rgba(37, 99, 235, 0.10);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
+.chipClickable:active {
+  transform: translateY(1px);
+}
+
+.addCharBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.actionBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(248, 250, 252, 0.95);
+  color: #334155;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.actionBtn:hover {
+  background: #ffffff;
+  border-color: rgba(37, 99, 235, 0.22);
+  color: #1e40af;
+}
+
+.actionBtn:active {
+  transform: translateY(1px);
+}
+
+.deleteBtn:hover {
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #b91c1c;
+}
+
+.shootInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

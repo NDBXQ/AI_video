@@ -5,7 +5,7 @@ export type NavItem = {
 
 export const appNavItems: NavItem[] = [
   { href: "/", label: "首页" },
-  { href: "/script", label: "脚本创作" },
+  { href: "/script/workspace?entry=nav", label: "剧本创作" },
   { href: "/video", label: "视频创作" },
   { href: "/library", label: "内容库" }
 ]
@@ -18,4 +18,3 @@ export const libraryNavItems: NavItem[] = [
   { href: "/library/generated-images", label: "已生成的图片库" },
   { href: "/library/generated-videos", label: "已生成的视频库" }
 ]
-

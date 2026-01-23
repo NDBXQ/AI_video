@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { InvalidCredentialsError, userManager } from "@/features/auth/user-manager"
 import { logger } from "@/shared/logger"
-import { buildSessionSetCookie, createSessionToken } from "@/shared/session"
+import { buildSessionSetCookie } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
+import { AuthService } from "@/server/services/authService"
+import { ServiceError } from "@/server/services/errors"
 
 const loginInputSchema = z.object({
   account: z.string().trim().min(1).max(100),
@@ -29,7 +30,6 @@ type ApiErr = {
  */
 export async function POST(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)
-  const start = Date.now()
 
   logger.info({
     event: "auth_login_start",
@@ -70,28 +70,7 @@ export async function POST(req: Request): Promise<Response> {
   const { account, password } = parsed.data
 
   try {
-    const durationMs = Date.now() - start
-    const sessionTtlSeconds = 60 * 60 * 24 * 7
-    const isTestAccount = account === "test" && password === "test"
-
-    const result = isTestAccount
-      ? { user: { id: "test-user", name: "test" }, created: false }
-      : await userManager.loginOrCreate(account, password)
-
-    const token = await createSessionToken(
-      { userId: result.user.id, account: result.user.name, ttlSeconds: sessionTtlSeconds },
-      traceId
-    )
-
-    logger.info({
-      event: "auth_login_success",
-      module: "auth",
-      traceId,
-      message: "登录成功",
-      durationMs,
-      userId: result.user.id,
-      created: result.created
-    })
+    const result = await AuthService.login(account, password, traceId)
 
     const body: ApiOk<{
       user: { id: string; account: string }
@@ -99,7 +78,7 @@ export async function POST(req: Request): Promise<Response> {
     }> = {
       ok: true,
       data: {
-        user: { id: result.user.id, account: result.user.name },
+        user: result.user,
         created: result.created
       },
       traceId
@@ -107,73 +86,36 @@ export async function POST(req: Request): Promise<Response> {
     const res = NextResponse.json(body, { status: 200 })
     res.headers.set(
       "set-cookie",
-      buildSessionSetCookie({ value: token, maxAgeSeconds: sessionTtlSeconds })
+      buildSessionSetCookie({ value: result.token, maxAgeSeconds: result.sessionTtlSeconds })
     )
     return res
   } catch (err) {
-    const durationMs = Date.now() - start
-    if (err instanceof InvalidCredentialsError) {
-      logger.warn({
-        event: "auth_login_invalid_credentials",
-        module: "auth",
-        traceId,
-        message: "登录失败：账号或密码错误",
-        durationMs
-      })
-
+    if (err instanceof ServiceError) {
+      let status = 500
+      if (err.code === "AUTH_INVALID_CREDENTIALS") status = 401
+      
       const body: ApiErr = {
         ok: false,
-        error: { code: "AUTH_INVALID_CREDENTIALS", message: "账号或密码错误" },
+        error: { code: err.code, message: err.message },
         traceId
       }
-      return NextResponse.json(body, { status: 401 })
+      return NextResponse.json(body, { status })
     }
 
-    const anyErr = err as {
-      message?: string
-      name?: string
-      stack?: string
-      code?: string
-      constraint?: string
-    }
-    const errorCode =
-      anyErr?.code === "42P01"
-        ? "DB_TABLE_MISSING"
-        : anyErr?.code === "42703"
-          ? "DB_SCHEMA_MISMATCH"
-          : anyErr?.code === "23505"
-            ? "DB_CONSTRAINT_VIOLATION"
-        : anyErr?.message?.includes("PGDATABASE_URL")
-          ? "DB_NOT_CONFIGURED"
-          : "AUTH_UNKNOWN"
-
+    const anyErr = err as { name?: string; message?: string; stack?: string }
     logger.error({
       event: "auth_login_failed",
       module: "auth",
       traceId,
-      message: "登录处理失败",
-      durationMs,
+      message: "登录处理失败（未知错误）",
       errorName: anyErr?.name,
       errorMessage: anyErr?.message,
-      stack: anyErr?.stack,
-      code: anyErr?.code,
-      constraint: anyErr?.constraint
+      stack: anyErr?.stack
     })
-
-    const publicMessage =
-      errorCode === "DB_TABLE_MISSING"
-        ? "users 表不存在，请先创建表结构"
-        : errorCode === "DB_SCHEMA_MISMATCH"
-          ? "users 表结构与当前代码不匹配"
-          : errorCode === "DB_CONSTRAINT_VIOLATION"
-            ? "数据冲突，请更换账号或稍后重试"
-        : errorCode === "DB_NOT_CONFIGURED"
-          ? "数据库未配置，请设置 PGDATABASE_URL"
-          : "登录失败，请稍后重试"
 
     const body: ApiErr = {
       ok: false,
-      error: { code: errorCode, message: publicMessage },
+      error: { code: "AUTH_UNKNOWN", message: "登录失败，请稍后重试" },
       traceId
     }
 

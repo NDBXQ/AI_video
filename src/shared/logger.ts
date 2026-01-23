@@ -19,23 +19,24 @@ function log(level: LogLevel, payload: LogPayload): void {
     timestamp: new Date().toISOString(),
     ...payload
   }
+  const headline = `${payload.module}:${payload.event} ${payload.message}`
 
   if (level === "error") {
-    console.error(record)
+    console.error(headline, record)
     return
   }
 
   if (level === "warn") {
-    console.warn(record)
+    console.warn(headline, record)
     return
   }
 
   if (level === "info") {
-    console.info(record)
+    console.info(headline, record)
     return
   }
 
-  console.debug(record)
+  console.debug(headline, record)
 }
 
 export const logger = {
@@ -72,4 +73,3 @@ export const logger = {
     log("error", payload)
   }
 }
-
