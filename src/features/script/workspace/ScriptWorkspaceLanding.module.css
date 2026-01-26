@@ -1,6 +1,7 @@
 .cards {
   display: grid;
   gap: 12px;
+  justify-items: start;
 }
 
 .card {
@@ -11,6 +12,8 @@
   padding: 14px 14px;
   text-align: left;
   cursor: pointer;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .cardPrimary {

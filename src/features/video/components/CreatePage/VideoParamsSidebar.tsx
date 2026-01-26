@@ -34,8 +34,6 @@ export function VideoParamsSidebar({
 }: Props): ReactElement {
   return (
     <aside className={styles.left} aria-label="生视频参数区">
-      <h2 className={styles.panelTitle}>生成视频</h2>
-
       <div className={styles.field}>
         <div className={styles.labelRow}>
           <span>分镜提示词</span>

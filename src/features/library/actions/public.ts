@@ -8,8 +8,10 @@ import { logger } from "@/shared/logger"
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
 
-type PublicResourceType = "all" | "character" | "background" | "props"
-const ENABLED_PUBLIC_RESOURCE_TYPES = ["character", "background", "props"] as const
+type PublicResourceType = "all" | "character" | "background" | "props" | "audio" | "video"
+const ENABLED_PUBLIC_RESOURCE_TYPES = ["character", "background", "props", "audio", "music", "effect", "transition", "video"] as const
+const AUDIO_TYPES = ["audio", "music", "effect"] as const
+const VIDEO_TYPES = ["video", "transition"] as const
 
 export async function listPublicResources(params: {
   type?: PublicResourceType
@@ -26,7 +28,11 @@ export async function listPublicResources(params: {
 
   const whereParts: (ReturnType<typeof eq> | ReturnType<typeof or>)[] = []
   whereParts.push(inArray(publicResources.type, ENABLED_PUBLIC_RESOURCE_TYPES as unknown as string[]))
-  if (type !== "all") whereParts.push(eq(publicResources.type, type))
+  if (type !== "all") {
+    if (type === "audio") whereParts.push(inArray(publicResources.type, AUDIO_TYPES as unknown as string[]))
+    else if (type === "video") whereParts.push(inArray(publicResources.type, VIDEO_TYPES as unknown as string[]))
+    else whereParts.push(eq(publicResources.type, type))
+  }
 
   if (keyword.length > 0) {
     const likeValue = `%${keyword}%`
@@ -80,13 +86,25 @@ export async function getPublicResourceStats() {
     all: 0,
     character: 0,
     background: 0,
-    props: 0
+    props: 0,
+    audio: 0,
+    video: 0
   }
 
   for (const row of rows) {
-    const type = row.type as keyof typeof base
-    if (type in base) {
-      base[type] = row.count
+    if (row.type === "audio" || row.type === "music" || row.type === "effect") {
+      base.audio += row.count
+      base.all += row.count
+      continue
+    }
+    if (row.type === "video" || row.type === "transition") {
+      base.video += row.count
+      base.all += row.count
+      continue
+    }
+    const t = row.type as keyof typeof base
+    if (t in base) {
+      base[t] = row.count
       base.all += row.count
     }
   }

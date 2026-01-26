@@ -53,6 +53,21 @@
   overflow: auto;
 }
 
+.metaBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panelFooter {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .promptInput {
   width: 100%;
   min-height: 80px;
@@ -134,7 +149,6 @@
 }
 
 .metaTitle {
-  margin-top: 6px;
   font-size: 13px;
   font-weight: 800;
   color: rgba(15, 23, 42, 0.88);

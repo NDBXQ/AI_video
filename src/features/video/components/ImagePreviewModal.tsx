@@ -3,6 +3,7 @@ import styles from "./ImagePreviewModal.module.css"
 import { startReferenceImageJob, waitReferenceImageJob } from "../utils/referenceImageAsync"
 import { ImagePreviewFrame } from "./ImagePreview/ImagePreviewFrame"
 import { ImagePreviewSidebar } from "./ImagePreview/ImagePreviewSidebar"
+import { ImageAssetPickerModal } from "./ImagePreview/ImageAssetPickerModal"
 import { type NormalizedRect, normalizeRect } from "../utils/imageEditorUtils"
 
 type ImagePreviewModalProps = {
@@ -12,8 +13,10 @@ type ImagePreviewModalProps = {
   generatedImageId?: string
   storyboardId?: string | null
   category?: string | null
+  frameKind?: "first" | "last" | null
   description?: string | null
   prompt?: string | null
+  onStoryboardFrameUpdated?: (params: { storyboardId: string; frameKind: "first" | "last"; url: string; thumbnailUrl: string | null }) => void
   onClose: () => void
 }
 
@@ -24,8 +27,10 @@ export function ImagePreviewModal({
   generatedImageId,
   storyboardId,
   category,
+  frameKind,
   description,
   prompt,
+  onStoryboardFrameUpdated,
   onClose,
 }: ImagePreviewModalProps): ReactElement | null {
   const [saving, setSaving] = useState(false)
@@ -45,6 +50,7 @@ export function ImagePreviewModal({
   const [currentGeneratedImageId, setCurrentGeneratedImageId] = useState<string | undefined>(generatedImageId)
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
   const [editPrompt, setEditPrompt] = useState("")
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -89,6 +95,7 @@ export function ImagePreviewModal({
     setCurrentSrc(imageSrc?.trim() ? imageSrc : "")
     setCurrentGeneratedImageId(generatedImageId)
     setEditPrompt("")
+    setAssetPickerOpen(false)
   }, [open, imageSrc, generatedImageId])
 
   useEffect(() => {
@@ -244,33 +251,57 @@ export function ImagePreviewModal({
     setInpaintLoading(true)
     setInpaintError(null)
     try {
-      const res = await fetch("/api/video-creation/images/inpaint", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: currentSrc,
-          selection: confirmedRect,
-          storyboardId: storyboardId ?? null,
-          generatedImageId: currentGeneratedImageId ?? null,
-          prompt: editPrompt,
-        }),
-      })
-      const json = (await res.json().catch(() => null)) as {
-        ok: boolean
-        data?: { url?: string; generatedImageId?: string }
-        error?: { message?: string }
-      } | null
-      if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
-      const nextUrl = typeof json.data?.url === "string" ? json.data.url : ""
-      if (!nextUrl) throw new Error("生成成功但缺少图片 URL")
-      const nextId = typeof json.data?.generatedImageId === "string" ? json.data.generatedImageId : ""
-      setCurrentSrc(nextUrl)
-      if (nextId) setCurrentGeneratedImageId(nextId)
+      if (frameKind && storyboardId) {
+        const res = await fetch("/api/video/storyboards/frames/inpaint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            storyboardId,
+            frameKind,
+            imageUrl: currentSrc,
+            selection: confirmedRect,
+            prompt: editPrompt
+          })
+        })
+        const json = (await res.json().catch(() => null)) as {
+          ok: boolean
+          data?: { url?: string; thumbnailUrl?: string | null }
+          error?: { message?: string }
+        } | null
+        if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
+        const nextUrl = typeof json.data?.url === "string" ? json.data.url : ""
+        const thumb = typeof json.data?.thumbnailUrl === "string" ? json.data.thumbnailUrl : null
+        if (!nextUrl) throw new Error("生成成功但缺少图片 URL")
+        setCurrentSrc(nextUrl)
+        onStoryboardFrameUpdated?.({ storyboardId, frameKind, url: nextUrl, thumbnailUrl: thumb })
+      } else {
+        const res = await fetch("/api/video-creation/images/inpaint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: currentSrc,
+            selection: confirmedRect,
+            storyboardId: storyboardId ?? null,
+            generatedImageId: currentGeneratedImageId ?? null,
+            prompt: editPrompt
+          })
+        })
+        const json = (await res.json().catch(() => null)) as {
+          ok: boolean
+          data?: { url?: string; generatedImageId?: string }
+          error?: { message?: string }
+        } | null
+        if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
+        const nextUrl = typeof json.data?.url === "string" ? json.data.url : ""
+        if (!nextUrl) throw new Error("生成成功但缺少图片 URL")
+        const nextId = typeof json.data?.generatedImageId === "string" ? json.data.generatedImageId : ""
+        setCurrentSrc(nextUrl)
+        if (nextId) setCurrentGeneratedImageId(nextId)
+      }
       setConfirmedRect(null)
       setIsEditing(false)
       setEditPrompt("")
-      if (storyboardId)
-        window.dispatchEvent(new CustomEvent("video_reference_images_updated", { detail: { storyboardId } }))
+      if (storyboardId) window.dispatchEvent(new CustomEvent("video_reference_images_updated", { detail: { storyboardId } }))
     } catch (err) {
       const anyErr = err as { message?: string }
       setInpaintError(anyErr?.message ?? "生成失败")
@@ -288,6 +319,8 @@ export function ImagePreviewModal({
 
   if (!open) return null
   const displayDescription = (description ?? "").trim() || (prompt ?? "").trim() || "暂无描述"
+  const normalizedCategory: "background" | "role" | "item" =
+    category === "role" || category === "item" || category === "background" ? category : "background"
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -323,6 +356,10 @@ export function ImagePreviewModal({
             onExitEdit={handleExitEdit}
             onRegenerate={handleRegenerate}
             onSave={handleSave}
+            onPickAsset={() => {
+              if (!storyboardId) return
+              setAssetPickerOpen(true)
+            }}
             loading={inpaintLoading}
             regenerating={regenerating}
             saving={saving}
@@ -338,6 +375,41 @@ export function ImagePreviewModal({
             deleting={deleting}
         />
       </div>
+      {storyboardId ? (
+        <ImageAssetPickerModal
+          open={assetPickerOpen}
+          title={title}
+          storyboardId={storyboardId}
+          category={normalizedCategory}
+          onPicked={({ url, thumbnailUrl, generatedImageId }) => {
+            setSaving(false)
+            setSaveDone(false)
+            setSaveError(null)
+            setPublicResourceId(null)
+            setDeleting(false)
+            setDeleteError(null)
+            setRegenerating(false)
+            setRegenerateError(null)
+            setInpaintError(null)
+            setIsEditing(false)
+            setDraftRect(null)
+            setConfirmedRect(null)
+            setEditPrompt("")
+            setCurrentSrc(url)
+            setCurrentGeneratedImageId(generatedImageId)
+            if (frameKind) {
+              onStoryboardFrameUpdated?.({ storyboardId, frameKind, url, thumbnailUrl })
+              void fetch("/api/video/storyboards", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ storyboardId, frames: frameKind === "first" ? { first: { url, thumbnailUrl } } : { last: { url, thumbnailUrl } } })
+              }).catch(() => {})
+            }
+            window.dispatchEvent(new CustomEvent("video_reference_images_updated", { detail: { storyboardId } }))
+          }}
+          onClose={() => setAssetPickerOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { getDb } from "coze-coding-dev-sdk"
 import { readEnv } from "@/features/coze/env"
 import { callCozeRunEndpoint } from "@/features/coze/runEndpointClient"
 import { updateStoryStatus } from "@/features/video/utils/storyStatus"
-import { stories, storyOutlines, storyboards } from "@/shared/schema"
+import { stories, storyOutlines, storyboards, type StoryboardScriptContent } from "@/shared/schema"
 import { mergeStoryboardVideoInfo } from "@/server/services/storyboardAssets"
 
 function extractStoryOriginal(data: unknown): string | null {
@@ -336,7 +336,7 @@ export async function runGenerateScript(input: {
     await db
       .update(storyboards)
       .set({
-        scriptContent: sanitizeScriptContentForDb(coze.data),
+        scriptContent: sanitizeScriptContentForDb(coze.data) as StoryboardScriptContent,
         isScriptGenerated: true,
         videoInfo: nextVideoInfo as any,
         updatedAt: new Date()

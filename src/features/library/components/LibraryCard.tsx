@@ -1,5 +1,5 @@
 import type { ReactElement } from "react"
-import { Pencil, Film, FileText, Image as ImageIcon, Eye } from "lucide-react"
+import { Pencil, Film, FileText, Image as ImageIcon, Eye, Music } from "lucide-react"
 import Image from "next/image"
 import styles from "./LibraryCard.module.css"
 import type { StoryMetadata } from "@/features/video/types/story"
@@ -31,6 +31,21 @@ interface LibraryCardProps {
 export function LibraryCard({ item, view, onClick, selected, onToggleSelected, onViewOriginal }: LibraryCardProps): ReactElement {
   const variant = item.scope ?? "my"
   const isList = view === "list"
+
+  const previewUrl = item.thumbnail
+  const previewKind = (() => {
+    if (!previewUrl) return "none"
+    if (previewUrl.startsWith("data:image/")) return "image"
+    const noHash = previewUrl.split("#")[0] ?? previewUrl
+    const noQuery = noHash.split("?")[0] ?? noHash
+    const lower = noQuery.toLowerCase()
+    if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".webp") || lower.endsWith(".gif") || lower.endsWith(".svg")) {
+      return "image"
+    }
+    if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")) return "video"
+    if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".m4a") || lower.endsWith(".aac") || lower.endsWith(".ogg")) return "audio"
+    return "unknown"
+  })()
   
   const TypeIcon = {
     draft: Pencil,
@@ -70,8 +85,16 @@ export function LibraryCard({ item, view, onClick, selected, onToggleSelected, o
       onClick={onClick}
     >
       <div className={styles.preview}>
-        {item.thumbnail ? (
-          <Image src={item.thumbnail} alt={item.title} className={styles.previewImage} fill sizes={isList ? "160px" : "320px"} />
+        {previewUrl && previewKind === "image" ? (
+          <Image src={previewUrl} alt={item.title} className={styles.previewImage} fill sizes={isList ? "160px" : "320px"} />
+        ) : previewUrl && previewKind === "video" ? (
+          <div className={styles.placeholder}>
+            <Film size={isList ? 24 : 32} strokeWidth={1.5} />
+          </div>
+        ) : previewUrl && previewKind === "audio" ? (
+          <div className={styles.placeholder}>
+            <Music size={isList ? 24 : 32} strokeWidth={1.5} />
+          </div>
         ) : (
           <div className={styles.placeholder}>
             <TypeIcon size={isList ? 24 : 32} strokeWidth={1.5} />

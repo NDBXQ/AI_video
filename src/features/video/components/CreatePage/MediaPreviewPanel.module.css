@@ -1,30 +1,107 @@
 
 .main {
+  --dock-h: 120px;
   height: 100%;
   min-height: 0;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: visible;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) var(--dock-h);
+  gap: 8px;
 }
 
-.topArea {
+.mainVideo {
+  --dock-h: 260px;
+}
+
+.mainImage {
+  --dock-h: 120px;
+}
+
+.topRow {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 12px;
-  padding: 6px 16px 8px;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.topRowVideo {
+  display: flex;
+  gap: 4px;
+}
+
+.topRowVideo .previewCard {
+  flex: 1 1 auto;
+}
+
+.previewCard {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 44px -26px rgba(15, 23, 42, 0.25);
 }
 
 @media (max-width: 1023px) {
-  .topArea {
+  .topRowVideo {
     grid-template-columns: 1fr;
   }
 }
 
 .assetSidebarWrap {
+  width: var(--asset-sidebar-w, 280px);
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  height: 100%;
+  flex: 0 0 auto;
+}
+
+.splitter {
+  width: 6px;
+  flex: 0 0 auto;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+}
+
+.splitter::before {
+  content: "";
+  width: 2px;
+  height: 72%;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.12);
+}
+
+.splitter:hover::before {
+  background: rgba(79, 70, 229, 0.35);
+}
+
+.splitterActive::before {
+  background: rgba(79, 70, 229, 0.55);
+}
+
+.dock {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .dock {
+    margin-left: calc(-1 * (var(--left-col-w, 0px) + var(--col-gap, 0px)));
+    width: calc(100% + var(--left-col-w, 0px) + var(--col-gap, 0px));
+  }
 }

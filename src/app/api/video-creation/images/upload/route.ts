@@ -3,7 +3,7 @@ import { z } from "zod"
 import { and, desc, eq } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
 import { makeApiErr, makeApiOk } from "@/shared/api"
-import { generatedImages, stories, storyOutlines, storyboards } from "@/shared/schema"
+import { generatedImages, stories, storyOutlines, storyboards, type StoryboardScriptContent } from "@/shared/schema"
 import { createCozeS3Storage } from "@/server/integrations/storage/s3"
 import { generateThumbnail } from "@/lib/thumbnail"
 import { getSessionFromRequest } from "@/shared/session"
@@ -14,9 +14,77 @@ const formSchema = z.object({
   storyId: z.string().trim().min(1).max(200).optional(),
   storyboardId: z.string().trim().min(1).max(200).optional(),
   name: z.string().trim().min(1).max(200),
+  displayName: z.string().trim().min(1).max(200).optional(),
   category: z.string().trim().min(1).max(50).default("reference"),
   description: z.string().trim().max(10_000).optional()
 })
+
+function buildEmptyScript(): StoryboardScriptContent {
+  return {
+    shot_info: { cut_to: false, shot_style: "", shot_duration: 0 },
+    shot_content: {
+      bgm: "",
+      roles: [],
+      shoot: { angle: "", shot_angle: "", camera_movement: "" },
+      background: { status: "", background_name: "" },
+      role_items: [],
+      other_items: []
+    },
+    video_content: {
+      items: [],
+      roles: [],
+      background: { description: "", background_name: "" },
+      other_items: []
+    }
+  }
+}
+
+function withReferenceAsset(
+  current: StoryboardScriptContent | null,
+  input: { category: string; entityName: string; assetName: string; assetDescription: string }
+): StoryboardScriptContent {
+  const next = current ? structuredClone(current) : buildEmptyScript()
+  const entityName = input.entityName.trim()
+  const assetName = input.assetName.trim()
+  const assetDescription = input.assetDescription.trim()
+  if (!entityName || !assetName) return next
+
+  if (input.category === "role") {
+    const roles = Array.isArray(next.video_content.roles) ? next.video_content.roles : []
+    let row = roles.find((r) => (r.role_name ?? "").trim() === entityName)
+    if (!row) {
+      row = { role_name: entityName, description: "" }
+      roles.push(row)
+      next.video_content.roles = roles
+    }
+    row.reference_image_name = assetName
+    row.reference_image_description = assetDescription
+    return next
+  }
+
+  if (input.category === "background") {
+    const bg = next.video_content.background ?? { description: "", background_name: "" }
+    bg.reference_image_name = assetName
+    bg.reference_image_description = assetDescription
+    next.video_content.background = bg
+    return next
+  }
+
+  const items = Array.isArray(next.video_content.items) ? next.video_content.items : []
+  const otherItems = Array.isArray(next.video_content.other_items) ? next.video_content.other_items : []
+  let row =
+    items.find((r) => (r.item_name ?? "").trim() === entityName) ??
+    otherItems.find((r) => (r.item_name ?? "").trim() === entityName) ??
+    null
+  if (!row) {
+    row = { relation: "", item_name: entityName, description: "" }
+    items.push(row)
+    next.video_content.items = items
+  }
+  row.reference_image_name = assetName
+  row.reference_image_description = assetDescription
+  return next
+}
 
 export async function POST(req: NextRequest): Promise<Response> {
   const traceId = getTraceId(req.headers)
@@ -32,6 +100,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     storyId: formData.get("storyId") ?? undefined,
     storyboardId: formData.get("storyboardId") ?? undefined,
     name: formData.get("name") ?? "",
+    displayName: formData.get("displayName") ?? undefined,
     category: formData.get("category") ?? undefined,
     description: formData.get("description") ?? undefined
   })
@@ -39,7 +108,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   if (!(file instanceof File)) return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "缺少上传文件"), { status: 400 })
 
-  const { storyId: rawStoryId, storyboardId, name, category, description } = parsed.data
+  const { storyId: rawStoryId, storyboardId, name, displayName, category, description } = parsed.data
   const db = await getDb({ generatedImages, stories, storyOutlines, storyboards })
 
   const effectiveStoryId =
@@ -124,7 +193,20 @@ export async function POST(req: NextRequest): Promise<Response> {
             .returning()
         )[0]
 
-  void storyboardId
+  if (storyboardId) {
+    const rows = await db
+      .select({ scriptContent: storyboards.scriptContent })
+      .from(storyboards)
+      .innerJoin(storyOutlines, eq(storyboards.outlineId, storyOutlines.id))
+      .innerJoin(stories, eq(storyOutlines.storyId, stories.id))
+      .where(and(eq(storyboards.id, storyboardId), eq(stories.userId, userId)))
+      .limit(1)
+    const current = (rows[0]?.scriptContent ?? null) as StoryboardScriptContent | null
+    const assetName = (file.name ?? "").trim() || displayName || name
+    const assetDescription = (description ?? "").trim()
+    const nextScript = withReferenceAsset(current, { category, entityName: name, assetName, assetDescription })
+    await db.update(storyboards).set({ scriptContent: nextScript, updatedAt: new Date() }).where(eq(storyboards.id, storyboardId))
+  }
 
   return NextResponse.json(makeApiOk(traceId, saved), { status: 200 })
 }

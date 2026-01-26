@@ -8,17 +8,21 @@
   --blue-primary: #4f46e5;
   --blue-light: rgba(109, 94, 247, 0.12);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --app-header-h: 64px;
 
   width: 100%;
-  height: calc(100vh - 120px);
-  border-radius: 18px;
+  flex: 1;
+  height: calc(100vh - var(--app-header-h));
+  max-height: calc(100vh - var(--app-header-h));
+  min-height: 0;
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  border: 0;
+  box-shadow: none;
   background: #ffffff;
   color: var(--text-main);
   display: grid;
-  grid-template-rows: 56px 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   position: relative;
 }
 
@@ -107,8 +111,36 @@
 .body {
   display: grid;
   grid-template-columns: 340px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding: 8px 12px 12px;
+  gap: 8px;
+  background: rgba(248, 250, 252, 0.65);
+  height: 100%;
+}
+
+.workspaceWrap {
+  min-height: 0;
+  display: flex;
+  border-radius: 14px;
   overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  flex: 1;
+  height: 100%;
+}
+
+.workspaceWrap .body {
+  flex: 1;
+  height: 100%;
+}
+
+.body > * {
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .left {

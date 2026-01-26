@@ -7,6 +7,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "coze-coding-project.tos.coze.site",
         pathname: "/**"
+      },
+      {
+        protocol: "https",
+        hostname: "integration.coze.cn",
+        pathname: "/**"
       }
     ]
   }

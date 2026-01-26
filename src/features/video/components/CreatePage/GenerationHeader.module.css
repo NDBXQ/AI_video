@@ -1,16 +1,22 @@
 .topBar {
   display: grid;
-  grid-template-columns: 120px 1fr 240px;
+  grid-template-columns: max-content 1fr 240px;
   align-items: center;
   gap: 12px;
+  height: 44px;
   padding: 0 12px;
+  margin: 8px 0 0;
   background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 16px 44px -26px rgba(15, 23, 42, 0.25);
   backdrop-filter: blur(10px);
 }
 
 .backBtn {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
   height: 30px;
   padding: 0 10px;
   border-radius: 10px;
@@ -19,10 +25,46 @@
   color: rgba(15, 23, 42, 0.86);
   font-size: 12px;
   font-weight: 800;
+  line-height: 1;
   cursor: pointer;
 }
 
 .backBtn:hover {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.leftArea {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.modePill {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modeBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.03);
+  color: rgba(15, 23, 42, 0.86);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: default;
+}
+
+.modeBadge:hover {
   background: #fff;
   border-color: rgba(15, 23, 42, 0.18);
 }
@@ -32,14 +74,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px;
+  padding: 3px;
   border: 1px solid rgba(15, 23, 42, 0.10);
   background: rgba(255, 255, 255, 0.75);
   border-radius: 999px;
 }
 
 .modeTab {
-  height: 34px;
+  height: 31px;
   padding: 0 12px;
   border: none;
   background: transparent;
@@ -72,7 +114,7 @@
   white-space: nowrap;
 }
 
-.rightInfo span {
+.pill {
   display: inline-flex;
   align-items: center;
   height: 24px;
@@ -84,12 +126,31 @@
   font-weight: 800;
 }
 
+.pillButton {
+  cursor: pointer;
+}
+
+.pillButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sceneNav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.extraInfo {
+  display: inline-flex;
+}
+
 @media (max-width: 1023px) {
   .topBar {
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: max-content 1fr;
   }
 
-  .rightInfo {
+  .extraInfo {
     display: none;
   }
 }

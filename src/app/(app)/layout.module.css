@@ -5,11 +5,17 @@
     #f6f7fb;
   color: #0f172a;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 .page {
   width: 100%;
-  max-width: var(--app-container-max);
-  margin: 0 auto;
-  padding: 22px var(--app-gutter) 42px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }

@@ -26,7 +26,7 @@ export function HomeWelcome(): ReactElement {
       </div>
 
       <div className={styles.right} aria-label="快捷入口">
-        <Link href="/script" className={styles.primary}>
+        <Link href="/script/workspace?entry=nav" className={styles.primary}>
           新建剧本 →
         </Link>
         <div className={styles.secondaryRow}>
@@ -42,4 +42,3 @@ export function HomeWelcome(): ReactElement {
     </section>
   )
 }
-

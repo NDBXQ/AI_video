@@ -202,7 +202,11 @@ export async function PUT(req: NextRequest): Promise<Response> {
       return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "参数格式不正确"), { status: 400 })
     }
 
-    const result = await StoryboardService.updateStoryboard(userId, parsed.data, traceId)
+    const result = await StoryboardService.updateStoryboard(
+      userId,
+      { ...parsed.data, scriptContent: parsed.data.scriptContent as any },
+      traceId
+    )
     if (!result) {
       return NextResponse.json(makeApiErr(traceId, "STORYBOARD_NOT_FOUND", "未找到可编辑的分镜"), { status: 404 })
     }

@@ -29,21 +29,21 @@ export function useLibrarySelection(scope: Scope, category: string) {
     setSelectedIds(new Set())
   }, [])
 
-  const handleBulkDelete = useCallback(async (onSuccess: () => Promise<void>) => {
-    if (selectedIds.size <= 0 || bulkDeleting) return
-    const ok = window.confirm(`确定删除已选中的 ${selectedIds.size} 项吗？`)
-    if (!ok) return
+  const handleBulkDelete = useCallback(async (ids: string[], onSuccess: () => Promise<void>) => {
+    if (bulkDeleting) return
+    const uniqueIds = Array.from(new Set(ids.map((id) => String(id).trim()).filter(Boolean))).slice(0, 200)
+    if (uniqueIds.length <= 0) return
 
     setBulkDeleting(true)
     try {
-      await deletePublicResources(Array.from(selectedIds))
+      await deletePublicResources(uniqueIds)
       await onSuccess()
       setSelectedIds(new Set())
       setPreviewItem(null)
     } finally {
       setBulkDeleting(false)
     }
-  }, [bulkDeleting, selectedIds])
+  }, [bulkDeleting])
 
   return {
     selectedIds,

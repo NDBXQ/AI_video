@@ -12,11 +12,13 @@ export type TwoFrameImagePreviewFrame = {
 export function TwoFrameImagePreview({
   title,
   frames,
-  onImageLoad
+  onImageLoad,
+  onEdit
 }: {
   title: string
   frames: [TwoFrameImagePreviewFrame, TwoFrameImagePreviewFrame]
   onImageLoad?: (img: { naturalWidth: number; naturalHeight: number }) => void
+  onEdit?: (frame: { label: string; src: string }) => void
 }): ReactElement {
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -26,6 +28,8 @@ export function TwoFrameImagePreview({
   const canNext = true
 
   const badgeText = useMemo(() => `${activeIndex + 1}/2`, [activeIndex])
+
+  const canEdit = Boolean(onEdit) && /^https?:\/\//i.test(active?.src ?? "")
 
   return (
     <div
@@ -43,6 +47,20 @@ export function TwoFrameImagePreview({
       }}
       aria-label="首帧/尾帧预览"
     >
+      {canEdit ? (
+        <button
+          type="button"
+          className={styles.editBtn}
+          onClick={() => {
+            const src = (active?.src ?? "").trim()
+            if (!src) return
+            onEdit?.({ label: active.label, src })
+          }}
+        >
+          编辑
+        </button>
+      ) : null}
+
       <button
         type="button"
         className={`${styles.navBtn} ${styles.navBtnLeft}`}

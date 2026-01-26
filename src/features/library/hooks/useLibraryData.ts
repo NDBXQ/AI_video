@@ -100,6 +100,8 @@ export function useLibraryData() {
           roles: stats.character,
           backgrounds: stats.background,
           props: stats.props,
+          audios: stats.audio,
+          videos: stats.video,
         })
       })
       .catch(() => {
@@ -142,7 +144,9 @@ export function useLibraryData() {
       all: stats.all,
       roles: stats.character,
       backgrounds: stats.background,
-      props: stats.props
+      props: stats.props,
+      audios: stats.audio,
+      videos: stats.video
     })
   }, [category, query])
 

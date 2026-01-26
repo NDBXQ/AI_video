@@ -1,6 +1,6 @@
 {
     "first_frame": {
-        "type": "image_url | prompt",
+        "type": "prompt | None",
         "content": "content",
         },
     "last_frame": {

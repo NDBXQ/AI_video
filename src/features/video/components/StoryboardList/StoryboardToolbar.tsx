@@ -1,4 +1,5 @@
 import { type ReactElement } from "react"
+import { RotateCcw } from "lucide-react"
 import styles from "./StoryboardToolbar.module.css"
 
 type StoryboardToolbarProps = {
@@ -6,10 +7,10 @@ type StoryboardToolbarProps = {
   isLoading: boolean
   loadError: string | null
   selectedCount: number
-  isAnyScriptGenerating: boolean
-  scriptGenerateSummary: { total: number; generating: number; done: number }
   onBatchDelete: () => void
-  onGenerateScript: () => void
+  onRegenerateEpisode?: () => void
+  regenerateDisabled?: boolean
+  regenerateStatusText?: string | null
 }
 
 export function StoryboardToolbar({
@@ -17,10 +18,10 @@ export function StoryboardToolbar({
   isLoading,
   loadError,
   selectedCount,
-  isAnyScriptGenerating,
-  scriptGenerateSummary,
   onBatchDelete,
-  onGenerateScript
+  onRegenerateEpisode,
+  regenerateDisabled,
+  regenerateStatusText,
 }: StoryboardToolbarProps): ReactElement {
   return (
     <div className={styles.toolbar}>
@@ -31,21 +32,25 @@ export function StoryboardToolbar({
         {loadError ? <span className={styles.toolbarMeta}>{loadError}</span> : null}
       </div>
       <div className={styles.toolbarActions}>
+        {regenerateStatusText ? <span className={styles.toolbarMeta}>{regenerateStatusText}</span> : null}
+        {onRegenerateEpisode ? (
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            onClick={onRegenerateEpisode}
+            disabled={Boolean(regenerateDisabled)}
+            title="重新生成分镜文本/分镜脚本/提示词/参考图"
+          >
+            <RotateCcw size={14} />
+            重新生成
+          </button>
+        ) : null}
         {selectedCount > 0 && (
           <button className={`${styles.btn} ${styles.btnDanger}`} onClick={onBatchDelete}>
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             删除 ({selectedCount})
           </button>
         )}
-        <button
-          type="button"
-          className={`${styles.btn} ${styles.btnPrimary}`}
-          disabled={isLoading || isAnyScriptGenerating}
-          style={{ opacity: isLoading || isAnyScriptGenerating ? 0.75 : 1, cursor: isLoading || isAnyScriptGenerating ? "not-allowed" : "pointer" }}
-          onClick={onGenerateScript}
-        >
-          ⚡️ AI 生成脚本{isAnyScriptGenerating ? `（${scriptGenerateSummary.done}/${scriptGenerateSummary.total}）` : ""}
-        </button>
       </div>
     </div>
   )

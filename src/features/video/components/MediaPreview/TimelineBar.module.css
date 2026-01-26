@@ -1,26 +1,38 @@
 
 .filmstrip {
-  padding: 6px 16px 10px;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
-  background: #ffffff;
+  height: 100%;
+  min-height: 0;
+  padding: 8px 12px;
+  margin: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 44px -26px rgba(15, 23, 42, 0.25);
   display: grid;
   grid-template-columns: 32px 1fr 32px;
   align-items: center;
-  gap: 10px;
-  min-height: 96px;
+  gap: 8px;
   align-content: start;
 }
 
 .filmstripEditor {
   grid-template-columns: 1fr;
-  padding: 10px 16px 12px;
-  min-height: 220px;
+  padding: 8px 12px;
+  min-height: 0;
   align-items: stretch;
+  border-top: none;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 44px -26px rgba(15, 23, 42, 0.25);
 }
 
 .editorOnly {
   width: 100%;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
   display: block;
 }
 
@@ -29,8 +41,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 6px 8px;
   border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.06);
   background: rgba(255, 255, 255, 0.75);
@@ -200,12 +212,40 @@
   background: rgba(255, 255, 255, 0.80);
   overflow: hidden;
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 900;
   transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.thumbImgWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+  flex-shrink: 0;
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .thumb:hover {

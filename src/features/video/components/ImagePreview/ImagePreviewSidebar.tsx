@@ -11,6 +11,7 @@ type Props = {
   onExitEdit: () => void
   onRegenerate: () => void
   onSave: () => void
+  onPickAsset: () => void
   loading: boolean
   regenerating: boolean
   saving: boolean
@@ -37,6 +38,7 @@ export function ImagePreviewSidebar({
   onExitEdit,
   onRegenerate,
   onSave,
+  onPickAsset,
   loading,
   regenerating,
   saving,
@@ -96,34 +98,44 @@ export function ImagePreviewSidebar({
           </>
         ) : (
           <>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              disabled={saving || saveDone || !canRegenerate}
-              onClick={onSave}
-            >
-              {saving ? "保存中…" : saveDone ? "已保存" : "保存到公共资源库"}
-            </button>
-            {publicResourceId && onDelete ? (
+            <div className={styles.metaBlock}>
+              <div className={styles.metaTitle}>{title}</div>
+              <div className={styles.metaDescription}>{description}</div>
+              <div className={styles.panelHint}>
+                后续会在这里增加更多功能，例如下载、复制链接、设置为封面等。
+              </div>
+            </div>
+
+            <div className={styles.panelFooter}>
+              <button type="button" className={styles.secondaryButton} disabled={loading} onClick={onPickAsset}>
+                选择素材
+              </button>
               <button
                 type="button"
-                className={styles.dangerButton}
-                disabled={deleting}
-                onClick={onDelete}
+                className={styles.primaryButton}
+                disabled={saving || saveDone || !canRegenerate}
+                onClick={onSave}
               >
-                {deleting ? "删除中…" : "从公共素材库删除"}
+                {saving ? "保存中…" : saveDone ? "已保存" : "保存到公共资源库"}
               </button>
-            ) : null}
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              disabled={regenerating || !canRegenerate}
-              onClick={onRegenerate}
-            >
-              {regenerating ? "重新生成中…" : "重新生成"}
-            </button>
-            <div className={styles.panelHint}>
-              后续会在这里增加更多功能，例如下载、复制链接、设置为封面等。
+              {publicResourceId && onDelete ? (
+                <button
+                  type="button"
+                  className={styles.dangerButton}
+                  disabled={deleting}
+                  onClick={onDelete}
+                >
+                  {deleting ? "删除中…" : "从公共素材库删除"}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={regenerating || !canRegenerate}
+                onClick={onRegenerate}
+              >
+                {regenerating ? "重新生成中…" : "重新生成"}
+              </button>
             </div>
           </>
         )}
@@ -131,8 +143,6 @@ export function ImagePreviewSidebar({
         {regenerateError ? <div className={styles.panelError}>{regenerateError}</div> : null}
         {deleteError ? <div className={styles.panelError}>{deleteError}</div> : null}
         {inpaintError ? <div className={styles.panelError}>{inpaintError}</div> : null}
-        <div className={styles.metaTitle}>{title}</div>
-        <div className={styles.metaDescription}>{description}</div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react"
 import type { StoryboardItem } from "../types"
 import { extractVideoScript } from "../utils/storyboardUtils"
+import type { StoryboardScriptContent } from "@/shared/schema"
 
 type ScriptGenerateTone = "info" | "warn" | "error"
 export type ScriptGenerateState = { status: "idle" | "generating" | "success" | "error"; tone?: ScriptGenerateTone; message?: string }
@@ -127,7 +128,7 @@ export function useScriptGeneration({ items, updateItemById }: UseScriptGenerati
         ...it,
         shot_info: patchShotInfo,
         shot_content: patchShotContent,
-        scriptContent: json.data,
+        scriptContent: json.data as StoryboardScriptContent,
         videoInfo: {
           ...(it.videoInfo ?? {}),
           durationSeconds: patchShotInfo.shot_duration > 0 ? Math.trunc(patchShotInfo.shot_duration) : it.videoInfo?.durationSeconds

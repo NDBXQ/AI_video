@@ -74,7 +74,7 @@ export async function getMyStories(query?: string): Promise<LibraryItem[]> {
       title: row.title || "未命名",
       type,
       updatedAt: dateStr,
-      specs: row.resolution,
+      specs: `${row.aspectRatio} ｜ ${row.resolution}`,
       thumbnail,
       metadata,
       progressStage: row.progressStage
@@ -141,7 +141,7 @@ export async function getDraftStories(query?: string): Promise<LibraryItem[]> {
       title: row.title || "未命名草稿",
       type: "draft",
       updatedAt: dateStr,
-      specs: row.resolution,
+      specs: `${row.aspectRatio} ${row.resolution}`,
       thumbnail,
       metadata,
       progressStage: row.progressStage

@@ -84,4 +84,6 @@ export const PUBLIC_COUNTS: Record<string, number> = {
   roles: 2,
   backgrounds: 0,
   props: 1,
+  audios: 0,
+  videos: 0,
 }

@@ -40,7 +40,12 @@ export function useAutoGenerateState(activeEpisode: string) {
   }, [activeEpisode])
 
   useEffect(() => {
-    if (generationStage === "idle") setGenerationEpisodeId("")
+    if (generationStage !== "idle") return
+    if (typeof queueMicrotask === "function") {
+      queueMicrotask(() => setGenerationEpisodeId(""))
+      return
+    }
+    void Promise.resolve().then(() => setGenerationEpisodeId(""))
   }, [generationStage])
 
   return {

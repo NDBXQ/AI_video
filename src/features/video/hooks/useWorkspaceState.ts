@@ -95,6 +95,7 @@ export function useWorkspaceState({
     generatedImageId?: string
     storyboardId?: string | null
     category?: string | null
+    frameKind?: "first" | "last" | null
     description?: string | null
     prompt?: string | null
   } | null>(null)

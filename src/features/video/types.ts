@@ -1,3 +1,5 @@
+import type { StoryboardScriptContent } from "@/shared/schema"
+
 export type RoleSpeak = {
   time_point: number
   tone: string
@@ -74,7 +76,7 @@ export type StoryboardItem = {
   storyboard_text?: string
   shot_info: ShotInfo
   shot_content: ShotContent
-  scriptContent?: unknown
+  scriptContent?: StoryboardScriptContent | null
   frames: StoryboardFrames
   videoInfo: StoryboardVideoInfo
   note?: string
@@ -97,7 +99,7 @@ export type ApiShot = {
   sequence: number
   storyboardText: string
   shotCut: boolean
-  scriptContent: unknown
+  scriptContent: StoryboardScriptContent | null
   frames: StoryboardFrames
   videoInfo: StoryboardVideoInfo
 }

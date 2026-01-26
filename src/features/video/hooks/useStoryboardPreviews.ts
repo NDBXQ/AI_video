@@ -91,12 +91,18 @@ export function useStoryboardPreviews(params: { storyId?: string; items: Storybo
 
       for (const row of json.data.items) {
         const storyboardId = typeof row.storyboardId === "string" ? row.storyboardId : null
-        const category = typeof row.category === "string" ? row.category : "reference"
+        const rawCategory = typeof row.category === "string" ? row.category : "reference"
+        const nameRaw = typeof row.name === "string" ? row.name : ""
+        const urlRaw = typeof row.url === "string" ? row.url : ""
+        const thumbRaw = typeof row.thumbnailUrl === "string" ? row.thumbnailUrl : ""
+        const isFrameLikeName = /^镜\s*\d+\s*-\s*(首帧|尾帧)\s*$/u.test(nameRaw.trim())
+        const isFrameImport = isFrameLikeName || urlRaw.includes("frame_import_") || thumbRaw.includes("frame_import_")
+        const category = isFrameImport ? "reference" : rawCategory
         const entry: PreviewImage = {
           id: String(row.id ?? `${storyboardId ?? "global"}:${row.name ?? ""}:${category}`),
-          name: typeof row.name === "string" ? row.name : category,
-          url: typeof row.url === "string" ? row.url : "",
-          thumbnailUrl: typeof row.thumbnailUrl === "string" ? row.thumbnailUrl : null,
+          name: nameRaw || category,
+          url: urlRaw,
+          thumbnailUrl: thumbRaw || null,
           category,
           storyboardId,
           description: typeof row.description === "string" ? row.description : null,
@@ -118,7 +124,7 @@ export function useStoryboardPreviews(params: { storyId?: string; items: Storybo
             seen.item.add(entry.name)
             next[storyboardId].item.push(entry)
           }
-        } else if (category === "background" || category === "reference") {
+        } else if (category === "background") {
           if (!seen.background.has(entry.name)) {
             seen.background.add(entry.name)
             next[storyboardId].background.push(entry)
@@ -128,7 +134,8 @@ export function useStoryboardPreviews(params: { storyId?: string; items: Storybo
 
       for (const entry of globalRows) {
         const name = entry.name
-        const category = entry.category === "reference" ? "background" : entry.category
+        const category = entry.category
+        if (category === "reference") continue
         const kind = category === "role" ? "role" : category === "item" ? "item" : "background"
         const targets = nameIndex[kind].get(name)
         if (!targets || targets.size === 0) continue

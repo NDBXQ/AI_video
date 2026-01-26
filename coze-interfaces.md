@@ -24,8 +24,7 @@
 
 ### 2.1 故事大纲生成（Outline）
 
-- **调用点**：`POST /api/storyboard/generate-text` → `fetch(COZE_API_URL)`
-- **代码**：[route.ts](file:///Users/bytedance/dev/AI%20Video/src/app/api/storyboard/generate-text/route.ts#L5-L66)
+- **调用点**：`POST /api/coze/storyboard/generate-outline` → `fetch(COZE_OUTLINE_API_URL)`
 - **鉴权**：`Authorization: Bearer ${COZE_API_TOKEN}`
 - **环境变量**
   - `COZE_API_URL`
@@ -35,7 +34,7 @@
 
 ```json
 {
-  "input_type": "original",
+  "input_type": "original/brief",
   "story_text": "..."
 }
 ```
@@ -46,6 +45,7 @@
 {
   "story_original": "...",
   "story_text": "...",
+  "story_brief":"...",
   "outline_original_list": [
     { "outline": "...", "original": "..." }
   ],
@@ -55,8 +55,7 @@
 
 ### 2.2 分镜文本生成（Storyboard Text）
 
-- **调用点**：`POST /api/storyboard/coze-generate-text` → `fetch(CREATE_STORYBOARD_TEXT_URL)`
-- **代码**：[route.ts](file:///Users/bytedance/dev/AI%20Video/src/app/api/storyboard/coze-generate-text/route.ts#L8-L77)
+- **调用点**：`POST /api/coze/storyboard/coze-generate-text` → `fetch(CREATE_STORYBOARD_TEXT_URL)`
 - **鉴权**：`Authorization: Bearer ${CREATE_STORYBOARD_TEXT_TOKEN}`
 - **环境变量**
   - `CREATE_STORYBOARD_TEXT_URL`
@@ -84,8 +83,7 @@
 
 ### 2.3 分镜脚本生成（Video Script）
 
-- **调用点**：`POST /api/coze/generate-script` → `fetch(COZE_SCRIPT_API_URL)`
-- **代码**：[route.ts](file:///Users/bytedance/dev/AI%20Video/src/app/api/coze/generate-script/route.ts#L48-L83)
+- **调用点**：`POST /api/coze/storyboard/generate-script` → `fetch(COZE_SCRIPT_API_URL)`
 - **鉴权**：`Authorization: Bearer ${COZE_SCRIPT_API_TOKEN}`
 - **环境变量**
   - `COZE_SCRIPT_API_URL`
@@ -109,15 +107,14 @@
 
 该能力在项目中存在两套调用方式：一套是“线上业务路由（硬编码 token）”，另一套是“测试路由（env 注入 token）”。两者**请求体包裹方式不完全一致**（详见第 5 节）。
 
-**A. 线上业务路由：`/api/video-creation/prompts/generate`**
+**A. 线上业务路由：`/api/coze/storyboard/generate-image`**
 
-- **调用点**：`POST /api/video-creation/prompts/generate` → `fetch(PROMPT_API_URL)`
+- **调用点**：`POST /api/coze/storyboard/generate-image` → `fetch(PROMPT_API_URL)`
 - **代码**：[route.ts](file:///Users/bytedance/dev/AI%20Video/src/app/api/video-creation/prompts/generate/route.ts#L6-L55)
 - **鉴权**：`Authorization: Bearer <硬编码token>`（不建议）
 - **外部 URL**：硬编码 `https://jyyj7yy9p5.coze.site/run`
 
 **请求体（发往 Coze）**
-
 该路由读取 `{ script_json }` 后，直接将 `script_json` 作为 body 发给 Coze（未包一层 `{script_json: ...}`）：
 
 ```json

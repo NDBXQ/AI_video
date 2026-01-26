@@ -7,6 +7,16 @@
 }
 
 .trackLabel {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(248, 250, 252, 0.95);
+  border-radius: 10px;
+  padding: 0 6px;
   font-size: 12px;
   font-weight: 900;
   color: rgba(15, 23, 42, 0.70);

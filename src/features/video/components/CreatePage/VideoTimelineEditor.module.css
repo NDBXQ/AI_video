@@ -88,6 +88,10 @@
   border-color: rgba(79, 70, 229, 0.45);
 }
 
+.clipSelected {
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.25), 0 6px 14px rgba(15, 23, 42, 0.10);
+}
+
 .audioClip {
   background: rgba(16, 185, 129, 0.14);
   border-color: rgba(16, 185, 129, 0.28);
@@ -138,4 +142,31 @@
   transform: translateX(-1px);
   z-index: 4;
   pointer-events: none;
+}
+
+.playheadHit {
+  position: absolute;
+  top: 0;
+  bottom: 10px;
+  width: 14px;
+  transform: translateX(-7px);
+  z-index: 5;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.playheadHit:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.5);
+  outline-offset: 2px;
+}
+
+.seekLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  z-index: 6;
+  cursor: pointer;
+  touch-action: none;
 }

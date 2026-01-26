@@ -4,7 +4,7 @@ import { useState, useMemo, type ReactElement } from "react"
 import { X } from "lucide-react"
 import styles from "./UploadResourceModal.module.css"
 
-export type ResourceType = 'character' | 'background' | 'props'
+export type ResourceType = 'character' | 'background' | 'props' | 'audio' | 'music' | 'effect' | 'transition' | 'video'
 
 interface UploadResourceModalProps {
   open: boolean
@@ -23,6 +23,11 @@ export function UploadResourceModal({ open, onClose, onUpload }: UploadResourceM
   const [error, setError] = useState<string | null>(null)
 
   const canSubmit = useMemo(() => file != null && !submitting, [file, submitting])
+  const accept = useMemo(() => {
+    if (type === "audio" || type === "music" || type === "effect") return "audio/*"
+    if (type === "video" || type === "transition") return "video/*"
+    return "image/*"
+  }, [type])
 
   const handleSubmit = async () => {
     if (!file) return
@@ -78,8 +83,13 @@ export function UploadResourceModal({ open, onClose, onUpload }: UploadResourceM
                 onChange={(e) => setType(e.target.value as ResourceType)}
               >
                 <option value="character">角色库</option>
-                <option value="background">背景库</option>
-                <option value="props">场景库</option>
+                <option value="background">场景库</option>
+                <option value="props">物品库</option>
+                <option value="audio">音频库</option>
+                <option value="music">音乐库</option>
+                <option value="effect">音效库</option>
+                <option value="video">视频库</option>
+                <option value="transition">转场库</option>
               </select>
             </div>
             <div className={styles.field}>
@@ -87,7 +97,7 @@ export function UploadResourceModal({ open, onClose, onUpload }: UploadResourceM
               <input 
                 type="file" 
                 className={styles.fileInput}
-                accept="image/*"
+                accept={accept}
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
             </div>

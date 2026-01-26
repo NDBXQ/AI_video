@@ -1,9 +1,12 @@
 .toolbar {
   padding: 12px 14px;
-  border-bottom: 1px solid #e5e7eb;
+  border: 1px solid rgba(15, 23, 42, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  width: 100%;
 }
 
 .toolbarLeft {
@@ -28,15 +31,15 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 12px;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
   border: 1px solid #e5e7eb;
   background: #f9fafb;
   color: #0f172a;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 

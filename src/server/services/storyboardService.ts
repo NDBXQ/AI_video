@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { stories, storyOutlines, storyboards } from "@/shared/schema"
+import { stories, storyOutlines, storyboards, type StoryboardScriptContent } from "@/shared/schema"
 import { logger } from "@/shared/logger"
 import { updateStoryStatus } from "@/features/video/utils/storyStatus"
 import { mergeStoryboardFrames, mergeStoryboardVideoInfo } from "@/server/services/storyboardAssets"
@@ -163,7 +163,7 @@ export class StoryboardService {
     params: {
       storyboardId: string
       storyboardText?: string
-      scriptContent?: unknown
+      scriptContent?: StoryboardScriptContent | null
       frames?: {
         first?: { prompt?: string | null }
         last?: { prompt?: string | null }

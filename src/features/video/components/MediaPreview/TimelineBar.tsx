@@ -18,6 +18,7 @@ type Props = {
   previewAllPercent: number
   previewAllPlaying: boolean
   previewAllElapsedSeconds: number
+  onSeekPreviewAllSeconds: (seconds: number) => void
   onStopPreviewAll: () => void
   onTogglePreviewAllPlaying: () => void
   onStartPreviewAll: () => void
@@ -39,6 +40,7 @@ export function TimelineBar({
   previewAllPercent,
   previewAllPlaying,
   previewAllElapsedSeconds,
+  onSeekPreviewAllSeconds,
   onStopPreviewAll,
   onTogglePreviewAllPlaying,
   onStartPreviewAll,
@@ -62,6 +64,7 @@ export function TimelineBar({
             onTimelineChange={onTimelineChange as any}
             playheadActive={previewAllActive}
             playheadSeconds={previewAllActive ? previewAllElapsedSeconds : null}
+            onSeekPlayheadSeconds={onSeekPreviewAllSeconds}
           />
         </div>
       ) : (
@@ -147,7 +150,10 @@ export function TimelineBar({
                 className={`${styles.thumb} ${it.id === activeId ? styles.thumbActive : ""}`}
                 onClick={() => onThumbnailClick(it.id)}
               >
-                {it.title}
+                <span className={styles.thumbImgWrap} aria-hidden="true">
+                  <img className={styles.thumbImg} src={it.firstFrameSrc ?? it.imageSrc} alt="" loading="lazy" />
+                </span>
+                <span className={styles.thumbText}>{it.title}</span>
               </button>
             ))}
           </div>

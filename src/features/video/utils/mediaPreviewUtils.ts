@@ -1,5 +1,5 @@
 
-export type Thumbnail = { id: string; title: string; imageSrc: string }
+export type Thumbnail = { id: string; title: string; imageSrc: string; firstFrameSrc?: string }
 
 export type TimelineSegment = {
   id: string
@@ -61,24 +61,62 @@ export const calculatePreviewPlaylist = (
   if (isVideoTab && timelineVideoClips.length > 0) {
     const byId = new Map<string, TimelineSegment>()
     for (const s of segments) byId.set(s.id, s)
+    const EPS = 1e-3
     const sorted = [...timelineVideoClips].sort((a, b) => (a.start + a.trimStart) - (b.start + b.trimStart))
-    return sorted.map((clip, idx) => {
+    const out: PreviewPlaylistItem[] = []
+    const contentSeconds = sorted.reduce((m, c) => Math.max(m, Number(c?.start ?? 0) + Math.max(0, Number(c?.duration ?? 0))), 0)
+    let cursor = 0
+    for (let i = 0; i < sorted.length; i += 1) {
+      const clip = sorted[i]!
       const seg = byId.get(clip.segmentId) ?? null
       const segDur = seg ? normalizeDurationSeconds(seg) : clip.duration
       const baseDur = Number.isFinite(segDur) && segDur > 0 ? segDur : clip.duration
+      const start = Number.isFinite(clip.start) ? clip.start : 0
       const trimStart = Math.max(0, Math.min(baseDur, Number.isFinite(clip.trimStart) ? clip.trimStart : 0))
       const trimEnd = Math.max(0, Math.min(baseDur - trimStart, Number.isFinite(clip.trimEnd) ? clip.trimEnd : 0))
-      const play = Math.max(0.1, baseDur - trimStart - trimEnd)
-      return {
-        key: clip.id || `${clip.segmentId}:${idx}`,
+      const visibleStart = start + trimStart
+      const visibleEnd = start + baseDur - trimEnd
+      const play = Math.max(0, visibleEnd - visibleStart)
+      if (play <= EPS) continue
+
+      if (visibleStart > cursor + EPS) {
+        out.push({
+          key: `gap:${Math.round(cursor * 1000)}:${i}`,
+          segmentId: "",
+          title: "空白",
+          videoSrc: null,
+          playDurationSeconds: visibleStart - cursor,
+          trimStartSeconds: 0,
+          trimEndSeconds: 0
+        })
+      }
+
+      out.push({
+        key: clip.id || `${clip.segmentId}:${i}`,
         segmentId: clip.segmentId,
-        title: clip.title || seg?.title || `镜 ${idx + 1}`,
+        title: clip.title || seg?.title || `镜 ${i + 1}`,
         videoSrc: (seg?.videoSrc ?? "").trim() || null,
         playDurationSeconds: play,
         trimStartSeconds: trimStart,
         trimEndSeconds: trimEnd
-      }
-    })
+      })
+
+      cursor = visibleEnd
+    }
+
+    if (contentSeconds > cursor + EPS) {
+      out.push({
+        key: `gap:${Math.round(cursor * 1000)}:tail`,
+        segmentId: "",
+        title: "空白",
+        videoSrc: null,
+        playDurationSeconds: contentSeconds - cursor,
+        trimStartSeconds: 0,
+        trimEndSeconds: 0
+      })
+    }
+
+    return out
   }
 
   return segments.map((seg, idx) => ({

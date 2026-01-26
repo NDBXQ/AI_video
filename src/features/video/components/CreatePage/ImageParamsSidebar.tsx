@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { type ReactElement, useState } from "react"
+import { type ReactElement, type ReactNode, useState } from "react"
 import styles from "./ImageParamsSidebar.module.css"
 
 type PreviewImage = {
@@ -19,6 +19,10 @@ type Props = {
   tailPrompt: string
   setTailPrompt: (v: string) => void
   isGenerating?: boolean
+  recommendedStoryboardMode?: "首帧" | "首尾帧" | null
+  shotCut?: boolean
+  prevVideoLastFrameUrl?: string | null
+  onUsePrevVideoLastFrame?: (url: string) => Promise<void> | void
   sceneText: string
   setSceneText: (v: string) => void
   roles: string[]
@@ -91,9 +95,24 @@ function ChipWithThumb({
   )
 }
 
+function ChipGroup({ title, children }: { title: string; children: ReactNode }): ReactElement {
+  return (
+    <div className={styles.group}>
+      <div className={styles.groupHeader}>
+        <span>{title}</span>
+      </div>
+      <div className={styles.chipList}>{children}</div>
+    </div>
+  )
+}
+
 export function ImageParamsSidebar({
   prompt, setPrompt,
   tailPrompt, setTailPrompt,
+  recommendedStoryboardMode,
+  shotCut,
+  prevVideoLastFrameUrl,
+  onUsePrevVideoLastFrame,
   sceneText, setSceneText,
   roles, setRoles,
   items, setItems,
@@ -106,10 +125,34 @@ export function ImageParamsSidebar({
   const bgPreviews = previews?.background ?? []
   const itemPreviews = previews?.item ?? []
   const [activePromptTab, setActivePromptTab] = useState<"first" | "last">("first")
+  const [lastFrameModalOpen, setLastFrameModalOpen] = useState(false)
+  const [shotCutError, setShotCutError] = useState<string | null>(null)
+  const [usingLastFrame, setUsingLastFrame] = useState(false)
 
   return (
     <aside className={styles.left} aria-label="生图参数区">
-      <h2 className={styles.panelTitle}>生成图片</h2>
+      <div className={styles.titleRow}>
+        {shotCut ? (
+          <div className={styles.shotCutRow}>
+            <span className={styles.shotCutHint}>推荐使用上个分镜的尾帧</span>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => {
+                setShotCutError(null)
+                if (!prevVideoLastFrameUrl) {
+                  setShotCutError("未在数据库中找到上个分镜视频的尾帧图")
+                  return
+                }
+                setLastFrameModalOpen(true)
+              }}
+            >
+              查看尾帧图
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {shotCutError ? <div className={styles.shotCutError}>{shotCutError}</div> : null}
 
       <div className={styles.promptStack} aria-label="首帧与尾帧提示词">
         <div
@@ -183,10 +226,7 @@ export function ImageParamsSidebar({
         </div>
       </div>
 
-      <div className={styles.groupHeader}>
-        <span>背景</span>
-      </div>
-      <div className={styles.chipList}>
+      <ChipGroup title="背景">
         {!sceneText ? <span className={`${styles.chip} ${styles.chipMuted}`}>未选择</span> : null}
         {sceneText ? (
           <ChipWithThumb
@@ -201,12 +241,9 @@ export function ImageParamsSidebar({
         ) : (
           <span className={styles.chip}>{sceneText}</span>
         )}
-      </div>
+      </ChipGroup>
 
-      <div className={styles.groupHeader}>
-        <span>出场角色</span>
-      </div>
-      <div className={styles.chipList}>
+      <ChipGroup title="出场角色">
         {roles.length === 0 ? <span className={`${styles.chip} ${styles.chipMuted}`}>未选择</span> : null}
         {roles.map((name) => {
           const p = pickPreview(rolePreviews, name)
@@ -224,12 +261,9 @@ export function ImageParamsSidebar({
             </span>
           )
         })}
-      </div>
+      </ChipGroup>
 
-      <div className={styles.groupHeader}>
-        <span>物品</span>
-      </div>
-      <div className={styles.chipList}>
+      <ChipGroup title="物品">
         {items.length === 0 ? <span className={`${styles.chip} ${styles.chipMuted}`}>未选择</span> : null}
         {items.map((name) => {
           const p = pickPreview(itemPreviews, name)
@@ -247,11 +281,75 @@ export function ImageParamsSidebar({
             </span>
           )
         })}
-      </div>
+      </ChipGroup>
 
       <button type="button" className={styles.primaryBtn} onClick={onGenerate} disabled={Boolean(isGenerating)}>
         {isGenerating ? "合成中…" : "生成图片"}
       </button>
+
+      {lastFrameModalOpen ? (
+        <div
+          className={styles.overlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="查看尾帧图"
+          onClick={() => setLastFrameModalOpen(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>上个分镜视频尾帧图</div>
+              <button type="button" className={styles.secondaryBtn} onClick={() => setLastFrameModalOpen(false)}>
+                关闭
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              {prevVideoLastFrameUrl ? (
+                <div className={styles.modalImgWrap}>
+                  <Image className={styles.modalImg} src={prevVideoLastFrameUrl} alt="" width={1200} height={900} unoptimized />
+                </div>
+              ) : (
+                <div className={styles.shotCutError}>未在数据库中找到上个分镜视频的尾帧图</div>
+              )}
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                onClick={() => setLastFrameModalOpen(false)}
+                disabled={usingLastFrame}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className={styles.modalPrimaryBtn}
+                disabled={usingLastFrame || !prevVideoLastFrameUrl}
+                onClick={async () => {
+                  setShotCutError(null)
+                  if (!prevVideoLastFrameUrl) {
+                    setShotCutError("未在数据库中找到上个分镜视频的尾帧图")
+                    setLastFrameModalOpen(false)
+                    return
+                  }
+                  try {
+                    setUsingLastFrame(true)
+                    await onUsePrevVideoLastFrame?.(prevVideoLastFrameUrl)
+                    setLastFrameModalOpen(false)
+                  } catch (e) {
+                    const anyErr = e as { message?: string }
+                    setShotCutError(anyErr?.message ?? "使用尾帧图失败")
+                    setLastFrameModalOpen(false)
+                  } finally {
+                    setUsingLastFrame(false)
+                  }
+                }}
+              >
+                使用
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </aside>
   )
 }

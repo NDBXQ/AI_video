@@ -2,37 +2,115 @@
   width: 100%;
   min-width: 0;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 14px;
-  padding: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.assetHeader {
+.topTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(248, 250, 252, 0.92);
+  border-radius: 12px;
+}
+
+.topTab {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.70);
   font-size: 13px;
   font-weight: 900;
-  color: rgba(15, 23, 42, 0.88);
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.topTab:hover {
+  background: rgba(79, 70, 229, 0.08);
+  color: rgba(15, 23, 42, 0.86);
+}
+
+.topTabActive {
+  background: rgba(79, 70, 229, 0.14);
+  color: rgba(15, 23, 42, 0.92);
+}
+
+.tabBody {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding-top: 2px;
 }
 
 .assetSection {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.splitBlock {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.90);
+  overflow: hidden;
+}
+
+.splitLabel {
+  display: grid;
+  place-items: center;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(241, 245, 249, 0.95);
+  color: rgba(15, 23, 42, 0.70);
+  font-size: 12px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 2px;
+  user-select: none;
+}
+
+.splitContent {
+  min-width: 0;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .assetSectionTitle {
   font-size: 12px;
   font-weight: 900;
   color: rgba(15, 23, 42, 0.66);
+  min-width: 0;
 }
 
 .uploadBtn {
-  height: 32px;
-  border-radius: 12px;
-  border: 1px dashed rgba(15, 23, 42, 0.18);
-  background: rgba(255, 255, 255, 0.85);
+  height: 28px;
+  border-radius: 999px;
+  border: 1px dashed rgba(15, 23, 42, 0.20);
+  background: rgba(255, 255, 255, 0.95);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -41,25 +119,64 @@
   color: rgba(15, 23, 42, 0.80);
   cursor: pointer;
   user-select: none;
+  padding: 0 10px;
+  flex-shrink: 0;
 }
 
 .uploadInput {
   display: none;
 }
 
-.assetList {
-  display: grid;
-  gap: 8px;
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
-.assetItem {
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.88);
-  display: flex;
+.groupList {
+  display: grid;
+  gap: 10px;
+}
+
+.groupRow {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.groupTag {
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.20);
+  background: rgba(37, 99, 235, 0.08);
+  color: rgba(30, 64, 175, 0.95);
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.groupChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+.chipItem {
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.02);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px 0 8px;
   font-size: 12px;
   font-weight: 800;
   color: rgba(15, 23, 42, 0.82);
@@ -67,4 +184,87 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+  transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.chipItem:hover {
+  background: rgba(79, 70, 229, 0.10);
+  border-color: rgba(79, 70, 229, 0.28);
+}
+
+.chipGrip {
+  width: 14px;
+  height: 14px;
+  border-radius: 6px;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.28) 1px, transparent 1.4px);
+  background-size: 4px 4px;
+  background-position: 0 0;
+  flex-shrink: 0;
+  margin-right: 6px;
+  opacity: 0.85;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.audioList {
+  display: grid;
+  gap: 6px;
+}
+
+.audioItem {
+  height: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(16, 185, 129, 0.06);
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.82);
+  cursor: grab;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.audioItem:hover {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.22);
+}
+
+.audioGrip {
+  width: 14px;
+  height: 14px;
+  border-radius: 6px;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.28) 1px, transparent 1.4px);
+  background-size: 4px 4px;
+  background-position: 0 0;
+  flex-shrink: 0;
+  margin-right: 6px;
+  opacity: 0.7;
+}
+
+.audioText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.emptyHint {
+  height: 28px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.45);
 }
