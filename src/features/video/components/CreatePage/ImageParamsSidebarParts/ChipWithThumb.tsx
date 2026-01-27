@@ -5,14 +5,16 @@ import styles from "../ImageParamsSidebar.module.css"
 export function ChipWithThumb({
   label,
   thumbUrl,
-  onPreview
+  onPreview,
+  onPick
 }: {
   label: string
   thumbUrl?: string | null
   onPreview?: () => void
+  onPick?: () => void
 }): ReactElement {
   const displayLabel = label.length > 3 ? `${label.slice(0, 3)}...` : label
-  const interactive = Boolean(onPreview)
+  const interactive = Boolean(onPreview || onPick)
   return (
     <span
       className={styles.chip}
@@ -33,7 +35,20 @@ export function ChipWithThumb({
       <span className={styles.chipText} title={label}>
         {displayLabel}
       </span>
+      {onPick ? (
+        <button
+          type="button"
+          className={styles.chipPickBtn}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onPick()
+          }}
+          aria-label="从素材库选择参考图"
+        >
+          选
+        </button>
+      ) : null}
     </span>
   )
 }
-

@@ -65,7 +65,7 @@ export function ImagePreviewModal({ open, title, imageSrc, generatedImageId, sto
     setCurrentSrc(imageSrc?.trim() ? imageSrc : "")
     setCurrentGeneratedImageId(generatedImageId)
     setEditPrompt("")
-  }, [open, imageSrc, generatedImageId, selection])
+  }, [open, imageSrc, generatedImageId])
 
   if (!open) return null
 

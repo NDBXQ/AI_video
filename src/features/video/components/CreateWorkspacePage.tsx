@@ -19,6 +19,7 @@ import { ImageParamsSidebar } from "./CreatePage/ImageParamsSidebar"
 import { VideoParamsSidebar } from "./CreatePage/VideoParamsSidebar"
 import { ChipEditModal } from "@/features/video/components/ChipEditModal"
 import { ImagePreviewModal } from "./ImagePreviewModal"
+import { ImageAssetPickerModal } from "./ImagePreview/ImageAssetPickerModal"
 import { uniqueStrings, clampInt } from "../utils/previewUtils"
 import shellStyles from "./ImageCreate/Shell.module.css"
 
@@ -148,6 +149,11 @@ export function CreateWorkspacePage({
   }
 
   const sceneSwitch = useSceneSwitch(items, activeItem?.id)
+  const [assetPicker, setAssetPicker] = useState<{ open: boolean; category: "background" | "role" | "item"; name: string }>({
+    open: false,
+    category: "background",
+    name: ""
+  })
 
   const { prevVideoLastFrameUrl, usePrevVideoLastFrameAsFirst } = usePrevVideoLastFrame({
     items,
@@ -187,6 +193,27 @@ export function CreateWorkspacePage({
         }}
         onClose={() => setPreview(null)}
       />
+      <ImageAssetPickerModal
+        open={assetPicker.open}
+        title={assetPicker.name}
+        entityName={assetPicker.name}
+        storyboardId={activeStoryboardId}
+        category={assetPicker.category}
+        onPicked={({ url, thumbnailUrl, generatedImageId }) => {
+          window.dispatchEvent(new CustomEvent("video_reference_images_updated", { detail: { storyboardId: activeStoryboardId } }))
+          setPreview({
+            title: assetPicker.name,
+            imageSrc: url,
+            generatedImageId,
+            storyboardId: activeStoryboardId,
+            category: assetPicker.category,
+            description: null,
+            prompt: null,
+            frameKind: null
+          })
+        }}
+        onClose={() => setAssetPicker((p) => ({ ...p, open: false }))}
+      />
       <CreateWorkspaceMain
         onBack={handleBack}
         activeTab={activeTab}
@@ -224,6 +251,11 @@ export function CreateWorkspacePage({
               items={roleItems}
               setItems={setRoleItems}
               onGenerate={handleGenerateImage}
+              onPickReferenceImage={({ category, name }) => {
+                const n = name.trim()
+                if (!n) return
+                setAssetPicker({ open: true, category, name: n })
+              }}
               onPreviewImage={(title, imageSrc, generatedImageId, storyboardId, category, description, prompt) =>
                 setPreview({ title, imageSrc, generatedImageId, storyboardId: storyboardId ?? activeStoryboardId, category, description, prompt })
               }

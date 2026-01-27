@@ -256,6 +256,27 @@
   white-space: nowrap;
 }
 
+.chipPickBtn {
+  height: 20px;
+  width: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(15, 23, 42, 0.78);
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  flex: 0 0 auto;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.chipPickBtn:hover {
+  background: rgba(79, 70, 229, 0.10);
+  border-color: rgba(79, 70, 229, 0.26);
+}
+
 .chipMuted {
   color: var(--text-secondary);
   font-weight: 600;
