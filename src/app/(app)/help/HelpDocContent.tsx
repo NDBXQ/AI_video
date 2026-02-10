@@ -63,6 +63,9 @@ export function buildHelpSections(): DocSection[] {
       title: "账号与登录",
       content: (
         <>
+          <h3 id="login" className={styles.h3}>
+            登录
+          </h3>
           <p className={styles.p}>
             访问需要登录的页面时，如果会话已过期会提示去登录。登录成功后，会在右上角显示账号信息，并可点击退出。
           </p>
@@ -103,15 +106,24 @@ export function buildHelpSections(): DocSection[] {
       title: "剧本创作（大纲/改写/生成分镜文本）",
       content: (
         <>
+          <h3 id="script-start" className={styles.h3}>
+            创建项目（入口态）
+          </h3>
           <p className={styles.p}>剧本工作台分为入口态与详情态：入口态用于创建故事；详情态用于查看大纲、改写并生成分镜文本。</p>
           <ul className={styles.list}>
             <li>入口态：选择“从故事原文开始”或“从剧情简介开始”。</li>
             <li>左侧：大纲章节列表；中间：预览；右侧：改写输入与对话。</li>
             <li>下一步：点击“一键生成”生成分镜文本，系统会跳转到视频创作页。</li>
           </ul>
+          <h3 id="script-outline" className={styles.h3}>
+            生成大纲
+          </h3>
           <Callout title="两种生成方式">
             <span>“一键生成”会直接触发生成并跳转；“手动生成”用于你希望更可控地编辑需求后再生成的场景。</span>
           </Callout>
+          <h3 id="script-storyboard" className={styles.h3}>
+            生成分镜脚本
+          </h3>
         </>
       )
     },
@@ -130,6 +142,38 @@ export function buildHelpSections(): DocSection[] {
             </li>
             <li>进入工作台：选择某个镜头后进入生图或生视频页面继续制作。</li>
           </ul>
+          <h3 id="video-generate" className={styles.h3}>
+            发起生成与查看进度
+          </h3>
+          <p className={styles.p}>发起生成后可以在页面就地查看请求状态，也可以打开右上角“任务中心”跟踪后台任务。</p>
+          <h3 id="video-export" className={styles.h3}>
+            导出与沉淀到内容库
+          </h3>
+          <p className={styles.p}>建议在每个阶段都把成果保存到内容库，便于回溯、复用素材与继续创作。</p>
+        </>
+      )
+    },
+    {
+      id: "task-center",
+      title: "任务中心（进度跟踪/失败定位）",
+      content: (
+        <>
+          <p className={styles.p}>任务中心用于汇总你当前故事的后台生成任务（排队/进行中/失败），并帮助你快速定位问题。</p>
+          <ul className={styles.list}>
+            <li>入口：右上角“任务中心”按钮。</li>
+            <li>建议做法：失败时优先复制错误信息里的 traceId，用于定位服务端日志。</li>
+            <li>没有任务时：去分镜列表发起生成，任务中心会自动更新。</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: "tvc",
+      title: "TVC（广告一键成片）",
+      content: (
+        <>
+          <p className={styles.p}>如果你要做广告成片，可使用 TVC 入口（输入产品/风格 → 生成脚本与成片）。</p>
+          <p className={styles.p}>本节仅作为入口说明，平台主链路仍推荐从“内容库 → 剧本 → 视频创作”开始。</p>
         </>
       )
     },

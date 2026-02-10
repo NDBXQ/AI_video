@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react"
 import styles from "./TtsDialoguePanel.module.css"
+import { ListboxSelect } from "@/shared/ui/ListboxSelect"
 
 type Speaker = { id: string; name: string; sampleUrl: string | null; sampleText: string }
 type Dialogue = { id: string; roleName: string; content: string }
@@ -98,18 +99,14 @@ export function TtsDialoguePanel({
                   <div className={styles.role} title={d.roleName}>
                     {d.roleName}
                   </div>
-                  <select
+                  <ListboxSelect
                     className={styles.select}
                     value={selected}
-                    onChange={(e) => setSpeakerByDialogueId((prev) => ({ ...prev, [d.id]: e.target.value }))}
-                    aria-label="选择音色"
-                  >
-                    {speakerOptions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    ariaLabel="选择音色"
+                    options={speakerOptions.map((s) => ({ value: s.id, label: s.name }))}
+                    onChange={(next) => setSpeakerByDialogueId((prev) => ({ ...prev, [d.id]: next }))}
+                    disabled={speakerOptions.length === 0}
+                  />
                   <button
                     type="button"
                     className={styles.btnGhost}

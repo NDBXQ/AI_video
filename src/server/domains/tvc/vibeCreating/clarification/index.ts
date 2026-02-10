@@ -1,0 +1,2 @@
+export { persistClarificationAsset } from "./persistClarificationAsset"
+

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
 import { logger } from "@/shared/logger"
 import type { ApiErr, ApiOk } from "@/shared/api"
+import { apiFetchJson } from "@/shared/apiClient"
 import type { StoryboardItem } from "@/features/video/types"
-import { createLocalPreviewSvg, clampInt } from "../utils/previewUtils"
+import { createLocalPreviewSvg, clampInt } from "@/shared/utils/previewUtils"
 import { clearClientLock, readClientLock, writeClientLock } from "../utils/generationLocks"
 import { buildReferenceImages, type ActivePreviews } from "../utils/referenceImages"
+import type { RequestState } from "@/shared/requestStatus"
 
 type UseGenerationActionsProps = {
   activeStoryboardId: string
@@ -59,6 +61,8 @@ export function useGenerationActions({
   const videoLockKey = useMemo(() => `video:gen:video:${activeStoryboardId}`, [activeStoryboardId])
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
+  const [imageRequest, setImageRequest] = useState<RequestState<{ firstUrl?: string; lastUrl?: string }>>({ status: "idle" })
+  const [videoRequest, setVideoRequest] = useState<RequestState<{ url: string }>>({ status: "idle" })
 
   useEffect(() => {
     setIsGeneratingImage(readClientLock(imageLockKey, 20 * 60 * 1000))
@@ -79,7 +83,7 @@ export function useGenerationActions({
       promptLength: prompt.length
     })
 
-    const res = await fetch("/api/video/storyboards", {
+    const json = await apiFetchJson<unknown>("/api/video/storyboards", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
@@ -95,19 +99,17 @@ export function useGenerationActions({
             }
       )
     })
-    const json = (await res.json()) as ApiOk<unknown> | ApiErr
-    if (!res.ok || !json || (json as ApiErr).ok === false) {
-      const errJson = json as ApiErr
+    if (!json.ok) {
       logger.error({
         event: kind === "image" ? "storyboard_image_prompt_save_failed" : "storyboard_video_prompt_save_failed",
         module: "video",
-        traceId: "client",
+        traceId: json.traceId ?? "client",
         message: kind === "image" ? "保存生图提示词失败" : "保存生视频提示词失败",
         storyboardId: activeStoryboardId,
         durationMs: Math.round(performance.now() - start),
-        errorMessage: errJson?.error?.message ?? `HTTP ${res.status}`
+        errorMessage: json?.error?.message
       })
-      throw new Error(errJson?.error?.message ?? `HTTP ${res.status}`)
+      throw { message: json?.error?.message ?? "保存提示词失败", traceId: json.traceId, code: json?.error?.code }
     }
 
     logger.info({
@@ -126,33 +128,27 @@ export function useGenerationActions({
     const mode = opts?.mode ?? "both"
     setIsGeneratingImage(true)
     writeClientLock(imageLockKey)
+    const startedAt = Date.now()
+    setImageRequest({ status: "pending", startedAt })
     try {
       if (mode === "tailOnly") {
-        const resPrompt = await fetch("/api/video/storyboards", {
+        const jsonPrompt = await apiFetchJson<unknown>("/api/video/storyboards", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storyboardId: activeStoryboardId, frames: { last: { prompt: lastImagePrompt } } })
         })
-        const jsonPrompt = (await resPrompt.json()) as ApiOk<unknown> | ApiErr
-        if (!resPrompt.ok || !jsonPrompt || (jsonPrompt as ApiErr).ok === false) {
-          const errJson = jsonPrompt as ApiErr
-          throw new Error(errJson?.error?.message ?? `HTTP ${resPrompt.status}`)
-        }
+        if (!jsonPrompt.ok) throw { message: jsonPrompt?.error?.message ?? "保存尾帧提示词失败", traceId: jsonPrompt.traceId, code: jsonPrompt?.error?.code }
       } else {
         await savePrompt("image")
         setPreviewImageSrcById((prev) => ({ ...prev, [activeStoryboardId]: createLocalPreviewSvg(`镜 ${activeSceneNo} / 合成中...`) }))
       }
       const referenceImages = buildReferenceImages({ activePreviews: activePreviews as any, sceneText, roles, roleItems })
-      const res = await fetch(mode === "tailOnly" ? "/api/video-creation/images/compose-tail" : "/api/video-creation/images/compose", {
+      const json = await apiFetchJson<any>(mode === "tailOnly" ? "/api/video-creation/images/compose-tail" : "/api/video-creation/images/compose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storyboardId: activeStoryboardId, referenceImages })
       })
-      const json = (await res.json()) as ApiOk<any> | ApiErr
-      if (!res.ok || !json || (json as ApiErr).ok === false) {
-        const errJson = json as ApiErr
-        throw new Error(errJson?.error?.message ?? `HTTP ${res.status}`)
-      }
+      if (!json.ok) throw { message: json?.error?.message ?? "合成失败", traceId: json.traceId, code: json?.error?.code }
       const okJson = json as ApiOk<any>
       if (mode === "tailOnly") {
         const last = okJson.data?.lastImage ?? null
@@ -193,13 +189,29 @@ export function useGenerationActions({
           })
         )
       }
+      setImageRequest({
+        status: "success",
+        startedAt,
+        finishedAt: Date.now(),
+        data: {
+          firstUrl: okJson.data.image?.url ?? okJson.data.image?.thumbnailUrl ?? undefined,
+          lastUrl: okJson.data.lastImage?.url ?? okJson.data.lastImage?.thumbnailUrl ?? undefined
+        },
+        traceId: okJson.traceId
+      })
       clearClientLock(imageLockKey)
     } catch (e) {
-      const anyErr = e as { message?: string }
+      const anyErr = e as { message?: string; traceId?: string; code?: string }
       if ((opts?.mode ?? "both") !== "tailOnly") {
         setPreviewImageSrcById((prev) => ({ ...prev, [activeStoryboardId]: createLocalPreviewSvg(`镜 ${activeSceneNo} / 合成失败`) }))
       }
-      alert(anyErr?.message ?? "合成失败")
+      setImageRequest({
+        status: "error",
+        startedAt,
+        finishedAt: Date.now(),
+        error: { code: anyErr?.code ?? "IMAGE_COMPOSE_FAILED", message: anyErr?.message ?? "合成失败" },
+        traceId: anyErr?.traceId ?? "client"
+      })
       clearClientLock(imageLockKey)
     } finally {
       setIsGeneratingImage(false)
@@ -211,6 +223,8 @@ export function useGenerationActions({
     if (isGeneratingVideo || readClientLock(videoLockKey, 60 * 60 * 1000)) return
     setIsGeneratingVideo(true)
     writeClientLock(videoLockKey)
+    const startedAt = Date.now()
+    setVideoRequest({ status: "pending", startedAt })
     setPreviewVideoSrcById((prev) => ({ ...prev, [activeStoryboardId]: createLocalPreviewSvg(`镜 ${activeSceneNo} / 生成中...`) }))
     try {
       await savePrompt("video")
@@ -226,16 +240,12 @@ export function useGenerationActions({
         if (firstCandidate && needsLast && lastCandidate) return { first: firstCandidate, last: lastCandidate }
 
         const referenceImages = buildReferenceImages({ activePreviews: activePreviews as any, sceneText, roles, roleItems })
-        const res = await fetch("/api/video-creation/images/compose", {
+        const json = await apiFetchJson<{ image?: { url?: string; thumbnailUrl?: string | null }; lastImage?: { url?: string; thumbnailUrl?: string | null } }>("/api/video-creation/images/compose", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storyboardId: activeStoryboardId, referenceImages })
         })
-        const json = (await res.json()) as ApiOk<{ image?: { url?: string; thumbnailUrl?: string | null }; lastImage?: { url?: string; thumbnailUrl?: string | null } }> | ApiErr
-        if (!res.ok || !json || (json as ApiErr).ok === false) {
-          const errJson = json as ApiErr
-          throw new Error(errJson?.error?.message ?? `HTTP ${res.status}`)
-        }
+        if (!json.ok) throw { message: json?.error?.message ?? "合成失败", traceId: json.traceId, code: json?.error?.code }
         const okJson = json as ApiOk<{ image?: { url?: string; thumbnailUrl?: string | null }; lastImage?: { url?: string; thumbnailUrl?: string | null } }>
         const first = okJson.data.image?.url ?? okJson.data.image?.thumbnailUrl ?? ""
         if (!first) throw new Error("合成成功但缺少图片 URL")
@@ -260,7 +270,7 @@ export function useGenerationActions({
 
       const images = await ensureComposedImages()
 
-      const res = await fetch("/api/video-creation/videos/generate", {
+      const json = await apiFetchJson<{ video?: { url?: string } }>("/api/video-creation/videos/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -277,11 +287,7 @@ export function useGenerationActions({
           last_image: images.last ? { url: images.last, file_type: "image" } : undefined
         })
       })
-      const json = (await res.json()) as ApiOk<{ video?: { url?: string } }> | ApiErr
-      if (!res.ok || !json || (json as ApiErr).ok === false) {
-        const errJson = json as ApiErr
-        throw new Error(errJson?.error?.message ?? `HTTP ${res.status}`)
-      }
+      if (!json.ok) throw { message: json?.error?.message ?? "生成失败", traceId: json.traceId, code: json?.error?.code }
       const okJson = json as ApiOk<{ video?: { url?: string } }>
       const videoUrl = okJson.data.video?.url ?? ""
       if (!videoUrl) throw new Error("生成成功但缺少视频 URL")
@@ -289,23 +295,31 @@ export function useGenerationActions({
       setItems((prev) =>
         prev.map((it) => (it.id === activeStoryboardId ? { ...it, videoInfo: { ...(it.videoInfo ?? {}), url: videoUrl } } : it))
       )
+      setVideoRequest({ status: "success", startedAt, finishedAt: Date.now(), data: { url: videoUrl }, traceId: okJson.traceId })
       clearClientLock(videoLockKey)
     } catch (e) {
-      const anyErr = e as { message?: string }
+      const anyErr = e as { message?: string; traceId?: string; code?: string }
       logger.error({
         event: "video_generate_failed",
         module: "video",
-        traceId: "client",
+        traceId: anyErr?.traceId ?? "client",
         message: "生视频流程失败",
         storyboardId: activeStoryboardId,
         errorMessage: anyErr?.message
       })
       setPreviewVideoSrcById((prev) => ({ ...prev, [activeStoryboardId]: createLocalPreviewSvg(`镜 ${activeSceneNo} / 生成失败`) }))
+      setVideoRequest({
+        status: "error",
+        startedAt,
+        finishedAt: Date.now(),
+        error: { code: anyErr?.code ?? "VIDEO_GENERATE_FAILED", message: anyErr?.message ?? "生成失败" },
+        traceId: anyErr?.traceId ?? "client"
+      })
       clearClientLock(videoLockKey)
     } finally {
       setIsGeneratingVideo(false)
     }
   }
 
-  return { handleGenerateImage, handleGenerateVideo, isGeneratingImage, isGeneratingVideo }
+  return { handleGenerateImage, handleGenerateVideo, isGeneratingImage, isGeneratingVideo, imageRequest, videoRequest }
 }

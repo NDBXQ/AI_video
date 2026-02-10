@@ -8,6 +8,8 @@ type StoryboardToolbarProps = {
   loadError: string | null
   selectedCount: number
   onBatchDelete: () => void
+  onCreateVideo?: () => void
+  createVideoDisabled?: boolean
   onRegenerateEpisode?: () => void
   regenerateDisabled?: boolean
   regenerateStatusText?: string | null
@@ -19,6 +21,8 @@ export function StoryboardToolbar({
   loadError,
   selectedCount,
   onBatchDelete,
+  onCreateVideo,
+  createVideoDisabled,
   onRegenerateEpisode,
   regenerateDisabled,
   regenerateStatusText,
@@ -33,6 +37,17 @@ export function StoryboardToolbar({
       </div>
       <div className={styles.toolbarActions}>
         {regenerateStatusText ? <span className={styles.toolbarMeta}>{regenerateStatusText}</span> : null}
+        {onCreateVideo ? (
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            onClick={onCreateVideo}
+            disabled={Boolean(createVideoDisabled)}
+            title="跳转到创作视频页"
+          >
+            创作视频
+          </button>
+        ) : null}
         {onRegenerateEpisode ? (
           <button
             type="button"

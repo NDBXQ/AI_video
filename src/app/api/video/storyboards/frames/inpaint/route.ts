@@ -6,12 +6,12 @@ import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { bakeSelectionBoxToS3 } from "@/server/services/inpaintService"
+import { bakeSelectionBoxToS3 } from "@/server/domains/video-creation/services/inpaintService"
 import { createCozeS3Storage } from "@/server/integrations/storage/s3"
-import { generateThumbnail } from "@/lib/thumbnail"
+import { generateThumbnail } from "@/server/lib/thumbnail"
 import { makeSafeObjectKeySegment } from "@/shared/utils/stringUtils"
-import { storyboards, stories, storyOutlines } from "@/shared/schema"
-import { mergeStoryboardFrames } from "@/server/services/storyboardAssets"
+import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
+import { mergeStoryboardFrames } from "@/server/shared/storyboard/storyboardAssets"
 import { resolveStorageUrl } from "@/shared/storageUrl"
 import sharp from "sharp"
 
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!row) return NextResponse.json(makeApiErr(traceId, "STORYBOARD_NOT_FOUND", "未找到可编辑的分镜"), { status: 404 })
 
   const endpoint = process.env.INPAINT_ENDPOINT?.trim() || "https://k9mq4y5xhb.coze.site/run"
-  const token = process.env.COZE_INPAINT_TOKEN?.trim()
-  if (!token) return NextResponse.json(makeApiErr(traceId, "COZE_TOKEN_MISSING", "缺少 COZE_INPAINT_TOKEN 环境变量"), { status: 500 })
+  const token = process.env.INPAINT_TOKEN?.trim()
+  if (!token) return NextResponse.json(makeApiErr(traceId, "COZE_TOKEN_MISSING", "缺少 INPAINT_TOKEN 环境变量"), { status: 500 })
 
   logger.info({
     event: "storyboard_frame_inpaint_start",

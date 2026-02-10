@@ -1,12 +1,13 @@
 import Link from "next/link"
 import type { ReactElement } from "react"
 import { cookies } from "next/headers"
-import { getDb } from "coze-coding-dev-sdk"
-import { stories, storyOutlines, storyboards } from "@/shared/schema"
+import { getDb } from "@/server/db/getDb"
+import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
 import { desc, eq, inArray, and } from "drizzle-orm"
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
 import styles from "./ContinueWorkSection.module.css"
+import { EmptyState } from "@/components/empty-state/EmptyState"
 
 type RecentStory = {
   id: string
@@ -194,19 +195,13 @@ export async function ContinueWorkSection(): Promise<ReactElement> {
           </div>
         </div>
       ) : (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon} aria-hidden="true" />
-          <div className={styles.emptyTitle}>暂无最近项目</div>
-          <div className={styles.emptySub}>从剧本创作开始，或者先去内容库准备素材</div>
-          <div className={styles.buttons}>
-            <Link href="/script/workspace?entry=nav" className={styles.primaryButton}>
-              去创作剧本
-            </Link>
-            <Link href="/library" className={styles.secondaryButton}>
-              打开内容库
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          title="暂无最近项目"
+          description="从剧本创作开始，或者先去内容库准备素材"
+          primaryAction={{ label: "去创作剧本", href: "/script/workspace?entry=nav" }}
+          secondaryAction={{ label: "打开内容库", href: "/library" }}
+          learnHref="/help?topic=script-start"
+        />
       )}
     </section>
   )

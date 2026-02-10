@@ -1,15 +1,48 @@
 .main {
   display: grid;
-  gap: 16px;
+  gap: 14px;
   align-items: start;
+  width: 100%;
+  max-width: clamp(1240px, 92vw, 1680px);
+  margin: 0 auto;
+  padding-inline: clamp(0px, 2vw, 12px);
+}
+
+.onboarding,
+.continue,
+.analytics {
+  min-width: 0;
 }
 
 @media (min-width: 980px) {
   .main {
-    grid-template-columns: minmax(360px, 520px) 1fr;
+    grid-template-columns: 1fr minmax(340px, 460px);
+    grid-template-areas:
+      "welcome welcome"
+      "continue analytics"
+      "continue onboarding";
+    gap: 14px;
   }
 }
 
-.fullRow {
+.welcome {
   grid-column: 1 / -1;
+}
+
+@media (min-width: 980px) {
+  .welcome {
+    grid-area: welcome;
+  }
+
+  .onboarding {
+    grid-area: onboarding;
+  }
+
+  .continue {
+    grid-area: continue;
+  }
+
+  .analytics {
+    grid-area: analytics;
+  }
 }

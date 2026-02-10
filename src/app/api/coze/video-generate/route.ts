@@ -3,8 +3,8 @@ import { z } from "zod"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
-import { VideoGenerationService } from "@/server/services/videoGenerationService"
-import { ServiceError } from "@/server/services/errors"
+import { VideoGenerationService } from "@/server/domains/video-creation/services/videoGenerationService"
+import { ServiceError } from "@/server/shared/errors"
 
 const inputSchema = z.object({
   storyId: z.string().trim().min(1).max(200).optional(),

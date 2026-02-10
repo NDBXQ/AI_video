@@ -7,6 +7,7 @@ import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
 import { publicResources } from "@/shared/schema"
 import { ensureSmoothLibraryMigration } from "@/shared/libraryMigration"
+import { ensurePublicSchema } from "@/server/db/ensurePublicSchema"
 
 const querySchema = z.object({
   type: z.string().trim().min(1).max(50).optional(),
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const userId = session?.userId
   if (!userId) return NextResponse.json(makeApiErr(traceId, "AUTH_REQUIRED", "未登录或登录已过期"), { status: 401 })
 
+  await ensurePublicSchema()
   await ensureSmoothLibraryMigration(userId, traceId)
 
   const url = new URL(req.url)

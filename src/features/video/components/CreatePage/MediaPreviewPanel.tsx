@@ -6,15 +6,15 @@ import { VideoPlayer } from "../MediaPreview/VideoPlayer"
 import { TimelineBar } from "../MediaPreview/TimelineBar"
 import { useResizableAssetSidebar } from "../../hooks/media-preview/useResizableAssetSidebar"
 import { useVideoEdit } from "../../hooks/media-preview/useVideoEdit"
-import { 
-  calculatePreviewPlaylist, 
+import {
+  calculatePreviewPlaylist,
   calculateTimelineAudioClips,
-  calculateTimelineVideoClips, 
-  normalizeDurationSeconds, 
-  Thumbnail, 
+  calculateTimelineVideoClips,
+  normalizeDurationSeconds,
+  Thumbnail,
   TimelineAudioClip,
-  TimelineSegment 
-} from "../../utils/mediaPreviewUtils"
+  TimelineSegment
+} from "@/shared/utils/mediaPreviewUtils"
 import type { VideoAssetGroup } from "../VideoTimeline/VideoAssetSidebar"
 
 type Props = {
@@ -88,6 +88,7 @@ export function MediaPreviewPanel({
   const [previewAllIndex, setPreviewAllIndex] = useState(0)
   const [previewAllPlaying, setPreviewAllPlaying] = useState(false)
   const [previewAllLocalTime, setPreviewAllLocalTime] = useState(0)
+  const [previewAllSeeking, setPreviewAllSeeking] = useState(false)
   const timelineVideoClips = useMemo(() => calculateTimelineVideoClips(initialTimeline), [initialTimeline])
   const timelineAudioClips = useMemo<TimelineAudioClip[]>(() => calculateTimelineAudioClips(initialTimeline), [initialTimeline])
   const activeTimelineVideoClip = useMemo(() => {
@@ -184,68 +185,67 @@ export function MediaPreviewPanel({
   }, [])
 
   return (
-    <main
-      className={`${styles.main} ${isVideoTab ? styles.mainVideo : styles.mainImage}`}
-      aria-label="预览区"
-      style={{ ["--asset-sidebar-w" as any]: `${assetSidebarWidth}px` } as any}
-    >
-      <div className={`${styles.topRow} ${isVideoTab ? styles.topRowVideo : ""}`} aria-label="预览与素材区">
-        <div className={styles.previewCard}>
-          <VideoPlayer
-            mode={mode}
-            activeImageSrc={activeImageSrc}
-            activeFrameImages={activeFrameImages}
-            activeTitle={displayTitle}
-            onOpenFrameImage={onOpenFrameImage}
-            previewAllActive={previewAllActive}
-            previewAllPlaying={previewAllPlaying}
-            previewAllLocalTime={previewAllLocalTime}
-            previewAllElapsedSeconds={previewAllElapsedSeconds}
-            nextPreloadVideoSrc={nextPreloadVideoSrc}
-            currentItem={currentItem}
-            currentItemDurationSeconds={currentItemDurationSeconds}
-            timelineVideoClips={timelineVideoClips}
-            timelineAudioClips={timelineAudioClips}
-            activeVideoClip={activeTimelineVideoClip}
-            onRequestVideoEdit={handleEdit}
-            onDownloadVideoEdit={editedVideoUrl ? downloadEditedVideo : undefined}
-            videoEditLoading={editingLoading}
-            onStopPreviewAll={stopPreviewAll}
-            onTogglePreviewAllPlaying={() => setPreviewAllPlaying((v) => !v)}
-            onAdvancePreviewAll={advancePreviewAll}
-            onUpdatePreviewAllLocalTime={setPreviewAllLocalTime}
-            onStartPreviewAll={handleStartPreviewAll}
-          />
-        </div>
-
-        {isVideoTab ? (
-          <>
-            <div
-              className={`${styles.splitter} ${splitterActive ? styles.splitterActive : ""}`}
-              role="separator"
-              aria-label="调整预览与素材区域宽度"
-              aria-orientation="vertical"
-              tabIndex={0}
-              onPointerDown={startResize}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowLeft") setAssetSidebarWidth((w) => Math.max(176, Math.min(480, w + 16)))
-                if (e.key === "ArrowRight") setAssetSidebarWidth((w) => Math.max(176, Math.min(480, w - 16)))
-              }}
+    <>
+      <div className={styles.top} aria-label="预览区" style={{ ["--asset-sidebar-w" as any]: `${assetSidebarWidth}px` } as any}>
+        <div className={`${styles.topRow} ${isVideoTab ? styles.topRowVideo : ""}`} aria-label="预览与素材区">
+          <div className={styles.previewCard}>
+            <VideoPlayer
+              mode={mode}
+              activeImageSrc={activeImageSrc}
+              activeFrameImages={activeFrameImages}
+              activeTitle={displayTitle}
+              onOpenFrameImage={onOpenFrameImage}
+              previewAllActive={previewAllActive}
+              previewAllPlaying={previewAllPlaying}
+              previewAllLocalTime={previewAllLocalTime}
+              previewAllElapsedSeconds={previewAllElapsedSeconds}
+              previewAllSeeking={previewAllSeeking}
+              nextPreloadVideoSrc={nextPreloadVideoSrc}
+              currentItem={currentItem}
+              currentItemDurationSeconds={currentItemDurationSeconds}
+              timelineVideoClips={timelineVideoClips}
+              timelineAudioClips={timelineAudioClips}
+              activeVideoClip={activeTimelineVideoClip}
+              onRequestVideoEdit={handleEdit}
+              onDownloadVideoEdit={editedVideoUrl ? downloadEditedVideo : undefined}
+              videoEditLoading={editingLoading}
+              onStopPreviewAll={stopPreviewAll}
+              onTogglePreviewAllPlaying={() => setPreviewAllPlaying((v) => !v)}
+              onAdvancePreviewAll={advancePreviewAll}
+              onUpdatePreviewAllLocalTime={setPreviewAllLocalTime}
+              onStartPreviewAll={handleStartPreviewAll}
             />
-            <div className={styles.assetSidebarWrap}>
-              <VideoAssetSidebar
-                videoSegments={segments as any}
-                videoGroups={videoAssetGroups}
-                segmentFirstFrames={segmentFirstFrames}
-                storyboardId={storyboardId ?? null}
-                ttsAudioVersion={ttsAudioVersion ?? 0}
+          </div>
+
+          {isVideoTab ? (
+            <>
+              <div
+                className={`${styles.splitter} ${splitterActive ? styles.splitterActive : ""}`}
+                role="separator"
+                aria-label="调整预览与素材区域宽度"
+                aria-orientation="vertical"
+                tabIndex={0}
+                onPointerDown={startResize}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowLeft") setAssetSidebarWidth((w) => Math.max(176, Math.min(480, w + 16)))
+                  if (e.key === "ArrowRight") setAssetSidebarWidth((w) => Math.max(176, Math.min(480, w - 16)))
+                }}
               />
-            </div>
-          </>
-        ) : null}
+              <div className={styles.assetSidebarWrap}>
+                <VideoAssetSidebar
+                  videoSegments={segments as any}
+                  videoGroups={videoAssetGroups}
+                  segmentFirstFrames={segmentFirstFrames}
+                  storyboardId={storyboardId ?? null}
+                  ttsAudioVersion={ttsAudioVersion ?? 0}
+                />
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
 
-      <div className={styles.dock} aria-label="时间线 Dock">
+      <div className={styles.dock} aria-label="时间线 Dock" style={{ gridColumn: "1 / -1" }}>
         <TimelineBar
           mode={mode}
           activeId={activeId}
@@ -264,6 +264,8 @@ export function MediaPreviewPanel({
           previewAllPlaying={previewAllPlaying}
           previewAllElapsedSeconds={previewAllElapsedSeconds}
           onSeekPreviewAllSeconds={seekPreviewAllSeconds}
+          onSeekPreviewAllStart={() => setPreviewAllSeeking(true)}
+          onSeekPreviewAllEnd={() => setPreviewAllSeeking(false)}
           onStopPreviewAll={stopPreviewAll}
           onTogglePreviewAllPlaying={() => setPreviewAllPlaying((v) => !v)}
           onStartPreviewAll={handleStartPreviewAll}
@@ -271,6 +273,6 @@ export function MediaPreviewPanel({
           onSetPreviewAllLocalTime={setPreviewAllLocalTime}
         />
       </div>
-    </main>
+    </>
   )
 }

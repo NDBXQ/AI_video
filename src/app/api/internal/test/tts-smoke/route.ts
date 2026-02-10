@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getTraceId } from "@/shared/trace"
-import { CozeTtsClient } from "@/server/services/tts/cozeTtsClient"
+import { CozeTtsClient } from "@/server/integrations/coze/ttsClient"
 import { DEFAULT_TTS_TEST_TEXT, TTS_SPEAKERS } from "@/features/tts/speakers"
 
 const inputSchema = z.object({
@@ -30,4 +30,3 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json(makeApiErr(traceId, "TTS_SMOKE_FAILED", anyErr?.message || "TTS 测试失败"), { status: 500 })
   }
 }
-

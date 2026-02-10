@@ -29,6 +29,7 @@ type Manifest = {
   size: number
   chunkSize: number
   totalChunks: number
+  durationMs?: number | null
   name: string
   description: string
   tags: string
@@ -126,6 +127,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       previewStorageKey: uploadedKey,
       originalUrl: url,
       originalStorageKey: uploadedKey,
+      durationMs: typeof manifestSafe.durationMs === "number" ? manifestSafe.durationMs : null,
       tags,
       applicableScenes
     })

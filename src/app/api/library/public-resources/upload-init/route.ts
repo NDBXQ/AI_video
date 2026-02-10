@@ -12,6 +12,7 @@ const inputSchema = z.object({
   fileName: z.string().trim().min(1).max(500),
   contentType: z.string().trim().min(1).max(200),
   size: z.number().int().min(1),
+  durationMs: z.number().int().positive().max(24 * 60 * 60 * 1000).optional(),
   name: z.string().trim().max(200).optional(),
   description: z.string().trim().max(2000).optional(),
   tags: z.string().trim().max(5000).optional(),
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     size: parsed.data.size,
     chunkSize,
     totalChunks,
+    durationMs: parsed.data.durationMs ?? null,
     name: parsed.data.name ?? "",
     description: parsed.data.description ?? "",
     tags: parsed.data.tags ?? "",
@@ -64,4 +66,3 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   return NextResponse.json(makeApiOk(traceId, { uploadId, chunkSize, totalChunks }), { status: 200 })
 }
-

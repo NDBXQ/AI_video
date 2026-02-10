@@ -53,10 +53,10 @@ export async function POST(req: Request): Promise<Response> {
 
     await db.execute(sql`
       insert into tvc.story_outlines (
-        id, story_id, sequence, outline_text, original_text, outline_drafts, active_outline_draft_id, created_at
+        id, story_id, sequence, outline_text, original_text, created_at
       )
       select
-        o.id, o.story_id, o.sequence, o.outline_text, o.original_text, o.outline_drafts, o.active_outline_draft_id, o.created_at
+        o.id, o.story_id, o.sequence, o.outline_text, o.original_text, o.created_at
       from public.story_outlines o
       join public.stories s on s.id = o.story_id
       where s.story_type = 'tvc'
@@ -65,19 +65,17 @@ export async function POST(req: Request): Promise<Response> {
         sequence = excluded.sequence,
         outline_text = excluded.outline_text,
         original_text = excluded.original_text,
-        outline_drafts = excluded.outline_drafts,
-        active_outline_draft_id = excluded.active_outline_draft_id,
         created_at = excluded.created_at
     `)
 
     await db.execute(sql`
       insert into tvc.storyboards (
-        id, outline_id, sequence, scene_title, original_text, created_at, updated_at, is_reference_generated,
-        shot_cut, storyboard_text, is_video_generated, is_script_generated, script_content, frames, video_info
+        id, outline_id, sequence, created_at, updated_at,
+        shot_cut, storyboard_text, script_content, frames, video_info
       )
       select
-        b.id, b.outline_id, b.sequence, b.scene_title, b.original_text, b.created_at, b.updated_at, b.is_reference_generated,
-        b.shot_cut, b.storyboard_text, b.is_video_generated, b.is_script_generated, b.script_content, b.frames, b.video_info
+        b.id, b.outline_id, b.sequence, b.created_at, b.updated_at,
+        b.shot_cut, b.storyboard_text, b.script_content, b.frames, b.video_info
       from public.storyboards b
       join public.story_outlines o on o.id = b.outline_id
       join public.stories s on s.id = o.story_id
@@ -85,15 +83,10 @@ export async function POST(req: Request): Promise<Response> {
       on conflict (id) do update set
         outline_id = excluded.outline_id,
         sequence = excluded.sequence,
-        scene_title = excluded.scene_title,
-        original_text = excluded.original_text,
         created_at = excluded.created_at,
         updated_at = excluded.updated_at,
-        is_reference_generated = excluded.is_reference_generated,
         shot_cut = excluded.shot_cut,
         storyboard_text = excluded.storyboard_text,
-        is_video_generated = excluded.is_video_generated,
-        is_script_generated = excluded.is_script_generated,
         script_content = excluded.script_content,
         frames = excluded.frames,
         video_info = excluded.video_info
@@ -101,11 +94,11 @@ export async function POST(req: Request): Promise<Response> {
 
     await db.execute(sql`
       insert into tvc.jobs (
-        id, user_id, type, status, story_id, storyboard_id, payload, snapshot, progress_version,
+        id, user_id, type, status, payload, snapshot, progress_version,
         started_at, finished_at, error_message, created_at, updated_at
       )
       select
-        j.id, j.user_id, j.type, j.status, j.story_id, j.storyboard_id, j.payload, j.snapshot, j.progress_version,
+        j.id, j.user_id, j.type, j.status, j.payload, j.snapshot, j.progress_version,
         j.started_at, j.finished_at, j.error_message, j.created_at, j.updated_at
       from public.jobs j
       join public.stories s on s.id = j.story_id
@@ -114,8 +107,6 @@ export async function POST(req: Request): Promise<Response> {
         user_id = excluded.user_id,
         type = excluded.type,
         status = excluded.status,
-        story_id = excluded.story_id,
-        storyboard_id = excluded.storyboard_id,
         payload = excluded.payload,
         snapshot = excluded.snapshot,
         progress_version = excluded.progress_version,

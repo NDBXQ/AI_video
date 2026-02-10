@@ -1,4 +1,4 @@
-import { readEnv, readEnvInt } from "@/features/coze/env"
+import { readEnv, readEnvInt } from "@/shared/env"
 import type { S3Storage } from "coze-coding-dev-sdk"
 
 export type StorageUrlMode = "presigned" | "direct"
@@ -43,4 +43,3 @@ export async function resolveStorageUrl(storage: S3Storage, key: string): Promis
     return buildDirectBucketUrl(key)
   }
 }
-

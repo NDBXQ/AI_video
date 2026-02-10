@@ -1,0 +1,143 @@
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.cardClickable {
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.cardClickable:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.cardClickable:active {
+  transform: translateY(0px);
+}
+
+.cardClickable:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.70);
+  outline-offset: 2px;
+}
+
+.preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(2, 6, 23, 0.35);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mediaImage {
+  object-fit: contain;
+  background: rgba(2, 6, 23, 0.35);
+}
+
+.mediaVideo {
+  object-fit: cover;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px;
+  text-align: center;
+}
+
+.body {
+  padding: 10px 10px 12px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cornerActions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.cornerBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.88);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.cornerBtn:hover {
+  background: rgba(2, 6, 23, 0.90);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+.cornerBtn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.70);
+  outline-offset: 2px;
+}
+
+.cornerBtnDanger {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.cornerBtnDanger:hover {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.metaRow {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.typePill {
+  border-radius: 999px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--theme-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.name {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--theme-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

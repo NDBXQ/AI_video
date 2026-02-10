@@ -1,13 +1,11 @@
 .toolbar {
-  padding: 12px 14px;
-  border: 1px solid var(--theme-border);
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-radius: 14px;
-  background: var(--theme-surface);
-  box-shadow: var(--theme-shadow);
-  backdrop-filter: var(--theme-blur);
+  background: transparent;
   width: 100%;
 }
 
@@ -34,8 +32,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 12px;
   border-radius: 10px;
   border: 1px solid var(--theme-border);
   background: rgba(255, 255, 255, 0.04);
@@ -43,6 +41,21 @@
   font-weight: 800;
   font-size: 12px;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--theme-border-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btnPrimary {
@@ -51,13 +64,24 @@
   color: rgba(255, 255, 255, 0.96);
 }
 
+.btnPrimary:hover {
+  background: linear-gradient(135deg, rgba(123, 97, 255, 1) 0%, rgba(79, 70, 229, 0.98) 100%);
+  border-color: rgba(109, 94, 247, 0.35);
+}
+
 .btnDanger {
   background: rgba(239, 68, 68, 0.10);
   border-color: rgba(239, 68, 68, 0.26);
   color: rgba(255, 255, 255, 0.92);
 }
 
+.btnDanger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 .toolbarMeta {
   color: var(--theme-text-muted);
-  font-size: 0.875rem;
+  font-size: 12px;
+  font-weight: 700;
 }

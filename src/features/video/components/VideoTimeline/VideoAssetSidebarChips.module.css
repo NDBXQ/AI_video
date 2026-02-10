@@ -23,6 +23,11 @@
   border-color: rgba(109, 94, 247, 0.35);
 }
 
+.chipItem:focus-visible {
+  outline: 2px solid rgba(109, 94, 247, 0.65);
+  outline-offset: 2px;
+}
+
 .chipGrip {
   width: 14px;
   height: 14px;
@@ -66,4 +71,9 @@
 .chipPreviewBtn:hover {
   background: rgba(109, 94, 247, 0.14);
   border-color: rgba(109, 94, 247, 0.35);
+}
+
+.chipPreviewBtn:focus-visible {
+  outline: 2px solid rgba(109, 94, 247, 0.65);
+  outline-offset: 2px;
 }

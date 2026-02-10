@@ -6,6 +6,7 @@ export function CreateWorkspaceMain({
   onBack,
   activeTab,
   onTabChange,
+  episodeLabel,
   sceneNo,
   recommendedStoryboardMode,
   canPrevScene,
@@ -13,12 +14,14 @@ export function CreateWorkspaceMain({
   onPrevScene,
   onNextScene,
   info,
+  mobileActions,
   leftPanel,
   rightPanel
 }: {
   onBack: () => void
   activeTab: "image" | "video"
   onTabChange: (tab: "image" | "video") => void
+  episodeLabel?: string | null
   sceneNo: number
   recommendedStoryboardMode: any
   canPrevScene: boolean
@@ -26,6 +29,7 @@ export function CreateWorkspaceMain({
   onPrevScene: () => void
   onNextScene: () => void
   info: Array<{ label: string; value: string }>
+  mobileActions?: ReactElement | null
   leftPanel: ReactElement
   rightPanel: ReactElement
 }): ReactElement {
@@ -35,6 +39,7 @@ export function CreateWorkspaceMain({
         onBack={onBack}
         activeTab={activeTab}
         onTabChange={onTabChange}
+        episodeLabel={episodeLabel}
         sceneNo={sceneNo}
         recommendedStoryboardMode={recommendedStoryboardMode}
         canPrevScene={canPrevScene}
@@ -42,6 +47,7 @@ export function CreateWorkspaceMain({
         onPrevScene={onPrevScene}
         onNextScene={onNextScene}
         info={info}
+        mobileActions={mobileActions}
       />
 
       <div className={shellStyles.workspaceWrap}>
@@ -53,12 +59,11 @@ export function CreateWorkspaceMain({
               ["--dock-gap" as any]: "8px",
               gridTemplateRows: "calc(100% - var(--dock-h, 0px) - var(--dock-gap, 0px)) var(--dock-h, 0px)",
               rowGap: "var(--dock-gap, 0px)",
-              columnGap: "8px"
+              columnGap: "10px"
             } as any
           }
         >
           {leftPanel}
-          <div aria-hidden style={{ gridColumn: 1, gridRow: 2 }} />
           {rightPanel}
         </div>
       </div>

@@ -5,7 +5,7 @@ import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { StoryboardService } from "@/server/services/storyboardService"
+import { StoryboardService } from "@/server/domains/storyboard/services/storyboardService"
 
 const querySchema = z.object({
   storyId: z.string().trim().min(1).max(200).optional(),

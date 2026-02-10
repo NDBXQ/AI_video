@@ -1,11 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
-import { and, desc, eq } from "drizzle-orm"
-import { getDb } from "coze-coding-dev-sdk"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { generatedImages, publicResources, stories, storyOutlines, storyboards, type StoryboardScriptContent } from "@/shared/schema"
+import { importVideoCreationPublicResource } from "@/server/domains/video-creation/usecases/images/importPublicResource"
 
 const bodySchema = z.object({
   storyboardId: z.string().trim().min(1).max(200),
@@ -14,109 +12,6 @@ const bodySchema = z.object({
   displayName: z.string().trim().min(1).max(200).optional(),
   category: z.string().trim().min(1).max(50).default("reference"),
 })
-
-function buildEmptyScript(): StoryboardScriptContent {
-  return {
-    shot_info: { cut_to: false, shot_style: "", shot_duration: 0 },
-    shot_content: {
-      bgm: "",
-      roles: [],
-      shoot: { angle: "", shot_angle: "", camera_movement: "" },
-      background: { status: "", background_name: "" },
-      role_items: [],
-      other_items: []
-    },
-    video_content: {
-      items: [],
-      roles: [],
-      background: { description: "", background_name: "" },
-      other_items: []
-    }
-  }
-}
-
-function withReferenceAsset(
-  current: StoryboardScriptContent | null,
-  input: { category: string; entityName: string; assetName: string; assetDescription: string }
-): StoryboardScriptContent {
-  const next = current ? structuredClone(current) : buildEmptyScript()
-  const entityName = input.entityName.trim()
-  const assetName = input.assetName.trim()
-  const assetDescription = input.assetDescription.trim()
-  if (!entityName || !assetName) return next
-
-  if (input.category === "role") {
-    const roles = Array.isArray(next.video_content.roles) ? next.video_content.roles : []
-    let row = roles.find((r) => (r.role_name ?? "").trim() === entityName)
-    if (!row) {
-      row = { role_name: entityName, description: "" }
-      roles.push(row)
-      next.video_content.roles = roles
-    }
-    row.reference_image_name = assetName
-    row.reference_image_description = assetDescription
-    return next
-  }
-
-  if (input.category === "background") {
-    const bg = next.video_content.background ?? { description: "", background_name: "" }
-    bg.reference_image_name = assetName
-    bg.reference_image_description = assetDescription
-    next.video_content.background = bg
-    return next
-  }
-
-  const items = Array.isArray(next.video_content.items) ? next.video_content.items : []
-  const otherItems = Array.isArray(next.video_content.other_items) ? next.video_content.other_items : []
-  let row =
-    items.find((r) => (r.item_name ?? "").trim() === entityName) ??
-    otherItems.find((r) => (r.item_name ?? "").trim() === entityName) ??
-    null
-  if (!row) {
-    row = { relation: "", item_name: entityName, description: "" }
-    items.push(row)
-    next.video_content.items = items
-  }
-  row.reference_image_name = assetName
-  row.reference_image_description = assetDescription
-  return next
-}
-
-function renameEntityInScript(current: StoryboardScriptContent, input: { category: string; from: string; to: string }): StoryboardScriptContent {
-  const from = input.from.trim()
-  const to = input.to.trim()
-  if (!from || !to || from === to) return current
-  const next = structuredClone(current)
-  if (input.category === "role") {
-    for (const list of [next.shot_content?.roles, next.video_content?.roles]) {
-      if (!Array.isArray(list)) continue
-      for (const r of list) {
-        if (r && typeof r.role_name === "string" && r.role_name.trim() === from) r.role_name = to
-      }
-    }
-    return next
-  }
-  if (input.category === "background") {
-    const bg1 = next.shot_content?.background
-    if (bg1 && typeof bg1.background_name === "string" && bg1.background_name.trim() === from) bg1.background_name = to
-    const bg2 = next.video_content?.background
-    if (bg2 && typeof bg2.background_name === "string" && bg2.background_name.trim() === from) bg2.background_name = to
-    return next
-  }
-  const replaceInArray = (arr: unknown) => {
-    if (!Array.isArray(arr)) return arr
-    return arr.map((v) => (typeof v === "string" && v.trim() === from ? to : v))
-  }
-  next.shot_content.role_items = replaceInArray(next.shot_content.role_items) as any
-  next.shot_content.other_items = replaceInArray(next.shot_content.other_items) as any
-  for (const list of [next.video_content?.items, next.video_content?.other_items]) {
-    if (!Array.isArray(list)) continue
-    for (const it of list) {
-      if (it && typeof it.item_name === "string" && it.item_name.trim() === from) it.item_name = to
-    }
-  }
-  return next
-}
 
 export async function POST(req: NextRequest): Promise<Response> {
   const traceId = getTraceId(req.headers)
@@ -135,86 +30,14 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!parsed.success) return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "参数格式不正确"), { status: 400 })
 
   const { storyboardId, publicResourceId, name, displayName, category } = parsed.data
-
-  const db = await getDb({ generatedImages, publicResources, stories, storyOutlines, storyboards })
-
-  const storyRow = await db
-    .select({ storyId: stories.id, scriptContent: storyboards.scriptContent })
-    .from(storyboards)
-    .innerJoin(storyOutlines, eq(storyboards.outlineId, storyOutlines.id))
-    .innerJoin(stories, eq(storyOutlines.storyId, stories.id))
-    .where(and(eq(storyboards.id, storyboardId), eq(stories.userId, userId)))
-    .limit(1)
-
-  const effectiveStoryId = storyRow[0]?.storyId ?? null
-  if (!effectiveStoryId) return NextResponse.json(makeApiErr(traceId, "STORY_NOT_FOUND", "未找到可用的故事"), { status: 404 })
-
-  const pr = await db.select().from(publicResources).where(eq(publicResources.id, publicResourceId)).limit(1)
-  const resource = pr[0] as any
-  if (!resource) return NextResponse.json(makeApiErr(traceId, "RESOURCE_NOT_FOUND", "未找到可用素材"), { status: 404 })
-
-  const url = (resource.originalUrl || resource.previewUrl || "").trim()
-  const storageKey = (resource.originalStorageKey || resource.previewStorageKey || "").trim()
-  if (!url || !storageKey) return NextResponse.json(makeApiErr(traceId, "RESOURCE_NOT_READY", "素材缺少可用存储信息"), { status: 400 })
-
-  const thumbnailUrl = (resource.previewUrl || "").trim() || null
-  const thumbnailStorageKey = (resource.previewStorageKey || "").trim() || null
-
-  const assetName = typeof resource.name === "string" ? resource.name : displayName ?? name
-  const assetDescription = typeof resource.description === "string" ? resource.description : ""
-
-  const existed = await db
-    .select({ id: generatedImages.id })
-    .from(generatedImages)
-    .where(and(eq(generatedImages.storyId, effectiveStoryId), eq(generatedImages.storyboardId, storyboardId), eq(generatedImages.name, name), eq(generatedImages.category, category)))
-    .orderBy(desc(generatedImages.createdAt))
-    .limit(1)
-
-  const existing = existed[0]
-  const saved =
-    existing
-      ? (
-          await db
-            .update(generatedImages)
-            .set({
-              name: assetName,
-              url,
-              storageKey,
-              thumbnailUrl,
-              thumbnailStorageKey,
-              description: typeof resource.description === "string" ? resource.description : null
-            })
-            .where(eq(generatedImages.id, existing.id))
-            .returning()
-        )[0]
-      : (
-          await db
-            .insert(generatedImages)
-            .values({
-              storyId: effectiveStoryId,
-              storyboardId,
-              name: assetName,
-              description: typeof resource.description === "string" ? resource.description : null,
-              url,
-              storageKey,
-              thumbnailUrl,
-              thumbnailStorageKey,
-              category
-            })
-            .returning()
-        )[0]
-
-  const renamedScript = renameEntityInScript(storyRow[0]?.scriptContent ?? buildEmptyScript(), { category, from: name, to: assetName })
-  const nextScript = withReferenceAsset(renamedScript, {
-    category,
-    entityName: assetName,
-    assetName,
-    assetDescription
+  const res = await importVideoCreationPublicResource({
+    userId,
+    storyboardId,
+    publicResourceId,
+    name,
+    ...(displayName ? { displayName } : {}),
+    category
   })
-  await db.update(storyboards).set({ scriptContent: nextScript, updatedAt: new Date() }).where(eq(storyboards.id, storyboardId))
-
-  return NextResponse.json(
-    makeApiOk(traceId, { ...saved, pickedEntityName: assetName, pickedTitle: assetName, pickedDescription: assetDescription }),
-    { status: 200 }
-  )
+  if (!res.ok) return NextResponse.json(makeApiErr(traceId, res.code, res.message), { status: res.status })
+  return NextResponse.json(makeApiOk(traceId, { ...(res.data as any) }), { status: 200 })
 }

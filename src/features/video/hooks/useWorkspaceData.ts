@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { ApiErr, ApiOk } from "@/shared/api"
 import type { StoryboardItem, VideoStoryboardsResponse } from "@/features/video/types"
 import { normalizeShotsToItems } from "../utils/storyboardUtils"
+import { useVideoImageEvents, useVideoStoryboardEvents, type VideoImageEvent, type VideoStoryboardEvent } from "./useVideoAssetEvents"
 
 export function useWorkspaceData({
   storyId,
@@ -31,18 +32,43 @@ export function useWorkspaceData({
     item: []
   })
 
-  useEffect(() => {
-    const onUpdated = (e: Event) => {
-      const anyEv = e as any
-      const storyboardId = typeof anyEv?.detail?.storyboardId === "string" ? anyEv.detail.storyboardId : ""
-      if (storyboardId && storyboardId !== activeStoryboardId) return
-      const refreshStoryboards = Boolean(anyEv?.detail?.refreshStoryboards)
-      if (refreshStoryboards) setStoryboardsVersion((v) => v + 1)
+  const onStoryboardEvent = useCallback(
+    (ev: VideoStoryboardEvent) => {
+      if (!outlineId) return
+      if (ev.outlineId !== outlineId) return
+      setStoryboardsVersion((v) => v + 1)
+      setPreviewVersion((v) => v + 1)
+    },
+    [outlineId]
+  )
+
+  useVideoStoryboardEvents({
+    storyId: storyId ?? "",
+    enabled: Boolean(storyId) && Boolean(outlineId),
+    onEvent: onStoryboardEvent,
+    onFallbackTick: () => {
+      setStoryboardsVersion((v) => v + 1)
       setPreviewVersion((v) => v + 1)
     }
-    window.addEventListener("video_reference_images_updated", onUpdated as any)
-    return () => window.removeEventListener("video_reference_images_updated", onUpdated as any)
-  }, [activeStoryboardId])
+  })
+
+  const onImageEvent = useCallback(
+    (ev: VideoImageEvent) => {
+      if (ev.storyboardId && ev.storyboardId !== activeStoryboardId) return
+      setPreviewVersion((v) => v + 1)
+    },
+    [activeStoryboardId]
+  )
+
+  useVideoImageEvents({
+    storyId: storyId ?? "",
+    enabled: Boolean(storyId),
+    includeGlobal: true,
+    onEvent: onImageEvent,
+    onFallbackTick: () => {
+      setPreviewVersion((v) => v + 1)
+    }
+  })
 
   // Load Storyboards
   useEffect(() => {

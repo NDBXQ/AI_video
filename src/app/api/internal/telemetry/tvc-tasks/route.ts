@@ -39,8 +39,7 @@ const generateBodySchema = z.object({
 type FunnelStats = {
   windowHours: number
   counts: Record<string, number>
-  rates: { styleSelectedRate: number; continueRate: number; chatRate: number }
-  topStyles: Array<{ styleId: string; uv: number }>
+  rates: { generateRate: number; chatRate: number }
 }
 
 async function computeTvcFunnel(hours: number): Promise<FunnelStats> {
@@ -62,51 +61,31 @@ async function computeTvcFunnel(hours: number): Promise<FunnelStats> {
   }
 
   const opens = counts.tvc_open ?? 0
-  const styles = counts.tvc_style_selected ?? 0
-  const continues = counts.tvc_continue_clicked ?? 0
+  const generates = counts.tvc_generate_shotlist_clicked ?? 0
   const chats = counts.tvc_chat_submitted ?? 0
-
-  const topStyles = await db.execute(sql`
-    select (payload->>'styleId') as style_id, count(distinct trace_id) as uv
-    from telemetry_events
-    where page = '/tvc'
-      and event = 'tvc_style_selected'
-      and created_at >= now() - (${hours}::text || ' hours')::interval
-    group by (payload->>'styleId')
-    order by uv desc
-    limit 10
-  `)
-
-  const topStyleRows = (topStyles.rows ?? []) as Array<{ style_id: string | null; uv: unknown }>
-  const topStyleList = topStyleRows
-    .map((r) => ({ styleId: r.style_id ?? "unknown", uv: Number(r.uv ?? 0) }))
-    .filter((r) => Number.isFinite(r.uv))
 
   const rate = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 10000) / 100 : 0)
 
   return {
     windowHours: hours,
-    counts: { ...counts, tvc_open: opens, tvc_style_selected: styles, tvc_continue_clicked: continues, tvc_chat_submitted: chats },
+    counts: { ...counts, tvc_open: opens, tvc_generate_shotlist_clicked: generates, tvc_chat_submitted: chats },
     rates: {
-      styleSelectedRate: rate(styles, opens),
-      continueRate: rate(continues, opens),
+      generateRate: rate(generates, opens),
       chatRate: rate(chats, opens)
-    },
-    topStyles: topStyleList
+    }
   }
 }
 
 function buildTasks(stats: FunnelStats): Array<{ title: string; spec: Record<string, unknown> }> {
   const opens = stats.counts.tvc_open ?? 0
-  const styles = stats.counts.tvc_style_selected ?? 0
-  const continues = stats.counts.tvc_continue_clicked ?? 0
+  const generates = stats.counts.tvc_generate_shotlist_clicked ?? 0
   const chats = stats.counts.tvc_chat_submitted ?? 0
 
   const baseline = {
     windowHours: stats.windowHours,
-    counts: { opens, styles, continues, chats },
+    counts: { opens, generates, chats },
     rates: stats.rates,
-    topStyles: stats.topStyles
+    topStyles: []
   }
 
   if (opens <= 0) {
@@ -131,32 +110,16 @@ function buildTasks(stats: FunnelStats): Array<{ title: string; spec: Record<str
 
   const tasks: Array<{ title: string; spec: Record<string, unknown> }> = []
 
-  if (styles / opens < 0.6) {
+  if (generates / opens < 0.3) {
     tasks.push({
-      title: "提升风格选择转化（Style & Vibe）",
+      title: "提升 Shotlist 生成点击率",
       spec: {
-        goal: "提高用户在 /tvc 完成风格选择的比例",
-        hypothesis: "风格卡片的可选中态不够显著或默认选择不足，用户不知道需要先选风格",
+        goal: "提高用户在 /tvc 触发生成 shotlist 的比例",
+        hypothesis: "生成入口的可见性与引导不足，用户停留但没有推进到生成步骤",
         change_scope: ["tvc_ui", "ux_copy", "telemetry"],
-        success_metrics: [{ metric: "styleSelectedRate", target: "+15% absolute", current: stats.rates.styleSelectedRate, windowHours: stats.windowHours }],
+        success_metrics: [{ metric: "generateRate", target: "+10% absolute", current: stats.rates.generateRate, windowHours: stats.windowHours }],
         guardrails: [{ metric: "tvc_error_rate", target: "no increase" }],
-        verification: ["A/B（feature flag）对比：默认高亮 + 引导文案 + 选择后自动提示下一步", "确保 tvc_style_selected 上报不下降"],
-        rollback: ["feature flag 关闭该改动"],
-        baseline
-      }
-    })
-  }
-
-  if (continues / opens < 0.3) {
-    tasks.push({
-      title: "提升 Continue 点击率（从 Style 到 Brief）",
-      spec: {
-        goal: "提升用户进入 brief 阶段的比例",
-        hypothesis: "Continue 的意义不清晰或入口位置不符合用户注意力，导致用户停留但不推进",
-        change_scope: ["tvc_ui", "ux_copy", "telemetry"],
-        success_metrics: [{ metric: "continueRate", target: "+10% absolute", current: stats.rates.continueRate, windowHours: stats.windowHours }],
-        guardrails: [{ metric: "tvc_time_to_interact_ms", target: "no worse" }],
-        verification: ["在中间预览区增加下一步 CTA（非功能）并对齐右侧 Continue", "检查 tvc_continue_clicked 上报提升"],
+        verification: ["调整主操作按钮层级与文案，引导用户先完善需求再生成", "检查 tvc_generate_shotlist_clicked uv 提升"],
         rollback: ["feature flag 关闭该改动"],
         baseline
       }
@@ -167,7 +130,7 @@ function buildTasks(stats: FunnelStats): Array<{ title: string; spec: Record<str
     tasks.push({
       title: "提升 Chat 引导使用率（让用户用自然语言描述）",
       spec: {
-        goal: "让更多用户通过 chat 描述产品与 vibe，形成可复用 brief",
+        goal: "让更多用户通过 chat 描述需求，形成可复用 brief",
         hypothesis: "用户不知道该说什么，缺少示例/快捷提示导致 chat 不被使用",
         change_scope: ["tvc_ui", "prompting", "telemetry"],
         success_metrics: [{ metric: "chatRate", target: "+5% absolute", current: stats.rates.chatRate, windowHours: stats.windowHours }],
@@ -292,4 +255,3 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json(makeApiErr(traceId, "TASKS_GENERATE_FAILED", "生成失败"), { status: 500 })
   }
 }
-

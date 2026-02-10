@@ -11,6 +11,7 @@ import { useFrameImagePreview } from "../hooks/create-workspace/useFrameImagePre
 import { usePrevVideoLastFrame } from "../hooks/create-workspace/usePrevVideoLastFrame"
 import { useWorkspaceThumbnails } from "../hooks/create-workspace/useWorkspaceThumbnails"
 import { useWorkspaceEpisodeThumbnails } from "../hooks/create-workspace/useWorkspaceEpisodeThumbnails"
+import { useWorkspaceEpisodeLabel } from "../hooks/create-workspace/useWorkspaceEpisodeLabel"
 import { useWorkspaceDialogues } from "../hooks/create-workspace/useWorkspaceDialogues"
 import { useTimelineSegments } from "../hooks/create-workspace/useTimelineSegments"
 import { useSceneSwitch } from "../hooks/create-workspace/useSceneSwitch"
@@ -18,9 +19,10 @@ import { MediaPreviewPanel } from "./CreatePage/MediaPreviewPanel"
 import { CreateWorkspaceMain } from "./CreatePage/CreateWorkspaceMain"
 import { ImageParamsSidebar } from "./CreatePage/ImageParamsSidebar"
 import { VideoParamsSidebar } from "./CreatePage/VideoParamsSidebar"
+import { VideoParamsDrawer } from "./CreatePage/VideoParamsDrawer"
 import { ChipEditModal } from "@/features/video/components/ChipEditModal"
 import { ImagePreviewModal } from "./ImagePreviewModal"
-import { uniqueStrings, clampInt } from "../utils/previewUtils"
+import { uniqueStrings, clampInt } from "@/shared/utils/previewUtils"
 import shellStyles from "./ImageCreate/Shell.module.css"
 
 export function CreateWorkspacePage({
@@ -61,6 +63,7 @@ export function CreateWorkspacePage({
     [activeStoryboardId, items]
   )
   const [ttsAudioVersion, setTtsAudioVersion] = useState(0)
+  const [videoParamsOpen, setVideoParamsOpen] = useState(false)
   const activeSceneNo = activeItem?.scene_no ?? sceneNo
   const hasExistingVideo = Boolean((activeItem?.videoInfo?.url ?? "").trim() || (activeItem?.videoInfo?.storageKey ?? "").trim())
 
@@ -80,7 +83,7 @@ export function CreateWorkspacePage({
     preview, setPreview
   } = useWorkspaceState({ activeItem, storyId, outlineId, activeTab })
 
-  const { handleGenerateImage, handleGenerateVideo, isGeneratingImage, isGeneratingVideo } = useGenerationActions({
+  const { handleGenerateImage, handleGenerateVideo, isGeneratingImage, isGeneratingVideo, imageRequest, videoRequest } = useGenerationActions({
     activeStoryboardId,
     activeSceneNo,
     imagePrompt,
@@ -116,6 +119,12 @@ export function CreateWorkspacePage({
     storyId,
     enabled: activeTab === "image",
     previewImageSrcById
+  })
+
+  const episodeLabel = useWorkspaceEpisodeLabel({
+    storyId,
+    outlineId,
+    enabled: Boolean((storyId ?? "").trim() && (outlineId ?? "").trim())
   })
 
   const dialogues = useWorkspaceDialogues(activeItem)
@@ -259,8 +268,35 @@ export function CreateWorkspacePage({
   if (isLoading) return <div className={shellStyles.shell}>加载中…</div>
   if (loadError) return <div className={shellStyles.shell}>{loadError}</div>
 
+  const videoSidebarProps =
+    activeTab === "video"
+      ? {
+          prompt: videoPrompt,
+          setPrompt: setVideoPrompt,
+          storyboardMode,
+          setStoryboardMode,
+          durationSeconds,
+          setDurationSeconds,
+          hasVoice,
+          setHasVoice,
+          isGenerating: isGeneratingVideo,
+          requestStatus: videoRequest.status,
+          requestError: videoRequest.status === "error" ? videoRequest.error?.message ?? null : null,
+          requestTraceId: videoRequest.traceId ?? null,
+          storyboardId: activeStoryboardId,
+          dialogues,
+          onAudioGenerated: () => setTtsAudioVersion((v) => v + 1),
+          onGenerate: handleGenerateVideo
+        }
+      : null
+
   return (
     <div className={shellStyles.shell} aria-label="生图/生视频工作台">
+      {videoSidebarProps ? (
+        <VideoParamsDrawer open={videoParamsOpen} onClose={() => setVideoParamsOpen(false)}>
+          <VideoParamsSidebar {...videoSidebarProps} variant="drawer" />
+        </VideoParamsDrawer>
+      ) : null}
       {preview ? (
         <ImagePreviewModal
           key={`${preview.storyboardId ?? activeStoryboardId}:${preview.generatedImageId ?? preview.imageSrc}:${preview.frameKind ?? ""}`}
@@ -297,6 +333,7 @@ export function CreateWorkspacePage({
         onBack={handleBack}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        episodeLabel={episodeLabel}
         sceneNo={activeSceneNo}
         recommendedStoryboardMode={((activeItem?.videoInfo as any)?.settings?.mode as any) ?? null}
         canPrevScene={sceneSwitch.canPrev}
@@ -310,6 +347,13 @@ export function CreateWorkspacePage({
           setActiveStoryboardId(sceneSwitch.nextId)
         }}
         info={[...(activeTab === "video" ? [{ label: "时长", value: `${clampInt(durationSeconds, 4, 12, 4)}s` }] : [])]}
+        mobileActions={
+          activeTab === "video" ? (
+            <button type="button" onClick={() => setVideoParamsOpen(true)}>
+              参数
+            </button>
+          ) : null
+        }
         leftPanel={
           activeTab === "image" ? (
             <ImageParamsSidebar
@@ -319,6 +363,9 @@ export function CreateWorkspacePage({
               tailPrompt={lastImagePrompt}
               setTailPrompt={setLastImagePrompt}
               isGenerating={isGeneratingImage}
+              requestStatus={imageRequest.status}
+              requestError={imageRequest.status === "error" ? imageRequest.error?.message ?? null : null}
+              requestTraceId={imageRequest.traceId ?? null}
               recommendedStoryboardMode={((activeItem?.videoInfo as any)?.settings?.mode as any) ?? null}
               shotCut={Boolean(!activeItem?.shot_info?.cut_to)}
               prevVideoLastFrameUrl={prevVideoLastFrameUrl}
@@ -338,71 +385,45 @@ export function CreateWorkspacePage({
               onDeleteAsset={handleDeleteAsset}
             />
           ) : (
-            <VideoParamsSidebar
-              prompt={videoPrompt}
-              setPrompt={setVideoPrompt}
-              storyboardMode={storyboardMode}
-              setStoryboardMode={setStoryboardMode}
-              durationSeconds={durationSeconds}
-              setDurationSeconds={setDurationSeconds}
-              hasVoice={hasVoice}
-              setHasVoice={setHasVoice}
-              isGenerating={isGeneratingVideo}
-              storyboardId={activeStoryboardId}
-              dialogues={dialogues}
-              onAudioGenerated={() => setTtsAudioVersion((v) => v + 1)}
-              onGenerate={handleGenerateVideo}
-            />
+            (videoSidebarProps ? <VideoParamsSidebar {...videoSidebarProps} /> : <div />)
           )
         }
         rightPanel={
-          <div
-            style={
-              {
-                gridColumn: 2,
-                gridRow: "1 / span 2",
-                minHeight: 0,
-                ["--left-col-w" as any]: "340px",
-                ["--col-gap" as any]: "8px"
-              } as any
-            }
-          >
-            <MediaPreviewPanel
-              mode={activeTab}
-              activeImageSrc={activePreview?.imageSrc ?? ""}
-              activeFrameImages={activeTab === "image" ? activeFrameImages : undefined}
-              activeTitle={activePreview?.title ?? ""}
-              thumbnails={thumbnails}
-              episodeThumbnailRows={episodeThumbnails}
-              activeId={activeStoryboardId || thumbnails[0]?.id || ""}
-              onEpisodeThumbnailClick={({ outlineId: targetOutlineId, storyboardId: targetStoryboardId }) => {
-                const sid = (storyId ?? "").trim()
-                if (!sid) return
-                const oid = (targetOutlineId ?? "").trim()
-                const tid = (targetStoryboardId ?? "").trim()
-                if (!oid || !tid) return
-                setActiveStoryboardId(tid)
-                if ((outlineId ?? "").trim() !== oid) {
-                  const qs = new URLSearchParams({ storyId: sid, outlineId: oid, storyboardId: tid, sceneNo: "1" })
-                  router.replace(`/video/image?${qs.toString()}`)
-                  return
-                }
-              }}
-              onOpenFrameImage={openFrameImagePreview}
-              timelineSegments={timelineSegments}
-              videoAssetGroups={activeTab === "video" ? videoAssetGroups : undefined}
-              timelineKey={storyId ?? "no-story"}
-              storyId={storyId ?? undefined}
-              initialTimeline={timelineDraft}
-              onTimelineChange={handleTimelineChange}
-              storyboardId={activeStoryboardId}
-              ttsAudioVersion={ttsAudioVersion}
-              onThumbnailClick={(id) => {
-                if (id === activeStoryboardId) return
-                setActiveStoryboardId(id)
-              }}
-            />
-          </div>
+          <MediaPreviewPanel
+            mode={activeTab}
+            activeImageSrc={activePreview?.imageSrc ?? ""}
+            activeFrameImages={activeTab === "image" ? activeFrameImages : undefined}
+            activeTitle={activePreview?.title ?? ""}
+            thumbnails={thumbnails}
+            episodeThumbnailRows={episodeThumbnails}
+            activeId={activeStoryboardId || thumbnails[0]?.id || ""}
+            onEpisodeThumbnailClick={({ outlineId: targetOutlineId, storyboardId: targetStoryboardId }) => {
+              const sid = (storyId ?? "").trim()
+              if (!sid) return
+              const oid = (targetOutlineId ?? "").trim()
+              const tid = (targetStoryboardId ?? "").trim()
+              if (!oid || !tid) return
+              setActiveStoryboardId(tid)
+              if ((outlineId ?? "").trim() !== oid) {
+                const qs = new URLSearchParams({ storyId: sid, outlineId: oid, storyboardId: tid, sceneNo: "1" })
+                router.replace(`/video/image?${qs.toString()}`)
+                return
+              }
+            }}
+            onOpenFrameImage={openFrameImagePreview}
+            timelineSegments={timelineSegments}
+            videoAssetGroups={activeTab === "video" ? videoAssetGroups : undefined}
+            timelineKey={storyId ?? "no-story"}
+            storyId={storyId ?? undefined}
+            initialTimeline={timelineDraft}
+            onTimelineChange={handleTimelineChange}
+            storyboardId={activeStoryboardId}
+            ttsAudioVersion={ttsAudioVersion}
+            onThumbnailClick={(id) => {
+              if (id === activeStoryboardId) return
+              setActiveStoryboardId(id)
+            }}
+          />
         }
       />
 

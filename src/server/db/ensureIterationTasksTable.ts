@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { iterationTasks } from "@/shared/schema"
+import { iterationTasks } from "@/shared/schema/telemetry"
 
 let ensured = false
 
@@ -21,4 +21,3 @@ export async function ensureIterationTasksTable(): Promise<void> {
   await db.execute(sql`create index if not exists idx_iteration_tasks_module_status_created on iteration_tasks (module, status, created_at);`)
   ensured = true
 }
-

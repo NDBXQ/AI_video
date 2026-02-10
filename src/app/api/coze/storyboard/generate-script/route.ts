@@ -7,11 +7,11 @@ import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
 import type { NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/shared/session"
-import { enqueueCozeGenerateScriptJob, kickCozeStoryboardWorker } from "@/server/jobs/cozeStoryboardWorker"
-import { runGenerateScript } from "@/server/coze/storyboardTasks"
+import { enqueueCozeGenerateScriptJob, kickCozeStoryboardWorker } from "@/server/domains/storyboard/jobs/cozeStoryboardWorker"
+import { runGenerateScript } from "@/server/domains/storyboard/integrations/cozeStoryboardTasks"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { stories, storyOutlines, storyboards } from "@/shared/schema"
+import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
 
 const inputSchema = z.object({
   raw_script: z.string().min(1).max(80_000),

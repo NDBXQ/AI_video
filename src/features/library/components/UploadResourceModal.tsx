@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, type ReactElement } from "react"
 import { X } from "lucide-react"
 import styles from "./UploadResourceModal.module.css"
+import { getMediaDurationMsFromFile } from "@/shared/utils/mediaDuration"
 
 export type ResourceType = 'character' | 'background' | 'props' | 'audio' | 'music' | 'effect' | 'transition' | 'video'
 
@@ -53,6 +54,12 @@ export function UploadResourceModal({ open, onClose, onUpload }: UploadResourceM
       if (description.trim()) fd.append('description', description.trim())
       if (tags.trim()) fd.append('tags', tags.trim())
       if (scenes.trim()) fd.append('applicableScenes', scenes.trim())
+
+      const mediaKind = type === "audio" || type === "music" || type === "effect" ? "audio" : type === "video" || type === "transition" ? "video" : null
+      if (mediaKind) {
+        const durationMs = await getMediaDurationMsFromFile(file, mediaKind)
+        if (typeof durationMs === "number") fd.append("durationMs", String(durationMs))
+      }
 
       await onUpload(fd, {
         onProgress: (p) => setProgressPercent(p.percent),

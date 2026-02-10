@@ -3,8 +3,8 @@ import { z } from "zod"
 import { logger } from "@/shared/logger"
 import { buildSessionSetCookie } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { AuthService } from "@/server/services/authService"
-import { ServiceError } from "@/server/services/errors"
+import { AuthService } from "@/server/domains/auth/services/authService"
+import { ServiceError } from "@/server/shared/errors"
 
 const loginInputSchema = z.object({
   account: z.string().trim().min(1).max(100),

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type { StoryboardItem, Episode, ApiOutline, VideoStoryboardsResponse } from "../types"
 import { normalizeShotsToItems } from "../utils/storyboardUtils"
+import { useVideoStoryboardEvents, type VideoStoryboardEvent } from "./useVideoAssetEvents"
 
 type UseStoryboardDataProps = {
   initialItems?: StoryboardItem[]
@@ -116,15 +117,25 @@ export function useStoryboardData({ initialItems = [], storyId: initialStoryId, 
     }
   }, [activeEpisode, isInitialized, lastLoadedKey, reloadTick, storyId])
 
-  useEffect(() => {
-    const onUpdated = (e: Event) => {
-      const anyEv = e as any
-      if (!anyEv?.detail?.refreshStoryboards) return
+  const onStoryboardEvent = useCallback(
+    (ev: VideoStoryboardEvent) => {
+      if (!isInitialized) return
+      if (!storyId) return
+      if (!activeEpisode) return
+      if (ev.outlineId !== activeEpisode) return
+      void reloadShots()
+    },
+    [activeEpisode, isInitialized, reloadShots, storyId]
+  )
+
+  useVideoStoryboardEvents({
+    storyId,
+    enabled: isInitialized && Boolean(storyId),
+    onEvent: onStoryboardEvent,
+    onFallbackTick: () => {
       void reloadShots()
     }
-    window.addEventListener("video_reference_images_updated", onUpdated as any)
-    return () => window.removeEventListener("video_reference_images_updated", onUpdated as any)
-  }, [reloadShots])
+  })
 
   const updateItemById = useCallback((id: string, updater: (item: StoryboardItem) => StoryboardItem) => {
     setItems((prev) => prev.map((it) => (it.id === id ? updater(it) : it)))

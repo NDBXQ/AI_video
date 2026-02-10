@@ -1,5 +1,5 @@
 import { S3Storage } from 'coze-coding-dev-sdk';
-import { readEnv } from '@/features/coze/env';
+import { readEnv } from '@/shared/env';
 
 let s3StorageInstance: S3Storage | null = null;
 

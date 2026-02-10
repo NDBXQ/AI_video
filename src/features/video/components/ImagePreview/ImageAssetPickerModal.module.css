@@ -1,10 +1,11 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.38);
+  background: rgba(2, 6, 23, 0.68);
+  backdrop-filter: blur(12px);
   display: grid;
   place-items: center;
-  z-index: 70;
+  z-index: 90;
   padding: 18px;
 }
 
@@ -12,9 +13,10 @@
   width: min(900px, calc(100vw - 36px));
   max-height: calc(100vh - 36px);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  box-shadow: var(--theme-shadow-strong);
+  backdrop-filter: var(--theme-blur);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -26,31 +28,31 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .title {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(15, 23, 42, 0.88);
+  color: var(--theme-text-strong);
 }
 
 .closeBtn {
   width: 32px;
   height: 32px;
   border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(15, 23, 42, 0.03);
-  color: rgba(15, 23, 42, 0.86);
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--theme-text-muted);
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
 }
 
 .closeBtn:hover {
-  background: #fff;
-  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--theme-border-strong);
 }
 
 .tabs {
@@ -58,8 +60,8 @@
   align-items: center;
   gap: 6px;
   padding: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(2, 6, 23, 0.35);
   border-radius: 999px;
 }
 
@@ -68,7 +70,7 @@
   padding: 0 10px;
   border: none;
   background: transparent;
-  color: rgba(15, 23, 42, 0.62);
+  color: var(--theme-text-muted);
   font-size: 12px;
   font-weight: 900;
   cursor: pointer;
@@ -76,8 +78,8 @@
 }
 
 .tabActive {
-  color: rgba(15, 23, 42, 0.86);
-  background: rgba(109, 94, 247, 0.16);
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(109, 94, 247, 0.26);
 }
 
 .body {
@@ -99,8 +101,8 @@
 
 .tile {
   border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -108,26 +110,26 @@
   cursor: pointer;
   overflow: hidden;
   text-align: left;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--theme-shadow);
   transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .tile:hover {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: rgba(79, 70, 229, 0.35);
+  background: rgba(109, 94, 247, 0.14);
+  border-color: rgba(109, 94, 247, 0.35);
   transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+  box-shadow: var(--theme-shadow-strong);
 }
 
 .tile:disabled {
   opacity: 0.65;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--theme-shadow);
 }
 
 .tile:focus-visible {
-  outline: 2px solid rgba(79, 70, 229, 0.45);
+  outline: 2px solid rgba(109, 40, 217, 0.55);
   outline-offset: 2px;
 }
 
@@ -136,8 +138,8 @@
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid var(--theme-border);
+  background: rgba(2, 6, 23, 0.35);
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
@@ -153,13 +155,13 @@
 .thumbFallback {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(15, 23, 42, 0.06));
+  background: linear-gradient(135deg, rgba(123, 97, 255, 0.22), rgba(2, 6, 23, 0.22));
 }
 
 .tileText {
   font-size: 12px;
   font-weight: 900;
-  color: rgba(15, 23, 42, 0.82);
+  color: var(--theme-text);
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
@@ -174,16 +176,16 @@
   gap: 10px;
   padding: 10px;
   border-radius: 16px;
-  border: 1px dashed rgba(15, 23, 42, 0.18);
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .uploadBtn {
   height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(109, 94, 247, 0.65);
-  background: #4f46e5;
+  border: 1px solid rgba(109, 94, 247, 0.26);
+  background: linear-gradient(135deg, rgba(123, 97, 255, 0.95) 0%, rgba(79, 70, 229, 0.92) 100%);
   color: #fff;
   font-size: 12px;
   font-weight: 900;
@@ -193,7 +195,7 @@
 }
 
 .uploadBtn:hover {
-  background: #4338ca;
+  background: linear-gradient(135deg, rgba(123, 97, 255, 1) 0%, rgba(79, 70, 229, 0.98) 100%);
 }
 
 .uploadInput {
@@ -203,7 +205,7 @@
 .hint {
   font-size: 12px;
   font-weight: 700;
-  color: rgba(15, 23, 42, 0.55);
+  color: var(--theme-text-muted);
   min-width: 0;
 }
 
@@ -217,6 +219,6 @@
 .empty {
   font-size: 12px;
   font-weight: 800;
-  color: rgba(15, 23, 42, 0.50);
+  color: var(--theme-text-muted);
   padding: 8px 2px;
 }

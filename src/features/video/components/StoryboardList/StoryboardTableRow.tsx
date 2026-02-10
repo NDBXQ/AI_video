@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react"
 import { createPortal } from "react-dom"
+import { useRouter } from "next/navigation"
 import type { StoryboardItem } from "../../types"
 import type { ScriptGenerateState } from "../../hooks/useScriptGeneration"
 import styles from "./StoryboardTableRow.module.css"
+import tableStyles from "./StoryboardTable.module.css"
 import { createPreviewSvgDataUrl } from "../../utils/svgUtils"
 import { extractReferenceImagePrompts } from "../../utils/referenceImagePrompts"
+import { GoGenerateMenu, type GoGenerateTarget } from "./GoGenerateMenu"
 
 type StoryboardTableRowProps = {
   item: StoryboardItem
   isSelected: boolean
   generationState?: ScriptGenerateState
+  storyId?: string
+  outlineId?: string
   onSelect: (id: string) => void
   previews?: {
     role: Array<{ id: string; name: string; url: string; thumbnailUrl?: string | null; category?: string; storyboardId?: string | null; isGlobal?: boolean; description?: string | null; prompt?: string | null }>
@@ -26,10 +31,11 @@ type StoryboardTableRowProps = {
     prompt?: string | null
   ) => void
   onPickAsset?: (params: { storyboardId: string; category: "role" | "background" | "item"; title: string; entityName: string }) => void
-  onDeleteAsset?: (params: { storyboardId: string; category: "role" | "item"; name: string; imageId: string; isGlobal?: boolean }) => Promise<void> | void
+  onDeleteAsset?: (params: { storyboardId: string; category: "role" | "item"; name: string; imageId?: string | null; isGlobal?: boolean }) => Promise<void> | void
   onGenerateReferenceImages?: (storyboardId: string) => void
   refImageGenerating?: boolean
   onOpenEdit: (itemId: string, initialValue: string) => void
+  onOpenDetails: (itemId: string) => void
   onDelete: (id: string) => void
 }
 
@@ -37,6 +43,8 @@ export function StoryboardTableRow({
   item,
   isSelected,
   generationState,
+  storyId,
+  outlineId,
   onSelect,
   previews,
   onPreviewImage,
@@ -45,8 +53,10 @@ export function StoryboardTableRow({
   onGenerateReferenceImages,
   refImageGenerating,
   onOpenEdit,
+  onOpenDetails,
   onDelete
 }: StoryboardTableRowProps): ReactElement {
+  const router = useRouter()
   const [moreOpen, setMoreOpen] = useState(false)
   const [moreKind, setMoreKind] = useState<"role" | "background" | "item">("background")
   const [moreLabel, setMoreLabel] = useState("")
@@ -55,11 +65,13 @@ export function StoryboardTableRow({
   >([])
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [confirmTarget, setConfirmTarget] = useState<{ category: "role" | "item"; name: string; imageId: string; isGlobal?: boolean } | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<{ category: "role" | "item"; name: string; imageId?: string | null; isGlobal?: boolean } | null>(null)
+  const [goGenerateOpen, setGoGenerateOpen] = useState(false)
+  const [goGenerateAnchorRect, setGoGenerateAnchorRect] = useState<DOMRect | null>(null)
   const canPortal = typeof document !== "undefined"
   const isPlaceholderId = useCallback((id: string) => id.startsWith("placeholder:"), [])
   const requestDelete = useCallback(
-    (p: { category: "role" | "item"; name: string; imageId: string; isGlobal?: boolean }) => {
+    (p: { category: "role" | "item"; name: string; imageId?: string | null; isGlobal?: boolean }) => {
       if (!onDeleteAsset) return
       if (deletingImageId) return
       setConfirmTarget(p)
@@ -72,7 +84,8 @@ export function StoryboardTableRow({
     if (!onDeleteAsset) return
     if (!confirmTarget) return
     if (deletingImageId) return
-    setDeletingImageId(confirmTarget.imageId)
+    const key = (confirmTarget.imageId ?? `placeholder:${confirmTarget.category}:${confirmTarget.name}`).trim()
+    setDeletingImageId(key)
     try {
       await onDeleteAsset({
         storyboardId: item.id,
@@ -222,7 +235,7 @@ export function StoryboardTableRow({
     return (
       <div className={styles.previewStack}>
         {visible.map((img) => {
-          const canDelete = !isPlaceholderId(img.id) && kind !== "background"
+          const canDelete = Boolean(onDeleteAsset) && kind !== "background"
           return (
             <div key={img.id} className={styles.previewThumbWrap}>
               <button
@@ -252,7 +265,12 @@ export function StoryboardTableRow({
                   disabled={Boolean(deletingImageId)}
                   onClick={(e) => {
                     e.stopPropagation()
-                    requestDelete({ category: kind === "role" ? "role" : "item", name: img.name, imageId: img.id, isGlobal: img.isGlobal })
+                    requestDelete({
+                      category: kind === "role" ? "role" : "item",
+                      name: img.name,
+                      imageId: isPlaceholderId(img.id) ? null : img.id,
+                      isGlobal: img.isGlobal
+                    })
                   }}
                 >
                   ×
@@ -289,38 +307,114 @@ export function StoryboardTableRow({
   }
 
   const moreTitle = useMemo(() => `镜头 ${item.scene_no} · ${moreLabel}素材`, [item.scene_no, moreLabel])
+  const goGenerateMenuId = useMemo(() => `go-generate-menu-${item.id}`, [item.id])
+
+  const firstFrameDisplaySrc = useMemo(() => {
+    const thumb = (item.frames?.first?.thumbnailUrl ?? "").trim()
+    const url = (item.frames?.first?.url ?? "").trim()
+    return thumb || url
+  }, [item.frames])
+
+  const firstFramePreviewSrc = useMemo(() => {
+    const url = (item.frames?.first?.url ?? "").trim()
+    const thumb = (item.frames?.first?.thumbnailUrl ?? "").trim()
+    return url || thumb
+  }, [item.frames])
+
+  const lastFrameDisplaySrc = useMemo(() => {
+    const thumb = (item.frames?.last?.thumbnailUrl ?? "").trim()
+    const url = (item.frames?.last?.url ?? "").trim()
+    return thumb || url
+  }, [item.frames])
+
+  const lastFramePreviewSrc = useMemo(() => {
+    const url = (item.frames?.last?.url ?? "").trim()
+    const thumb = (item.frames?.last?.thumbnailUrl ?? "").trim()
+    return url || thumb
+  }, [item.frames])
+
+  const buildGoGenerateUrl = useCallback(
+    (target: GoGenerateTarget) => {
+      const qs = new URLSearchParams({ storyboardId: item.id, sceneNo: String(item.scene_no) })
+      if (storyId) qs.set("storyId", storyId)
+      if (outlineId) qs.set("outlineId", outlineId)
+      return `/video/${target}?${qs.toString()}`
+    },
+    [item.id, item.scene_no, outlineId, storyId]
+  )
+
+  const handleGoGenerateSelect = useCallback(
+    (target: GoGenerateTarget) => {
+      router.push(buildGoGenerateUrl(target))
+    },
+    [buildGoGenerateUrl, router]
+  )
 
   return (
     <>
       <tr>
-        <td className={styles.colCheckbox}>
+        <td className={tableStyles.colCheckbox}>
           <input type="checkbox" checked={isSelected} onChange={() => onSelect(item.id)} />
         </td>
-        <td className={styles.colNo}>
+        <td className={tableStyles.colNo}>
           <span className={styles.sceneNo}>{item.scene_no}</span>
         </td>
-        <td className={styles.colVisual}>
+        <td className={tableStyles.colVisual}>
           <div className={styles.visualContent}>
             {item.storyboard_text ? <div className={styles.storyboardText}>{item.storyboard_text}</div> : null}
             {hintText ? <div className={`${styles.scriptHint} ${hintToneClass}`}>{hintText}</div> : null}
           </div>
         </td>
-        <td className={styles.colRole}>
+        <td className={tableStyles.colRole}>
           {renderPreviewStack(previews?.role ?? [], "role", "角色")}
         </td>
-        <td className={styles.colBackground}>
+        <td className={tableStyles.colBackground}>
           {renderPreviewStack(previews?.background ?? [], "background", "背景")}
         </td>
-        <td className={styles.colItems}>
+        <td className={tableStyles.colItems}>
           {renderPreviewStack(previews?.item ?? [], "item", "物品")}
         </td>
-        <td className={styles.colActions}>
+        <td className={tableStyles.colFrames}>
+          <div className={styles.frameCell}>
+            {firstFrameDisplaySrc ? (
+              <button
+                type="button"
+                className={styles.frameThumb}
+                aria-label={`预览镜头 ${item.scene_no} 首帧`}
+                title="首帧"
+                onClick={() =>
+                  onPreviewImage(`镜头 ${item.scene_no} · 首帧`, firstFramePreviewSrc, undefined, item.id, null, null, item.frames?.first?.prompt ?? null)
+                }
+              >
+                <img className={styles.frameImg} src={firstFrameDisplaySrc} alt="" />
+                <div className={styles.frameBadge}>首</div>
+              </button>
+            ) : null}
+            {lastFrameDisplaySrc ? (
+              <button
+                type="button"
+                className={styles.frameThumb}
+                aria-label={`预览镜头 ${item.scene_no} 尾帧`}
+                title="尾帧"
+                onClick={() =>
+                  onPreviewImage(`镜头 ${item.scene_no} · 尾帧`, lastFramePreviewSrc, undefined, item.id, null, null, item.frames?.last?.prompt ?? null)
+                }
+              >
+                <img className={styles.frameImg} src={lastFrameDisplaySrc} alt="" />
+                <div className={styles.frameBadge}>尾</div>
+              </button>
+            ) : null}
+            {!firstFrameDisplaySrc && !lastFrameDisplaySrc ? <div className={styles.frameEmpty} /> : null}
+          </div>
+        </td>
+        <td className={tableStyles.colActions}>
           <div className={styles.actionGroup}>
             <button
               type="button"
               className={styles.actionBtn}
-              title="预览"
-              onClick={() => onOpenEdit(item.id, item.storyboard_text ?? "")}
+              title="分镜详情"
+              aria-label="分镜详情"
+              onClick={() => onOpenDetails(item.id)}
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -335,9 +429,9 @@ export function StoryboardTableRow({
             <button
               type="button"
               className={styles.actionBtn}
-              title={refImageGenerating ? "参考图生成中…" : "生成参考图"}
+              title={!storyId ? "缺少 storyId，无法生成参考图" : refImageGenerating ? "参考图生成中…" : "生成参考图"}
               aria-label="生成参考图"
-              disabled={Boolean(refImageGenerating) || !onGenerateReferenceImages}
+              disabled={!storyId || Boolean(refImageGenerating) || !onGenerateReferenceImages}
               onClick={() => onGenerateReferenceImages?.(item.id)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -349,6 +443,34 @@ export function StoryboardTableRow({
                 />
                 <path d="M8 14l2-2 2 2 3-3 3 3" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                 <path d="M8.5 9.5h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={styles.actionBtn}
+              title="去生成"
+              aria-label="去生成"
+              aria-haspopup="menu"
+              aria-expanded={goGenerateOpen}
+              aria-controls={goGenerateMenuId}
+              onClick={(e) => {
+                setGoGenerateAnchorRect(e.currentTarget.getBoundingClientRect())
+                setGoGenerateOpen(true)
+              }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v12m6-6H6"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 5l-1.2 2.8L15 9l2.8 1.2L19 13l1.2-2.8L23 9l-2.8-1.2L19 5Z"
+                />
               </svg>
             </button>
             <button className={`${styles.actionBtn} ${styles.deleteBtn}`} onClick={() => onDelete(item.id)} title="删除">
@@ -364,6 +486,13 @@ export function StoryboardTableRow({
           </div>
         </td>
       </tr>
+      <GoGenerateMenu
+        open={goGenerateOpen}
+        menuId={goGenerateMenuId}
+        anchorRect={goGenerateAnchorRect}
+        onClose={() => setGoGenerateOpen(false)}
+        onSelect={handleGoGenerateSelect}
+      />
       {canPortal && moreOpen
         ? createPortal(
             <div
@@ -386,7 +515,7 @@ export function StoryboardTableRow({
                 </div>
                 <div className={styles.moreGrid} aria-label="素材列表">
                   {moreList.map((img) => {
-                    const canDelete = !isPlaceholderId(img.id) && moreKind !== "background"
+                    const canDelete = Boolean(onDeleteAsset) && moreKind !== "background"
                     return (
                       <div key={img.id} className={styles.moreItemWrap}>
                         <button
@@ -419,7 +548,12 @@ export function StoryboardTableRow({
                             disabled={Boolean(deletingImageId)}
                             onClick={(e) => {
                               e.stopPropagation()
-                              requestDelete({ category: moreKind === "role" ? "role" : "item", name: img.name, imageId: img.id, isGlobal: img.isGlobal })
+                              requestDelete({
+                                category: moreKind === "role" ? "role" : "item",
+                                name: img.name,
+                                imageId: isPlaceholderId(img.id) ? null : img.id,
+                                isGlobal: img.isGlobal
+                              })
                             }}
                           >
                             ×

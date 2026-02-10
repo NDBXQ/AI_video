@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react"
+import { createPortal } from "react-dom"
 import styles from "./ImageAssetPickerModal.module.css"
 
 type TabKey = "library" | "script"
@@ -240,8 +241,8 @@ export function ImageAssetPickerModal({
   )
 
   if (!open) return null
-
-  return (
+  const canPortal = typeof document !== "undefined"
+  const content = (
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="选择素材">
         <div className={styles.header}>
@@ -337,4 +338,5 @@ export function ImageAssetPickerModal({
       </div>
     </div>
   )
+  return canPortal ? createPortal(content, document.body) : content
 }

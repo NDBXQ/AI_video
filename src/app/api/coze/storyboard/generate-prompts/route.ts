@@ -7,8 +7,8 @@ import { callCozeRunEndpoint } from "@/features/coze/runEndpointClient"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
-import { storyboards } from "@/shared/schema"
-import { mergeStoryboardFrames, mergeStoryboardVideoInfo } from "@/server/services/storyboardAssets"
+import { storyboards } from "@/shared/schema/story"
+import { mergeStoryboardFrames, mergeStoryboardVideoInfo } from "@/server/shared/storyboard/storyboardAssets"
 
 const inputSchema = z.object({
   storyboardId: z.string().min(1)

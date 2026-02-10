@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { kickAllWorkers } from "@/server/jobs/kickWorkers"
-import { listJobsByStory } from "@/server/jobs/jobDb"
+import { kickAllWorkers } from "@/server/framework/jobs/kickWorkers"
+import { listJobsByStory } from "@/server/framework/jobs/jobDb"
 
 export async function GET(req: NextRequest): Promise<Response> {
   const traceId = getTraceId(req.headers)
@@ -24,4 +24,3 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   return NextResponse.json(makeApiOk(traceId, { jobs }), { status: 200 })
 }
-

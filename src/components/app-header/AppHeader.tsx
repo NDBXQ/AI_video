@@ -8,6 +8,7 @@ import { createPortal } from "react-dom"
 import { CircleHelp, Home, Library, ListChecks, LogIn, LogOut, NotebookPen, RotateCw, Shield, UserRound, Video, X } from "lucide-react"
 import { appNavItems } from "@/shared/navigation"
 import { useActiveJobs } from "@/features/video/hooks/useActiveJobs"
+import { EmptyState } from "@/components/empty-state/EmptyState"
 import styles from "./AppHeader.module.css"
 
 type MeResult =
@@ -155,7 +156,14 @@ export function AppHeader({ variant = "app", autoHide }: AppHeaderProps): ReactE
               </div>
 
               {!activeStoryId ? (
-                <div className={styles.taskEmpty}>打开一个故事后，这里会展示生成进度与任务状态。</div>
+                <EmptyState
+                  size="inline"
+                  title="暂时还没有可展示的任务"
+                  description="先打开一个故事（项目），生成素材后这里会展示进度与失败原因。"
+                  primaryAction={{ label: "去内容库", href: "/library" }}
+                  secondaryAction={{ label: "去创作剧本", href: "/script/workspace?mode=brief" }}
+                  learnHref="/help?topic=task-center"
+                />
               ) : (
                 <>
                   <div className={styles.taskMeta}>
@@ -171,7 +179,13 @@ export function AppHeader({ variant = "app", autoHide }: AppHeaderProps): ReactE
 
                   <div className={styles.taskList}>
                     {jobs.length === 0 ? (
-                      <div className={styles.taskEmpty}>当前没有进行中的任务。</div>
+                      <EmptyState
+                        size="inline"
+                        title="当前没有进行中的任务"
+                        description="你可以在分镜表里发起生成，这里会自动跟踪进度。"
+                        primaryAction={{ label: "打开分镜表", href: `/video?tab=list&storyId=${encodeURIComponent(activeStoryId)}` }}
+                        learnHref="/help?topic=task-center"
+                      />
                     ) : (
                       jobs.map((j) => {
                         const stage = typeof (j.snapshot as any)?.stage === "string" ? String((j.snapshot as any).stage) : ""

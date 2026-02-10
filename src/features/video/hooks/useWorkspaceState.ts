@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import type { StoryboardItem } from "@/features/video/types"
-import { uniqueStrings } from "../utils/previewUtils"
+import { uniqueStrings } from "@/shared/utils/previewUtils"
 
 type AddModalState = {
   open: boolean

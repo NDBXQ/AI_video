@@ -8,11 +8,13 @@ import { ImageAssetPickerModal } from "./ImagePreview/ImageAssetPickerModal"
 
 type ImagePreviewModalProps = {
   open: boolean
+  uiMode?: "default" | "tvc_info"
   title: string
   imageSrc: string
   generatedImageId?: string
   storyId?: string | null
   storyboardId?: string | null
+  tvcAsset?: { storyId: string; kind: "reference_image" | "first_frame"; ordinal: number; publicType?: "character" | "background" | "props" } | null
   category?: string | null
   frameKind?: "first" | "last" | null
   description?: string | null
@@ -23,11 +25,13 @@ type ImagePreviewModalProps = {
 
 export function ImagePreviewModal({
   open,
+  uiMode = "default",
   title,
   imageSrc,
   generatedImageId,
   storyId,
   storyboardId,
+  tvcAsset,
   category,
   frameKind,
   description,
@@ -36,15 +40,18 @@ export function ImagePreviewModal({
   onClose
 }: ImagePreviewModalProps): ReactElement | null {
   if (!open) return null
-  const modalKey = [title, imageSrc, generatedImageId, storyboardId, frameKind].filter(Boolean).join("|")
+  const tvcKey = tvcAsset ? `${tvcAsset.storyId}_${tvcAsset.kind}_${tvcAsset.ordinal}` : ""
+  const modalKey = [uiMode, title, imageSrc, generatedImageId, storyboardId, frameKind, tvcKey].filter(Boolean).join("|")
   return (
     <ImagePreviewModalInner
       key={modalKey}
+      uiMode={uiMode}
       title={title}
       imageSrc={imageSrc}
       generatedImageId={generatedImageId}
       storyId={storyId}
       storyboardId={storyboardId}
+      tvcAsset={tvcAsset}
       category={category}
       frameKind={frameKind}
       description={description}
@@ -56,11 +63,13 @@ export function ImagePreviewModal({
 }
 
 function ImagePreviewModalInner({
+  uiMode,
   title,
   imageSrc,
   generatedImageId,
   storyId,
   storyboardId,
+  tvcAsset,
   category,
   frameKind,
   description,
@@ -83,7 +92,7 @@ function ImagePreviewModalInner({
     open,
     imageSize,
     frameRef,
-    disabled: false
+    disabled: uiMode === "tvc_info"
   })
 
   useEffect(() => {
@@ -118,7 +127,7 @@ function ImagePreviewModalInner({
           currentSrc={currentSrc}
           imageSize={imageSize}
           frameRef={frameRef}
-          canEdit={selection.canEdit}
+          canEdit={uiMode !== "tvc_info" && selection.canEdit}
           isEditing={selection.isEditing}
           setIsEditing={selection.setIsEditing}
           confirmedRect={selection.confirmedRect}
@@ -139,18 +148,23 @@ function ImagePreviewModalInner({
 
         <SidePanel
           open={open}
+          uiMode={uiMode}
           title={currentEntityName}
           metaTitle={currentMetaTitle}
           description={description}
           metaDescription={currentMetaDescription}
           prompt={prompt}
           storyboardId={storyboardId ?? null}
+          tvcAsset={tvcAsset ?? null}
           category={category ?? null}
           frameKind={frameKind ?? null}
           currentSrc={currentSrc}
           setCurrentSrc={setCurrentSrc}
           currentGeneratedImageId={currentGeneratedImageId}
           setCurrentGeneratedImageId={setCurrentGeneratedImageId}
+          setCurrentEntityName={setCurrentEntityName}
+          setCurrentMetaTitle={setCurrentMetaTitle}
+          setCurrentMetaDescription={setCurrentMetaDescription}
           isEditing={selection.isEditing}
           confirmedRect={selection.confirmedRect}
           setConfirmedRect={selection.setConfirmedRect}

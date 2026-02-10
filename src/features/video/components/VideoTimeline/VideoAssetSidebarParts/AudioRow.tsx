@@ -1,6 +1,6 @@
 import type { ReactElement } from "react"
 import audioStyles from "../VideoAssetSidebarAudio.module.css"
-import { ASSET_MIME } from "../../../utils/timelineUtils"
+import { ASSET_MIME } from "@/shared/utils/timelineUtils"
 
 export function AudioRow({
   id,

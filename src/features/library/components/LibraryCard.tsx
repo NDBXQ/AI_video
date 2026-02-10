@@ -2,22 +2,9 @@ import type { ReactElement } from "react"
 import { Pencil, Film, FileText, Image as ImageIcon, Eye, Music, LayoutGrid } from "lucide-react"
 import Image from "next/image"
 import styles from "./LibraryCard.module.css"
-import type { StoryMetadata } from "@/features/video/types/story"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 
-export interface LibraryItem {
-  id: string
-  title: string
-  type: "draft" | "video" | "storyboard" | "material" | "tvc"
-  updatedAt?: string
-  subtitle?: string
-  thumbnail?: string
-  originalUrl?: string
-  specs?: string // e.g. "4:3 480p"
-  scope?: "my" | "public" | "library" | "shared"
-  publicCategory?: string
-  metadata?: StoryMetadata
-  progressStage?: string
-}
+export type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 
 interface LibraryCardProps {
   item: LibraryItem
@@ -30,7 +17,7 @@ interface LibraryCardProps {
 
 export function LibraryCard({ item, view, onClick, selected, onToggleSelected, onViewContent }: LibraryCardProps): ReactElement {
   const variant = item.scope === "public" ? "library" : item.scope ?? "my"
-  const isList = view === "list"
+  const showMyCheckbox = variant === "my" && Boolean(onToggleSelected)
 
   const previewUrl = item.thumbnail
   const previewKind = (() => {
@@ -51,6 +38,8 @@ export function LibraryCard({ item, view, onClick, selected, onToggleSelected, o
     if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".m4a") || lower.endsWith(".aac") || lower.endsWith(".ogg")) return "audio"
     return "unknown"
   })()
+  const isAudio = previewKind === "audio"
+  const isList = view === "list" || isAudio
 
   const isStablePublicResourceUrl = Boolean(
     previewUrl?.startsWith("/api/library/public-resources/file/") || previewUrl?.startsWith("/api/library/shared-resources/file/")
@@ -87,10 +76,12 @@ export function LibraryCard({ item, view, onClick, selected, onToggleSelected, o
 
   return (
     <div 
-      className={`${styles.card} ${isList ? styles.cardList : ""}`} 
+      className={`${styles.card} ${isList ? styles.cardList : ""} ${isAudio ? styles.cardAudioFlat : ""}`} 
       onClick={onClick}
     >
-      <div className={styles.preview}>
+      <div
+        className={`${styles.preview} ${previewKind === "audio" ? styles.previewAudio : ""} ${previewKind === "video" ? styles.previewVideo : ""}`}
+      >
         {previewUrl && previewKind === "image" ? (
           <Image
             src={previewUrl}
@@ -101,11 +92,11 @@ export function LibraryCard({ item, view, onClick, selected, onToggleSelected, o
             unoptimized={isStablePublicResourceUrl}
           />
         ) : previewUrl && previewKind === "video" ? (
-          <div className={styles.placeholder}>
+          <div className={`${styles.placeholder} ${styles.placeholderVideo}`}>
             <Film size={isList ? 24 : 32} strokeWidth={1.5} />
           </div>
         ) : previewUrl && previewKind === "audio" ? (
-          <div className={styles.placeholder}>
+          <div className={`${styles.placeholder} ${styles.placeholderAudio}`}>
             <Music size={isList ? 24 : 32} strokeWidth={1.5} />
           </div>
         ) : (
@@ -130,14 +121,14 @@ export function LibraryCard({ item, view, onClick, selected, onToggleSelected, o
         
         {variant === "my" ? (
           <>
-            <div className={styles.typeTag} title={`progressStage: ${item.progressStage ?? ""}`}>
+            <div className={`${styles.typeTag} ${showMyCheckbox ? styles.typeTagShift : ""}`} title={`progressStage: ${item.progressStage ?? ""}`}>
               <TypeIcon size={12} strokeWidth={2} />
               <span className={styles.typeTagText}>
                 {item.type === "tvc" ? "类型：TVC" : stageLabel ? `阶段：${stageLabel}` : ""}
               </span>
             </div>
             {item.specs ? <div className={styles.specTag}>{item.specs}</div> : null}
-            {item.type === "storyboard" ? (
+            {showMyCheckbox ? (
               <input
                 type="checkbox"
                 className={styles.checkbox}

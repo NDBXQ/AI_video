@@ -11,17 +11,20 @@
 
   width: 100%;
   flex: 1;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100%;
+  max-height: none;
   min-height: 0;
-  border-radius: 0;
+  border-radius: var(--theme-radius);
   overflow: hidden;
-  border: 0;
-  box-shadow: none;
-  background: transparent;
+  border: 1px solid var(--theme-border);
+  box-shadow: var(--theme-shadow);
+  background: var(--theme-surface);
+  backdrop-filter: var(--theme-blur);
   color: var(--text-main);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
   position: relative;
 }
 
@@ -115,8 +118,8 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: hidden;
-  padding: 8px 12px 20px;
-  gap: 8px;
+  padding: 0;
+  gap: 12px;
   background: transparent;
   height: 100%;
 }
@@ -124,12 +127,12 @@
 .workspaceWrap {
   min-height: 0;
   display: flex;
-  border-radius: 14px;
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid var(--theme-border);
-  background: var(--theme-surface);
-  box-shadow: var(--theme-shadow);
-  backdrop-filter: var(--theme-blur);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
   flex: 1;
   height: 100%;
 }

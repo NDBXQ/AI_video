@@ -5,6 +5,7 @@ type Props = {
   onBack: () => void
   activeTab: "image" | "video"
   onTabChange: (tab: "image" | "video") => void
+  episodeLabel?: string | null
   sceneNo: number
   info: { label: string; value: string }[]
   recommendedStoryboardMode?: "首帧" | "首尾帧" | null
@@ -12,19 +13,22 @@ type Props = {
   canNextScene?: boolean
   onPrevScene?: () => void
   onNextScene?: () => void
+  mobileActions?: ReactElement | null
 }
 
 export function GenerationHeader({
   onBack,
   activeTab,
   onTabChange,
+  episodeLabel,
   sceneNo,
   info,
   recommendedStoryboardMode,
   canPrevScene,
   canNextScene,
   onPrevScene,
-  onNextScene
+  onNextScene,
+  mobileActions
 }: Props): ReactElement {
   return (
     <header className={styles.topBar}>
@@ -33,7 +37,7 @@ export function GenerationHeader({
           返回
         </button>
         <span className={`${styles.modeBadge} ${styles.modePill}`} aria-label="推荐模式">
-          ✨ 推荐模式：{recommendedStoryboardMode ? `${recommendedStoryboardMode}` : "未生成"}
+          推荐模式：{recommendedStoryboardMode ? `${recommendedStoryboardMode}` : "未生成"}
         </span>
       </div>
       <div className={styles.modeTabs} role="tablist" aria-label="生成类型切换">
@@ -59,6 +63,7 @@ export function GenerationHeader({
         </button>
       </div>
       <div className={styles.rightInfo}>
+        {mobileActions ? <div className={styles.mobileOnly}>{mobileActions}</div> : null}
         <div className={styles.sceneNav}>
           <button
             type="button"
@@ -70,6 +75,7 @@ export function GenerationHeader({
           >
             上一镜
           </button>
+          {episodeLabel ? <span className={styles.pill}>{episodeLabel}</span> : null}
           <span className={styles.pill}>镜号：{sceneNo}</span>
           <button
             type="button"

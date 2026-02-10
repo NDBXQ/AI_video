@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import type { StoryboardItem } from "@/features/video/types"
 import type { VideoAssetGroup } from "../../components/VideoTimeline/VideoAssetSidebar"
-import type { TimelineSegment } from "../../utils/mediaPreviewUtils"
+import type { TimelineSegment } from "@/shared/utils/mediaPreviewUtils"
 
 export function useTimelineSegments(params: {
   activeTab: "image" | "video"

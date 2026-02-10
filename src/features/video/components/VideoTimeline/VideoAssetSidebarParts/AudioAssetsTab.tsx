@@ -1,8 +1,11 @@
 import type { ReactElement } from "react"
 import layoutStyles from "../VideoAssetSidebarLayout.module.css"
 import audioStyles from "../VideoAssetSidebarAudio.module.css"
-import type { Asset, AudioAsset } from "../../../utils/timelineUtils"
+import type { Asset, AudioAsset } from "@/shared/utils/timelineUtils"
 import { AudioRow } from "./AudioRow"
+import { CollapsibleSplitBlock } from "./CollapsibleSplitBlock"
+import { buildCollapsedStorageKey, writeCollapsedState } from "./collapseStorage"
+import { useCollapsedPreference } from "./useCollapsedPreference"
 
 export function AudioAssetsTab({
   scriptAudioAssets,
@@ -15,34 +18,40 @@ export function AudioAssetsTab({
   onUploadAudio: (file: File) => void
   onOpenPreview: (asset: Asset) => void
 }): ReactElement {
+  const scriptKey = buildCollapsedStorageKey({ tab: "audio", block: "script" })
+  const libraryKey = buildCollapsedStorageKey({ tab: "audio", block: "library" })
+  const scriptCollapsed = useCollapsedPreference(scriptKey, false)
+  const libraryCollapsed = useCollapsedPreference(libraryKey, true)
   return (
     <div className={layoutStyles.tabBody} aria-label="音频素材">
-      <div className={layoutStyles.splitBlock} aria-label="脚本音频">
-        <div className={layoutStyles.splitLabel}>脚本</div>
-        <div className={layoutStyles.splitContent}>
-          {scriptAudioAssets.length > 0 ? (
-            <>
-              <div className={layoutStyles.sectionHeader}>
-                <div className={layoutStyles.assetSectionTitle}>音频</div>
-                <div className={layoutStyles.groupMeta}>{scriptAudioAssets.length} 条</div>
-              </div>
-              <div className={audioStyles.audioList}>
-                {scriptAudioAssets.map((a) => (
-                  <AudioRow key={a.id} id={a.id} name={a.name} src={a.src} content={a.content} draggableAsset={a as any} onOpenPreview={onOpenPreview as any} />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className={layoutStyles.emptyHint}>暂无脚本音频</div>
-          )}
-        </div>
-      </div>
+      <CollapsibleSplitBlock
+        ariaLabel="脚本音频"
+        label="脚本"
+        title="音频"
+        headerActions={<div className={layoutStyles.groupMeta}>{scriptAudioAssets.length} 条</div>}
+        collapsed={scriptCollapsed}
+        contentId="audio_script_assets"
+        onToggle={() => {
+          writeCollapsedState(scriptKey, !scriptCollapsed)
+        }}
+      >
+        {scriptAudioAssets.length > 0 ? (
+          <div className={audioStyles.audioList}>
+            {scriptAudioAssets.map((a) => (
+              <AudioRow key={a.id} id={a.id} name={a.name} src={a.src} content={a.content} draggableAsset={a as any} onOpenPreview={onOpenPreview as any} />
+            ))}
+          </div>
+        ) : (
+          <div className={layoutStyles.emptyHint}>暂无脚本音频</div>
+        )}
+      </CollapsibleSplitBlock>
 
-      <div className={layoutStyles.splitBlock} aria-label="素材库音频">
-        <div className={layoutStyles.splitLabel}>素材库</div>
-        <div className={layoutStyles.splitContent}>
-          <div className={layoutStyles.sectionHeader}>
-            <div className={layoutStyles.assetSectionTitle}>音频</div>
+      <CollapsibleSplitBlock
+        ariaLabel="素材库音频"
+        label="素材库"
+        title="音频"
+        headerActions={
+          <>
             <div className={layoutStyles.groupMeta}>{audioAssets.length} 条</div>
             <label className={layoutStyles.uploadBtn}>
               <input
@@ -58,16 +67,22 @@ export function AudioAssetsTab({
               />
               添加
             </label>
-          </div>
-          <div className={audioStyles.audioList}>
-            {audioAssets.length > 0 ? (
-              audioAssets.map((a) => <AudioRow key={a.id} id={a.id} name={a.name} src={a.src} draggableAsset={a} onOpenPreview={onOpenPreview as any} />)
-            ) : (
-              <div className={layoutStyles.emptyHint}>暂无素材库音频</div>
-            )}
-          </div>
+          </>
+        }
+        collapsed={libraryCollapsed}
+        contentId="audio_library_assets"
+        onToggle={() => {
+          writeCollapsedState(libraryKey, !libraryCollapsed)
+        }}
+      >
+        <div className={audioStyles.audioList}>
+          {audioAssets.length > 0 ? (
+            audioAssets.map((a) => <AudioRow key={a.id} id={a.id} name={a.name} src={a.src} draggableAsset={a} onOpenPreview={onOpenPreview as any} />)
+          ) : (
+            <div className={layoutStyles.emptyHint}>暂无素材库音频</div>
+          )}
         </div>
-      </div>
+      </CollapsibleSplitBlock>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
-import { getDb } from "coze-coding-dev-sdk"
-import { stories } from "@/shared/schema"
+import { getDb } from "@/server/db/getDb"
+import { stories } from "@/shared/schema/story"
 import { logger } from "@/shared/logger"
 import type { StoryMetadata, StoryProgressStage, StoryStatus, StageState, StageStatusDetail } from "../types/story"
 

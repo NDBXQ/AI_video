@@ -1,21 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
-import { and, eq } from "drizzle-orm"
-import { getDb } from "coze-coding-dev-sdk"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { readEnv, readEnvInt } from "@/features/coze/env"
-import { callCozeRunEndpoint } from "@/features/coze/runEndpointClient"
 import { logger } from "@/shared/logger"
-import { tvcStories } from "@/shared/schema"
-import { ensureTvcSchema } from "@/server/db/ensureTvcSchema"
+import { editTvcProjectVideo } from "@/server/domains/tvc/usecases/videoEdit"
 
 export const runtime = "nodejs"
 
-const urlSchema = z.string().trim().max(5_000).refine((v) => v.startsWith("http"), {
-  message: "url 必须是 http(s)"
-})
+const STABLE_PUBLIC_RESOURCE_PREFIX = "/api/library/public-resources/file/"
+const STABLE_GENERATED_AUDIO_PREFIX = "/api/video-creation/audios/file/"
+
+const urlSchema = z
+  .string()
+  .trim()
+  .max(5_000)
+  .refine((v) => v.startsWith("http") || v.startsWith(STABLE_PUBLIC_RESOURCE_PREFIX) || v.startsWith(STABLE_GENERATED_AUDIO_PREFIX), {
+    message: "url 必须是 http(s) 或稳定资源路径"
+  })
 
 const videoItemSchema = z
   .object({
@@ -40,22 +42,12 @@ const inputSchema = z.object({
   audio_config_list: z.array(audioItemSchema).default([])
 })
 
-const outputSchema = z
-  .object({
-    output_video_url: z.string().trim().url().max(5_000).optional(),
-    final_video_url: z.string().trim().url().max(5_000).optional(),
-    video_meta: z.unknown().optional()
-  })
-  .refine((v) => Boolean(v.output_video_url || v.final_video_url), { message: "缺少 output_video_url / final_video_url" })
-
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
   const traceId = getTraceId(req.headers)
 
   const session = await getSessionFromRequest(req)
   const userId = session?.userId
   if (!userId) return NextResponse.json(makeApiErr(traceId, "AUTH_REQUIRED", "未登录或登录已过期"), { status: 401 })
-
-  await ensureTvcSchema()
 
   const rawParams = await ctx.params
   const storyId = (rawParams?.id ?? "").trim()
@@ -71,15 +63,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const parsed = inputSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "参数格式不正确"), { status: 400 })
 
-  const token = readEnv("COZE_VIDEO_EDIT_API_TOKEN")
-  const url = readEnv("VIDEO_EDIT_API_URL") ?? "https://h4y9qnk5qt.coze.site/run"
-  if (!token) return NextResponse.json(makeApiErr(traceId, "COZE_NOT_CONFIGURED", "未配置 COZE_VIDEO_EDIT_API_TOKEN"), { status: 500 })
-  const timeoutMs = readEnvInt("REQUEST_TIMEOUT_MS") ?? 120_000
-
-  const db = await getDb({ tvcStories })
-  const allowed = await db.select({ id: tvcStories.id, userId: tvcStories.userId }).from(tvcStories).where(eq(tvcStories.id, storyId)).limit(1)
-  if (!allowed[0] || allowed[0].userId !== userId) return NextResponse.json(makeApiErr(traceId, "NOT_FOUND", "项目不存在"), { status: 404 })
-
   const startedAt = performance.now()
   logger.info({
     event: "tvc_video_edit_start",
@@ -91,55 +74,25 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     audioClips: parsed.data.audio_config_list.length
   })
 
-  try {
-    const coze = await callCozeRunEndpoint({
-      traceId,
-      url,
-      token,
-      timeoutMs,
-      module: "video-edit",
-      body: {
-        video_config_list: parsed.data.video_config_list,
-        audio_config_list: parsed.data.audio_config_list
-      }
-    })
-
-    const normalized = outputSchema.safeParse(coze.data)
-    if (!normalized.success) {
-      logger.warn({
-        event: "tvc_video_edit_invalid_response",
-        module: "tvc",
-        traceId,
-        message: "剪辑接口返回格式不符合预期",
-        durationMs: Math.round(performance.now() - startedAt)
-      })
-      return NextResponse.json(makeApiErr(traceId, "VIDEO_EDIT_INVALID_RESPONSE", "剪辑接口返回格式不符合预期"), { status: 502 })
-    }
-
-    const resultUrl = (normalized.data.output_video_url ?? normalized.data.final_video_url ?? "").trim()
-    await db
-      .update(tvcStories)
-      .set({ finalVideoUrl: resultUrl, updatedAt: new Date(), progressStage: "done" })
-      .where(and(eq(tvcStories.id, storyId), eq(tvcStories.userId, userId)))
-      .returning({ id: tvcStories.id })
-
-    logger.info({
-      event: "tvc_video_edit_success",
+  const origin = req.nextUrl.origin
+  const res = await editTvcProjectVideo({
+    traceId,
+    userId,
+    storyId,
+    origin,
+    video_config_list: parsed.data.video_config_list,
+    audio_config_list: parsed.data.audio_config_list
+  })
+  if (!res.ok) {
+    logger.warn({
+      event: "tvc_video_edit_failed",
       module: "tvc",
       traceId,
-      message: "TVC 视频剪辑合成成功",
-      durationMs: Math.round(performance.now() - startedAt)
+      message: "TVC 视频剪辑合成失败",
+      durationMs: Math.round(performance.now() - startedAt),
+      code: res.code
     })
-
-    return NextResponse.json(makeApiOk(traceId, { finalVideoUrl: resultUrl }), { status: 200 })
-  } catch (e) {
-    logger.error({
-      event: "tvc_video_edit_error",
-      module: "tvc",
-      traceId,
-      message: "TVC 视频剪辑合成异常"
-    })
-    return NextResponse.json(makeApiErr(traceId, "VIDEO_EDIT_FAILED", "剪辑失败，请稍后重试"), { status: 500 })
+    return NextResponse.json(makeApiErr(traceId, res.code, res.message), { status: res.status })
   }
+  return NextResponse.json(makeApiOk(traceId, { finalVideoUrl: res.finalVideoUrl }), { status: 200 })
 }
-

@@ -6,6 +6,7 @@ import styles from "./ImageParamsSidebar.module.css"
 import { ChipWithThumb } from "./ImageParamsSidebarParts/ChipWithThumb"
 import { ChipGroup } from "./ImageParamsSidebarParts/ChipGroup"
 import { LastFrameModal } from "./ImageParamsSidebarParts/LastFrameModal"
+import type { RequestStatus } from "@/shared/requestStatus"
 
 type PreviewImage = {
   id: string
@@ -25,6 +26,9 @@ type Props = {
   tailPrompt: string
   setTailPrompt: (v: string) => void
   isGenerating?: boolean
+  requestStatus?: RequestStatus
+  requestError?: string | null
+  requestTraceId?: string | null
   recommendedStoryboardMode?: "首帧" | "首尾帧" | null
   shotCut?: boolean
   prevVideoLastFrameUrl?: string | null
@@ -80,7 +84,10 @@ export function ImageParamsSidebar({
   previews,
   onOpenAddModal,
   onDeleteAsset,
-  isGenerating
+  isGenerating,
+  requestStatus = "idle",
+  requestError,
+  requestTraceId
 }: Props): ReactElement {
   const rolePreviews = previews?.role ?? []
   const bgPreviews = previews?.background ?? []
@@ -381,6 +388,14 @@ export function ImageParamsSidebar({
       >
         {isGenerating ? "合成中…" : firstFrameLocked ? "生成尾帧" : "生成图片"}
       </button>
+
+      {requestStatus === "success" ? <div className={`${styles.requestHint} ${styles.requestHintSuccess}`}>已完成{requestTraceId ? `（${requestTraceId}）` : ""}</div> : null}
+      {requestStatus === "error" ? (
+        <div className={`${styles.requestHint} ${styles.requestHintError}`}>
+          失败：{requestError ?? "请求失败"}
+          {requestTraceId ? `（${requestTraceId}）` : ""}
+        </div>
+      ) : null}
 
       <LastFrameModal
         open={lastFrameModalOpen}

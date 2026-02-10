@@ -5,11 +5,12 @@ import { getDb } from "coze-coding-dev-sdk"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
-import { storyboards, generatedImages } from "@/shared/schema"
+import { generatedImages } from "@/shared/schema/generation"
+import { stories, storyboards } from "@/shared/schema/story"
 import { generateImageByCoze } from "@/features/coze/imageClient"
-import { downloadImage, generateThumbnail } from "@/lib/thumbnail"
+import { downloadImage, generateThumbnail } from "@/server/lib/thumbnail"
 import { createCozeS3Storage } from "@/server/integrations/storage/s3"
-import { mergeStoryboardFrames } from "@/server/services/storyboardAssets"
+import { mergeStoryboardFrames } from "@/server/shared/storyboard/storyboardAssets"
 import { resolveStorageUrl } from "@/shared/storageUrl"
 
 const inputSchema = z.object({
@@ -51,8 +52,18 @@ export async function POST(req: Request): Promise<Response> {
   const { storyId, storyboardId, prompt, name, category } = parsed.data
 
   try {
+    const db = await getDb({ storyboards, generatedImages, stories })
+    const storyStyle =
+      (
+        await db
+          .select({ shotStyle: stories.shotStyle })
+          .from(stories)
+          .where(eq(stories.id, storyId))
+          .limit(1)
+      )[0]?.shotStyle ?? null
+
     // 1. Call Coze
-    const apiImageUrl = await generateImageByCoze(prompt, category as "background" | "role" | "item", { traceId, module: "coze" })
+    const apiImageUrl = await generateImageByCoze(prompt, category as "background" | "role" | "item", { traceId, module: "coze", style: storyStyle ?? undefined })
     
     // 2. Download Image
     const imageBuffer = await downloadImage(apiImageUrl, traceId)
@@ -83,8 +94,6 @@ export async function POST(req: Request): Promise<Response> {
     const thumbnailSignedUrl = await resolveStorageUrl(storage, uploadedThumbnailKey)
 
     // 5. Save to DB
-    const db = await getDb({ storyboards, generatedImages })
-    
     // Insert into generated_images
     const [newImage] = await db.insert(generatedImages).values({
       storyId,

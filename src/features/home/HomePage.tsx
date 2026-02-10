@@ -1,7 +1,7 @@
 import type { ReactElement } from "react"
 import styles from "./HomePage.module.css"
 import { HomeWelcome } from "@/features/home/HomeWelcome"
-import { WorkbenchHero } from "@/features/home/WorkbenchHero"
+import { HomeOnboardingSection } from "@/features/onboarding/HomeOnboardingSection"
 import { ContinueWorkSection } from "@/features/home/ContinueWorkSection"
 import { AnalyticsOverview } from "@/features/home/AnalyticsOverview"
 
@@ -12,12 +12,16 @@ import { AnalyticsOverview } from "@/features/home/AnalyticsOverview"
 export function HomePage(): ReactElement {
   return (
     <main className={styles.main}>
-      <div className={styles.fullRow}>
+      <div className={styles.welcome}>
         <HomeWelcome />
       </div>
-      <WorkbenchHero />
-      <ContinueWorkSection />
-      <div className={styles.fullRow}>
+      <div className={styles.onboarding}>
+        <HomeOnboardingSection />
+      </div>
+      <div className={styles.continue}>
+        <ContinueWorkSection />
+      </div>
+      <div className={styles.analytics}>
         <AnalyticsOverview />
       </div>
     </main>

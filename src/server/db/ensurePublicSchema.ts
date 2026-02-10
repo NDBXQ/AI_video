@@ -1,22 +1,14 @@
 import { sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import {
-  generatedAudios,
-  generatedImages,
-  iterationTasks,
-  jobs,
-  publicResources,
-  sharedResources,
-  stories,
-  storyOutlines,
-  storyboards,
-  telemetryEvents,
-  ttsSpeakerSamples,
-  users
-} from "@/shared/schema"
+import { users } from "@/shared/schema/auth"
+import { generatedAudios, generatedImages, ttsSpeakerSamples } from "@/shared/schema/generation"
+import { jobs } from "@/shared/schema/jobs"
+import { publicResources, sharedResources } from "@/shared/schema/library"
+import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
+import { iterationTasks, telemetryEvents } from "@/shared/schema/telemetry"
 import { logger } from "@/shared/logger"
 
-const ENSURE_VERSION = 1
+const ENSURE_VERSION = 3
 
 export async function ensurePublicSchema(): Promise<void> {
   const g = globalThis as any
@@ -276,11 +268,19 @@ export async function ensurePublicSchema(): Promise<void> {
         preview_storage_key text,
         original_url text,
         original_storage_key text,
+        duration_ms integer,
         tags jsonb not null default '[]'::jsonb,
         applicable_scenes jsonb not null default '[]'::jsonb,
         created_at timestamptz not null default now()
       );
     `)
+
+    await db.execute(sql`alter table public.public_resources add column if not exists duration_ms integer;`)
+    await db.execute(sql`alter table public.public_resources add column if not exists preview_storage_key text;`)
+    await db.execute(sql`alter table public.public_resources add column if not exists original_url text;`)
+    await db.execute(sql`alter table public.public_resources add column if not exists original_storage_key text;`)
+    await db.execute(sql`alter table public.public_resources add column if not exists tags jsonb not null default '[]'::jsonb;`)
+    await db.execute(sql`alter table public.public_resources add column if not exists applicable_scenes jsonb not null default '[]'::jsonb;`)
 
     await db.execute(sql`
       create table if not exists public.shared_resources (
@@ -298,6 +298,11 @@ export async function ensurePublicSchema(): Promise<void> {
         created_at timestamptz not null default now()
       );
     `)
+    await db.execute(sql`alter table public.shared_resources add column if not exists preview_storage_key text;`)
+    await db.execute(sql`alter table public.shared_resources add column if not exists original_url text;`)
+    await db.execute(sql`alter table public.shared_resources add column if not exists original_storage_key text;`)
+    await db.execute(sql`alter table public.shared_resources add column if not exists tags jsonb not null default '[]'::jsonb;`)
+    await db.execute(sql`alter table public.shared_resources add column if not exists applicable_scenes jsonb not null default '[]'::jsonb;`)
 
     await db.execute(sql`
       create table if not exists public.telemetry_events (
@@ -343,4 +348,3 @@ export async function ensurePublicSchema(): Promise<void> {
     g.__publicSchemaEnsuring = null
   }
 }
-

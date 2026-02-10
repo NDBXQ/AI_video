@@ -3,8 +3,8 @@ import { z } from "zod"
 import { makeApiErr } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { CozeRewriteService } from "@/server/services/cozeRewriteService"
-import { ServiceError } from "@/server/services/errors"
+import { CozeRewriteService } from "@/server/domains/story-rewrite/usecases/cozeRewriteService"
+import { ServiceError } from "@/server/shared/errors"
 
 const inputSchema = z.object({
   storyId: z.string().trim().min(1).max(200),

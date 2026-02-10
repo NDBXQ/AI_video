@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useMemo, useState } from "react"
 import styles from "./PreviewPanel.module.css"
 import type { RewriteState, OutlineItem } from "../utils"
 import { deriveLiveRewrite } from "../utils"
@@ -15,6 +16,7 @@ type PreviewPanelProps = Readonly<{
   generatingStoryboard: boolean
   handleGenerateStoryboardText: () => void
   handleManualGenerate: () => void
+  shortDrama?: any
 }>
 
 /**
@@ -31,8 +33,23 @@ export function PreviewPanel({
   activeDraft,
   generatingStoryboard,
   handleGenerateStoryboardText,
-  handleManualGenerate
+  handleManualGenerate,
+  shortDrama
 }: PreviewPanelProps) {
+  const [showShortDrama, setShowShortDrama] = useState(false)
+  const hasShortDrama = Boolean(shortDrama && typeof shortDrama === "object")
+  const shortDramaCards = useMemo(() => {
+    if (!hasShortDrama) return null
+    const planning = (shortDrama as any)?.planningResult ?? null
+    const world = (shortDrama as any)?.worldSetting ?? null
+    const character = (shortDrama as any)?.characterSetting ?? null
+    return [
+      { title: "短剧剧本策划", value: planning },
+      { title: "短剧世界观设定", value: world },
+      { title: "短剧角色设定", value: character }
+    ]
+  }, [hasShortDrama, shortDrama])
+
   return (
     <section className={styles.preview}>
       <div className={styles.previewHeader}>
@@ -57,11 +74,38 @@ export function PreviewPanel({
               </button>
             </>
           ) : null}
+          <button
+            type="button"
+            className={showShortDrama ? `${styles.toggleButton} ${styles.toggleButtonActive}` : styles.toggleButton}
+            disabled={!hasShortDrama}
+            onClick={() => setShowShortDrama((v) => !v)}
+          >
+            短剧信息
+          </button>
           <div className={styles.previewHint}>可在此查看生成内容</div>
         </div>
       </div>
 
       <article className={styles.markdown}>
+        {showShortDrama && shortDramaCards ? (
+          <div className={styles.shortDramaPanel}>
+            {shortDramaCards.map((card) => {
+              const raw = (() => {
+                try {
+                  return JSON.stringify(card.value, null, 2)
+                } catch {
+                  return String(card.value ?? "")
+                }
+              })()
+              return (
+                <div className={styles.shortDramaCard} key={card.title}>
+                  <div className={styles.shortDramaCardTitle}>{card.title}</div>
+                  <pre className={styles.shortDramaCardBody}>{raw}</pre>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
         {activeOutline ? (
           (() => {
             if (previewMode === "rewrite") {

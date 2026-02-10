@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactElement } from "react"
 import styles from "./VideoPlayer.module.css"
-import { PreviewAllPlayer } from "./PreviewAllPlayer"
+import { PreviewAllPlayer } from "@/shared/ui/mediaPreview/PreviewAllPlayer"
 import { SinglePlayer } from "./SinglePlayer"
-import type { PreviewPlaylistItem, TimelineAudioClip, TimelineVideoClip } from "../../utils/mediaPreviewUtils"
+import type { PreviewPlaylistItem, TimelineAudioClip, TimelineVideoClip } from "@/shared/utils/mediaPreviewUtils"
 
 type Props = {
   mode: "image" | "video"
@@ -14,6 +14,7 @@ type Props = {
   previewAllPlaying: boolean
   previewAllLocalTime: number
   previewAllElapsedSeconds: number
+  previewAllSeeking?: boolean
   nextPreloadVideoSrc?: string
   currentItem: PreviewPlaylistItem | null
   currentItemDurationSeconds: number
@@ -41,6 +42,7 @@ export function VideoPlayer({
   previewAllPlaying,
   previewAllLocalTime,
   previewAllElapsedSeconds,
+  previewAllSeeking,
   nextPreloadVideoSrc,
   currentItem,
   currentItemDurationSeconds,
@@ -117,7 +119,7 @@ export function VideoPlayer({
             </div>
             <div className={styles.previewHint}>{isVideoTab ? "视频预览" : "图片预览"}</div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div className={styles.previewActions}>
             {isVideoTab ? (
               <button
                 type="button"
@@ -162,6 +164,7 @@ export function VideoPlayer({
             previewAllPlaying={previewAllPlaying}
             previewAllLocalTime={previewAllLocalTime}
             previewAllElapsedSeconds={previewAllElapsedSeconds}
+            previewAllSeeking={previewAllSeeking}
             nextPreloadVideoSrc={nextPreloadVideoSrc}
             timelineAudioClips={timelineAudioClips}
             onAdvancePreviewAll={onAdvancePreviewAll}

@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { generatedImages, jobs, stories, storyOutlines, storyboards } from "@/shared/schema"
+import { jobs } from "@/shared/schema/jobs"
+import { generatedImages } from "@/shared/schema/generation"
+import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
 
 let ensured = false
 
@@ -29,4 +31,3 @@ export async function ensureJobsTable(): Promise<void> {
   await db.execute(sql`create index if not exists idx_jobs_user_id on jobs (user_id);`)
   ensured = true
 }
-

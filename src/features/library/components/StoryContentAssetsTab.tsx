@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import { ExternalLink } from "lucide-react"
 import styles from "./StoryContentModal.module.css"
 import type { GeneratedAudio, GeneratedImage, Outline, Shot } from "./storyContentTypes"
+import { StoryContentExpandableText } from "./StoryContentExpandableText"
 
 export function StoryContentAssetsTab({
   outlines,
@@ -19,6 +20,8 @@ export function StoryContentAssetsTab({
 }): ReactElement {
   const [globalTab, setGlobalTab] = useState<"auto" | "role" | "item" | "background">("auto")
   const [episodeId, setEpisodeId] = useState<string>("")
+  const [globalExpanded, setGlobalExpanded] = useState(false)
+  const [expandedRefsByShotId, setExpandedRefsByShotId] = useState<Record<string, boolean>>({})
 
   const imagesByStoryboardId = useMemo(() => {
     const map = new Map<string, { role: GeneratedImage[]; item: GeneratedImage[]; background: GeneratedImage[]; other: GeneratedImage[] }>()
@@ -99,7 +102,7 @@ export function StoryContentAssetsTab({
           {effectiveGlobalTab === "role" ? (
             globalBuckets.role.length > 0 ? (
               <div className={styles.assetGrid}>
-                {globalBuckets.role.slice(0, 24).map((img) => (
+                {(globalExpanded ? globalBuckets.role : globalBuckets.role.slice(0, 24)).map((img) => (
                   <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                     <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                   </a>
@@ -113,7 +116,7 @@ export function StoryContentAssetsTab({
           {effectiveGlobalTab === "item" ? (
             globalBuckets.item.length > 0 ? (
               <div className={styles.assetGrid}>
-                {globalBuckets.item.slice(0, 24).map((img) => (
+                {(globalExpanded ? globalBuckets.item : globalBuckets.item.slice(0, 24)).map((img) => (
                   <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                     <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                   </a>
@@ -127,7 +130,7 @@ export function StoryContentAssetsTab({
           {effectiveGlobalTab === "background" ? (
             globalBuckets.background.length > 0 ? (
               <div className={styles.assetGrid}>
-                {globalBuckets.background.slice(0, 24).map((img) => (
+                {(globalExpanded ? globalBuckets.background : globalBuckets.background.slice(0, 24)).map((img) => (
                   <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                     <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                   </a>
@@ -140,15 +143,23 @@ export function StoryContentAssetsTab({
 
           {globalBuckets.other.length > 0 ? (
             <>
-              <div className={styles.sectionTitle}>{`其他（${globalBuckets.other.length}）`}</div>
+              <div className={styles.sectionSubTitle}>{`其他（${globalBuckets.other.length}）`}</div>
               <div className={styles.assetGrid}>
-                {globalBuckets.other.slice(0, 24).map((img) => (
+                {(globalExpanded ? globalBuckets.other : globalBuckets.other.slice(0, 24)).map((img) => (
                   <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                     <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                   </a>
                 ))}
               </div>
             </>
+          ) : null}
+
+          {globalImages.length > 24 ? (
+            <div className={styles.expandRow}>
+              <button type="button" className={styles.expandBtn} onClick={() => setGlobalExpanded((v) => !v)}>
+                {globalExpanded ? "收起" : "展开全部"}
+              </button>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -188,6 +199,13 @@ export function StoryContentAssetsTab({
               const buckets = imagesByStoryboardId.get(s.id) ?? { role: [], item: [], background: [], other: [] }
               const refs = [...buckets.role, ...buckets.item, ...buckets.background, ...buckets.other]
               const audios = audiosByStoryboardId[s.id] ?? []
+              const refsLimit = 12
+              const expandedRefs = !!expandedRefsByShotId[s.id]
+              const hasMoreRefs =
+                buckets.role.length > refsLimit ||
+                buckets.item.length > refsLimit ||
+                buckets.background.length > refsLimit ||
+                buckets.other.length > refsLimit
 
               const openLinks: Array<{ label: string; href: string }> = []
               if (firstFrame) openLinks.push({ label: "首帧", href: firstFrame })
@@ -201,6 +219,8 @@ export function StoryContentAssetsTab({
                     <div className={styles.shotTitle}>{`第${s.sequence}镜`}</div>
                     <div className={styles.shotMeta}>{`${refs.length} 参考图 ｜ ${audios.length} 音频`}</div>
                   </div>
+
+                  {s.storyboardText ? <StoryContentExpandableText text={s.storyboardText} clampLines={6} collapsedMinChars={160} /> : null}
 
                   {openLinks.length > 0 ? (
                     <div className={styles.linkRow}>
@@ -234,9 +254,9 @@ export function StoryContentAssetsTab({
 
                       {buckets.role.length > 0 ? (
                         <>
-                          <div className={styles.sectionTitle}>{`角色（${buckets.role.length}）`}</div>
+                          <div className={styles.sectionSubTitle}>{`角色（${buckets.role.length}）`}</div>
                           <div className={styles.assetGrid}>
-                            {buckets.role.slice(0, 12).map((img) => (
+                            {(expandedRefs ? buckets.role : buckets.role.slice(0, refsLimit)).map((img) => (
                               <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                                 <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                               </a>
@@ -247,9 +267,9 @@ export function StoryContentAssetsTab({
 
                       {buckets.item.length > 0 ? (
                         <>
-                          <div className={styles.sectionTitle}>{`物品（${buckets.item.length}）`}</div>
+                          <div className={styles.sectionSubTitle}>{`物品（${buckets.item.length}）`}</div>
                           <div className={styles.assetGrid}>
-                            {buckets.item.slice(0, 12).map((img) => (
+                            {(expandedRefs ? buckets.item : buckets.item.slice(0, refsLimit)).map((img) => (
                               <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                                 <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                               </a>
@@ -260,9 +280,9 @@ export function StoryContentAssetsTab({
 
                       {buckets.background.length > 0 ? (
                         <>
-                          <div className={styles.sectionTitle}>{`背景（${buckets.background.length}）`}</div>
+                          <div className={styles.sectionSubTitle}>{`背景（${buckets.background.length}）`}</div>
                           <div className={styles.assetGrid}>
-                            {buckets.background.slice(0, 12).map((img) => (
+                            {(expandedRefs ? buckets.background : buckets.background.slice(0, refsLimit)).map((img) => (
                               <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                                 <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                               </a>
@@ -273,15 +293,27 @@ export function StoryContentAssetsTab({
 
                       {buckets.other.length > 0 ? (
                         <>
-                          <div className={styles.sectionTitle}>{`其他（${buckets.other.length}）`}</div>
+                          <div className={styles.sectionSubTitle}>{`其他（${buckets.other.length}）`}</div>
                           <div className={styles.assetGrid}>
-                            {buckets.other.slice(0, 12).map((img) => (
+                            {(expandedRefs ? buckets.other : buckets.other.slice(0, refsLimit)).map((img) => (
                               <a key={img.id} className={styles.thumb} href={img.url} target="_blank" rel="noreferrer">
                                 <img className={styles.thumbImg} src={img.thumbnailUrl || img.url} alt={img.name} loading="lazy" />
                               </a>
                             ))}
                           </div>
                         </>
+                      ) : null}
+
+                      {hasMoreRefs ? (
+                        <div className={styles.expandRow}>
+                          <button
+                            type="button"
+                            className={styles.expandBtn}
+                            onClick={() => setExpandedRefsByShotId((prev) => ({ ...prev, [s.id]: !expandedRefs }))}
+                          >
+                            {expandedRefs ? "收起" : "展开全部"}
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                   ) : null}
@@ -292,11 +324,11 @@ export function StoryContentAssetsTab({
                     <div>
                       <div className={styles.sectionTitle}>{`音频（${audios.length}）`}</div>
                       {audios.map((a) => (
-                        <div key={a.id} className={styles.section} style={{ padding: 10, background: "rgba(255,255,255,0.8)" }}>
+                        <div key={a.id} className={styles.audioCard}>
                           <div className={styles.shotHeader}>
                             <div className={styles.shotTitle}>{`${a.roleName}｜${a.speakerName}`}</div>
                           </div>
-                          {a.content ? <div className={styles.kvVal}>{a.content}</div> : null}
+                          {a.content ? <div className={styles.prose}>{a.content}</div> : null}
                           <audio className={styles.media} src={a.url} controls />
                         </div>
                       ))}

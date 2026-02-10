@@ -59,7 +59,7 @@ export function TvcTimelinePanel({
                     key={c.id}
                     type="button"
                     className={`${styles.clipBtn} ${active ? styles.clipBtnActive : ""}`}
-                    onClick={() => onSelectShot?.(active ? null : c.id)}
+                    onClick={() => onSelectShot?.(c.id)}
                     title={`Shot ${label}`}
                   >
                     <div className={styles.clipTop}>

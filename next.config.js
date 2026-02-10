@@ -17,7 +17,8 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ["*.dev.coze.site", "*.coze.site", "*.sandbox-dev.coze-coding.bytedance.net"]
+      allowedOrigins: ["*.dev.coze.site", "*.coze.site", "*.sandbox-dev.coze-coding.bytedance.net"],
+      bodySizeLimit: "5mb"
     }
   }
 }

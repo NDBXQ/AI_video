@@ -2,8 +2,8 @@
   display: grid;
   gap: 10px;
   border-radius: 14px;
-  border: 1px solid var(--theme-border);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   padding: 10px;
 }
 
@@ -38,8 +38,8 @@
 
 .row {
   border-radius: 12px;
-  border: 1px solid var(--theme-border);
-  background: rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(2, 6, 23, 0.28);
   padding: 10px;
   display: grid;
   gap: 8px;
@@ -67,15 +67,16 @@
   min-width: 0;
   height: 32px;
   border-radius: 10px;
-  border: 1px solid var(--theme-border);
-  background: rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(2, 6, 23, 0.28);
   color: var(--theme-text);
   padding: 0 10px;
   font-size: 12px;
+  font-weight: 800;
   outline: none;
 }
 
-.select:focus {
+.select:focus-visible {
   border-color: rgba(109, 94, 247, 0.7);
   box-shadow: 0 0 0 3px rgba(109, 94, 247, 0.18);
 }
@@ -116,7 +117,7 @@
 
 .content {
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.65;
   color: var(--theme-text);
   word-break: break-word;
 }

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { tvcStories } from "@/shared/schema"
+import { tvcStories } from "@/shared/schema/tvc"
 
 export async function updateTvcStoryStatus(
   storyId: string,
@@ -30,4 +30,3 @@ export async function updateTvcStoryStatus(
     })
     .where(eq(tvcStories.id, storyId))
 }
-

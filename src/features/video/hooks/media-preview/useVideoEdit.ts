@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react"
-import type { TimelineAudioClip, TimelineSegment } from "../../utils/mediaPreviewUtils"
+import type { TimelineAudioClip, TimelineSegment } from "@/shared/utils/mediaPreviewUtils"
 
 export function useVideoEdit(params: {
   enabled: boolean

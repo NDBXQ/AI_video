@@ -3,6 +3,7 @@
 import type { ReactElement } from "react"
 import styles from "./StoryContentModal.module.css"
 import type { Outline, Shot } from "./storyContentTypes"
+import { StoryContentExpandableText } from "./StoryContentExpandableText"
 
 export function StoryContentStoryboardsTab({
   outlines,
@@ -26,7 +27,7 @@ export function StoryContentStoryboardsTab({
                   <div className={styles.shotTitle}>{`第${s.sequence}镜`}</div>
                   <div className={styles.shotMeta}>{s.shotCut ? "切镜" : ""}</div>
                 </div>
-                <div className={styles.kvVal}>{s.storyboardText || ""}</div>
+                {s.storyboardText ? <StoryContentExpandableText text={s.storyboardText} clampLines={8} /> : <div className={styles.muted}>暂无文案</div>}
               </div>
             ))}
           </div>
@@ -35,4 +36,3 @@ export function StoryContentStoryboardsTab({
     </>
   )
 }
-

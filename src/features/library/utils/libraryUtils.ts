@@ -1,7 +1,7 @@
 import type { Scope } from "../components/ScopeTabs"
 import type { CategoryOption } from "../components/CategorySidebar"
 import type { ViewMode } from "../components/LibraryToolbar"
-import type { LibraryItem } from "../components/LibraryCard"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 import type { PublicResource, SharedResource } from "@/shared/schema"
 
 export const MY_CATEGORIES: CategoryOption[] = [

@@ -3,7 +3,7 @@ import { getDb } from "coze-coding-dev-sdk"
 import { notFound } from "next/navigation"
 import type { ReactElement } from "react"
 import { ScriptWorkspacePage } from "@/features/script/workspace/ScriptWorkspacePage"
-import { storyOutlines } from "@/shared/schema"
+import { stories, storyOutlines } from "@/shared/schema"
 
 type ScriptWorkspaceStoryRouteProps = Readonly<{
   params:
@@ -46,7 +46,9 @@ export default async function ScriptWorkspaceStoryRoutePage({
   const outlineValue = resolvedSearchParams?.outline
   const outline = Array.isArray(outlineValue) ? outlineValue[0] : outlineValue
 
-  const db = await getDb({ storyOutlines })
+  const db = await getDb({ storyOutlines, stories })
+  const storyRows = await db.select({ metadata: stories.metadata }).from(stories).where(eq(stories.id, storyId)).limit(1)
+  const storyMetadata = (storyRows[0]?.metadata ?? {}) as Record<string, unknown>
   const rows = await db
     .select()
     .from(storyOutlines)
@@ -70,6 +72,7 @@ export default async function ScriptWorkspaceStoryRoutePage({
       storyId={storyId}
       outline={outline}
       outlines={outlines}
+      storyMetadata={storyMetadata}
     />
   )
 }

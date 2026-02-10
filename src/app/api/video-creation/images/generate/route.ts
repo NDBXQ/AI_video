@@ -3,7 +3,7 @@ import { z } from "zod"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { ImageGenerationService } from "@/server/services/imageGenerationService"
+import { generateVideoCreationImages } from "@/server/domains/video-creation/usecases/images/generateImages"
 
 const promptSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -38,19 +38,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const parsed = inputSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "入参格式不正确"), { status: 400 })
 
-  try {
-    const result = await ImageGenerationService.generateImages(userId, parsed.data, traceId)
-    
-    if (result.async) {
-      return NextResponse.json(makeApiOk(traceId, { jobId: result.jobId, status: result.status }), { status: 202 })
-    }
-
-    return NextResponse.json(makeApiOk(traceId, result), { status: 200 })
-  } catch (err) {
-    const anyErr = err as { message?: string }
-    if (anyErr.message === "STORY_NOT_FOUND") {
-      return NextResponse.json(makeApiErr(traceId, "STORY_NOT_FOUND", "未找到可用的故事"), { status: 404 })
-    }
-    return NextResponse.json(makeApiErr(traceId, "IMAGE_GENERATION_FAILED", anyErr.message ?? "生成失败"), { status: 500 })
-  }
+  const res = await generateVideoCreationImages({ userId, traceId, payload: parsed.data })
+  if (!res.ok) return NextResponse.json(makeApiErr(traceId, res.code, res.message), { status: res.status })
+  return NextResponse.json(makeApiOk(traceId, res.data), { status: res.status })
 }

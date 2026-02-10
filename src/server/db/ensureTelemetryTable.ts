@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { telemetryEvents } from "@/shared/schema"
+import { telemetryEvents } from "@/shared/schema/telemetry"
 
 let ensured = false
 
@@ -24,4 +24,3 @@ export async function ensureTelemetryTable(): Promise<void> {
   await db.execute(sql`create index if not exists idx_telemetry_events_user_id_created on telemetry_events (user_id, created_at);`)
   ensured = true
 }
-

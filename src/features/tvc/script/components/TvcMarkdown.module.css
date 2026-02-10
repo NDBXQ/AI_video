@@ -1,0 +1,77 @@
+.root {
+  font-size: 14px;
+  line-height: 1.65;
+  color: inherit;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.root :global(h1) {
+  font-size: 18px;
+  line-height: 1.35;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.root :global(h2) {
+  font-size: 16px;
+  line-height: 1.35;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.root :global(h3) {
+  font-size: 15px;
+  line-height: 1.35;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.root :global(p) {
+  margin: 6px 0;
+}
+
+.root :global(ul),
+.root :global(ol) {
+  margin: 6px 0 6px 18px;
+  padding: 0;
+}
+
+.root :global(li) {
+  margin: 2px 0;
+}
+
+.root :global(blockquote) {
+  margin: 8px 0;
+  padding-left: 10px;
+  border-left: 3px solid rgba(255, 255, 255, 0.18);
+  opacity: 0.9;
+}
+
+.link {
+  text-decoration: underline;
+}
+
+.inlineCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95em;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  border-radius: 10px;
+  overflow: auto;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 8px 0;
+}
+
+.text {
+  white-space: pre-wrap;
+}
+

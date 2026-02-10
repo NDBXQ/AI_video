@@ -7,6 +7,7 @@ import { getTraceId } from "@/shared/trace"
 import { publicResources, insertPublicResourceSchema } from "@/shared/schema"
 import { uploadPublicBuffer } from "@/shared/storage"
 import { eq } from "drizzle-orm"
+import { ensurePublicSchema } from "@/server/db/ensurePublicSchema"
 
 const inputSchema = z.object({
   type: z.string().trim().min(1).max(50),
@@ -15,6 +16,12 @@ const inputSchema = z.object({
   tags: z.string().trim().max(5000).optional(),
   applicableScenes: z.string().trim().max(5000).optional()
 })
+
+function normalizeDurationMs(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Math.round(n)
+}
 
 function parseBoundary(contentType: string): string | null {
   const m = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i)
@@ -129,6 +136,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   const userId = session?.userId
   if (!userId) return NextResponse.json(makeApiErr(traceId, "AUTH_REQUIRED", "未登录或登录已过期"), { status: 401 })
 
+  await ensurePublicSchema()
+
   const contentType = req.headers.get("content-type") || "unknown"
   const contentLength = req.headers.get("content-length") || "unknown"
   const boundary = contentType.includes("multipart/form-data") ? parseBoundary(contentType) : null
@@ -209,6 +218,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     .filter(Boolean)
     .slice(0, 100)
 
+  const durationMs = normalizeDurationMs(parsedMultipart.fields["durationMs"])
+
   const payload = insertPublicResourceSchema.parse({
     userId,
     type,
@@ -219,6 +230,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     previewStorageKey: key,
     originalUrl: url,
     originalStorageKey: key,
+    durationMs,
     tags,
     applicableScenes
   })

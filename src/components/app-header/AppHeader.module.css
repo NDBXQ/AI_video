@@ -412,10 +412,3 @@
   color: rgba(15, 23, 42, 0.45);
   white-space: nowrap;
 }
-
-.taskEmpty {
-  padding: 12px;
-  color: rgba(15, 23, 42, 0.62);
-  font-size: 12px;
-  line-height: 16px;
-}

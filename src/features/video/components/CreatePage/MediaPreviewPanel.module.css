@@ -1,28 +1,18 @@
 
-.main {
-  --dock-h: 120px;
+.top {
   height: 100%;
   min-height: 0;
   min-width: 0;
-  overflow: visible;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) var(--dock-h);
-  gap: 8px;
-}
-
-.mainVideo {
-  --dock-h: 190px;
-}
-
-.mainImage {
-  --dock-h: 140px;
+  overflow: hidden;
 }
 
 .topRow {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 8px;
   overflow: hidden;
   align-items: stretch;
@@ -108,11 +98,4 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
-}
-
-@media (min-width: 1024px) {
-  .dock {
-    margin-left: calc(-1 * (var(--left-col-w, 0px) + var(--col-gap, 0px)));
-    width: calc(100% + var(--left-col-w, 0px) + var(--col-gap, 0px));
-  }
 }

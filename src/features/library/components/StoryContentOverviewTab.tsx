@@ -3,6 +3,8 @@
 import type { ReactElement } from "react"
 import styles from "./StoryContentModal.module.css"
 import type { Outline, StoryDetail } from "./storyContentTypes"
+import { StoryContentExpandableText } from "./StoryContentExpandableText"
+import { getShotStyleLabel } from "@/shared/shotStyle"
 
 export function StoryContentOverviewTab({ story, outlines }: { story: StoryDetail | null; outlines: Outline[] }): ReactElement {
   return (
@@ -23,7 +25,7 @@ export function StoryContentOverviewTab({ story, outlines }: { story: StoryDetai
         </div>
         <div className={styles.kvRow}>
           <div className={styles.kvKey}>风格</div>
-          <div className={styles.kvVal}>{story?.shotStyle ?? ""}</div>
+          <div className={styles.kvVal}>{getShotStyleLabel(story?.shotStyle)}</div>
         </div>
       </div>
 
@@ -31,12 +33,16 @@ export function StoryContentOverviewTab({ story, outlines }: { story: StoryDetai
         <div className={styles.sectionTitle}>简介/原文</div>
         <div className={styles.kvRow}>
           <div className={styles.kvKey}>原文</div>
-          <div className={styles.kvVal}>{story?.storyText ?? ""}</div>
+          <div className={styles.kvVal}>
+            {story?.storyText ? <StoryContentExpandableText text={story.storyText} clampLines={8} /> : null}
+          </div>
         </div>
         {story?.generatedText ? (
           <div className={styles.kvRow}>
             <div className={styles.kvKey}>生成文案</div>
-            <div className={styles.kvVal}>{story.generatedText}</div>
+            <div className={styles.kvVal}>
+              <StoryContentExpandableText text={story.generatedText} clampLines={10} />
+            </div>
           </div>
         ) : null}
       </div>
@@ -49,7 +55,9 @@ export function StoryContentOverviewTab({ story, outlines }: { story: StoryDetai
           outlines.map((o) => (
             <div key={o.id} className={styles.kvRow}>
               <div className={styles.kvKey}>{`第${o.sequence}集`}</div>
-              <div className={styles.kvVal}>{o.originalText || o.outlineText}</div>
+              <div className={styles.kvVal}>
+                {o.originalText || o.outlineText ? <StoryContentExpandableText text={o.originalText || o.outlineText} clampLines={6} /> : null}
+              </div>
             </div>
           ))
         )}
@@ -57,4 +65,3 @@ export function StoryContentOverviewTab({ story, outlines }: { story: StoryDetai
     </>
   )
 }
-

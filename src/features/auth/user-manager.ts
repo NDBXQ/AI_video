@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm"
-import { getDb } from "coze-coding-dev-sdk"
-import { insertUserSchema, updateUserSchema, users } from "@/shared/schema"
-import type { InsertUser, UpdateUser, User } from "@/shared/schema"
+import { getDb } from "@/server/db/getDb"
+import { insertUserSchema, updateUserSchema, users, type InsertUser, type UpdateUser, type User } from "@/shared/schema/auth"
 import { hashPassword, verifyPassword } from "./password"
 import { ensurePublicSchema } from "@/server/db/ensurePublicSchema"
 

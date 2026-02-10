@@ -1,10 +1,11 @@
 .card {
   border-radius: 18px;
-  background: var(--theme-surface);
+  background: var(--theme-surface-2);
   border: 1px solid var(--theme-border);
   box-shadow: var(--theme-shadow);
   backdrop-filter: var(--theme-blur);
   padding: 18px;
+  height: 100%;
 }
 
 .header {
@@ -32,12 +33,12 @@
 .title {
   font-size: 16px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--theme-text-strong);
 }
 
 .range {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--theme-text-muted);
 }
 
 .grid {
@@ -56,14 +57,14 @@
 .metricCard {
   border-radius: 14px;
   border: 1px solid var(--theme-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--theme-surface-3);
   padding: 12px;
   min-width: 0;
 }
 
 .metricLabel {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,7 +82,7 @@
   font-size: 22px;
   line-height: 1.1;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--theme-text-strong);
 }
 
 .metricDelta {
@@ -97,7 +98,7 @@
 .note {
   margin-top: 10px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--theme-text-faint);
 }
 
 .side {
@@ -108,14 +109,14 @@
 .panel {
   border-radius: 14px;
   border: 1px solid var(--theme-border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--theme-surface-3);
   padding: 12px;
 }
 
 .panelTitle {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--theme-text-strong);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -125,7 +126,7 @@
 
 .panelHint {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--theme-text-muted);
   font-weight: 700;
 }
 
@@ -150,7 +151,7 @@
 
 .barLabel {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -171,7 +172,7 @@
 
 .barValue {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--theme-text-faint);
   text-align: right;
   font-weight: 800;
 }

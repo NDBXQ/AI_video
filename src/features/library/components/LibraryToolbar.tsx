@@ -2,9 +2,9 @@
 
 import type { ReactElement } from "react"
 import { useCallback, useState } from "react"
-import { UiSelect } from "@/components/ui-select/UiSelect"
+import { ListboxSelect } from "@/shared/ui/ListboxSelect"
 import styles from "./LibraryToolbar.module.css"
-import { LayoutGrid, List, Search, Upload, Sparkles, Trash2 } from "lucide-react"
+import { CheckSquare, LayoutGrid, List, Search, Upload, Sparkles, Trash2 } from "lucide-react"
 
 export type ViewMode = "grid" | "list"
 
@@ -15,6 +15,9 @@ interface LibraryToolbarProps {
   variant?: "my" | "library" | "shared"
   onUpload?: () => void
   onGenerate?: () => void
+  selectAllLabel?: string
+  selectAllDisabled?: boolean
+  onSelectAll?: () => void
   deleteLabel?: string
   deleteDisabled?: boolean
   onDelete?: () => void
@@ -27,6 +30,9 @@ export function LibraryToolbar({
   variant = "my",
   onUpload,
   onGenerate,
+  selectAllLabel,
+  selectAllDisabled,
+  onSelectAll,
   deleteLabel,
   deleteDisabled,
   onDelete,
@@ -66,6 +72,12 @@ export function LibraryToolbar({
       ) : null}
 
       <div className={styles.actions}>
+        {selectAllLabel && onSelectAll ? (
+          <button type="button" className={styles.selectBtn} onClick={onSelectAll} disabled={selectAllDisabled}>
+            <CheckSquare size={16} strokeWidth={2} />
+            {selectAllLabel}
+          </button>
+        ) : null}
         {deleteLabel && onDelete ? (
           <button type="button" className={styles.dangerBtn} onClick={onDelete} disabled={deleteDisabled}>
             <Trash2 size={16} strokeWidth={2} />
@@ -73,7 +85,7 @@ export function LibraryToolbar({
           </button>
         ) : null}
         <div className={styles.sortSelect}>
-          <UiSelect
+          <ListboxSelect
             value={sort}
             ariaLabel="排序"
             onChange={onSortChange}

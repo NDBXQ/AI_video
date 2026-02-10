@@ -8,9 +8,8 @@ type ApiErr = { ok: false; error: { code: string; message: string }; traceId: st
 
 type Funnel = {
   windowHours: number
-  counts: { tvc_open: number; tvc_style_selected: number; tvc_continue_clicked: number; tvc_chat_submitted: number }
-  rates: { styleSelectedRate: number; continueRate: number; chatRate: number }
-  topStyles: Array<{ styleId: string; uv: number }>
+  counts: { tvc_open: number; tvc_generate_shotlist_clicked: number; tvc_chat_submitted: number }
+  rates: { generateRate: number; chatRate: number }
   updatedAt: string
 }
 
@@ -88,11 +87,9 @@ export function TelemetryTasksPage(): ReactElement {
     if (!funnel) return null
     return [
       { label: "Open UV", value: funnel.counts.tvc_open },
-      { label: "Style UV", value: funnel.counts.tvc_style_selected },
-      { label: "Continue UV", value: funnel.counts.tvc_continue_clicked },
+      { label: "Generate UV", value: funnel.counts.tvc_generate_shotlist_clicked },
       { label: "Chat UV", value: funnel.counts.tvc_chat_submitted },
-      { label: "Style Rate", value: `${funnel.rates.styleSelectedRate}%` },
-      { label: "Continue Rate", value: `${funnel.rates.continueRate}%` },
+      { label: "Generate Rate", value: `${funnel.rates.generateRate}%` },
       { label: "Chat Rate", value: `${funnel.rates.chatRate}%` }
     ]
   }, [funnel])
@@ -154,13 +151,6 @@ export function TelemetryTasksPage(): ReactElement {
                     </div>
                   ))}
                 </div>
-                <div className={styles.details}>
-                  <div className={styles.summary}>
-                    <span>Top Styles</span>
-                    <span className={styles.summaryMeta}>{funnel?.topStyles?.length ?? 0} items</span>
-                  </div>
-                  <pre className={styles.pre}>{JSON.stringify(funnel?.topStyles ?? [], null, 2)}</pre>
-                </div>
               </>
             ) : (
               <div className={styles.empty}>暂无漏斗数据（先打开 /tvc 操作几次再看）</div>
@@ -190,4 +180,3 @@ export function TelemetryTasksPage(): ReactElement {
     </main>
   )
 }
-

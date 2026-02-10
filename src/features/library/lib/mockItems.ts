@@ -1,4 +1,4 @@
-import type { LibraryItem } from "../components/LibraryCard"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 
 function makeSvgDataUrl({
   background,

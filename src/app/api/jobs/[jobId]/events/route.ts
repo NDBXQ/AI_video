@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/shared/session"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getTraceId } from "@/shared/trace"
-import { getJobById } from "@/server/jobs/jobDb"
-import { getTvcJobById } from "@/server/jobs/tvcJobDb"
-import { kickAllWorkers } from "@/server/jobs/kickWorkers"
+import { getJobById } from "@/server/framework/jobs/jobDb"
+import { getTvcJobById } from "@/server/domains/tvc/jobs/tvcJobDb"
+import { kickAllWorkers } from "@/server/framework/jobs/kickWorkers"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ jobId: string }> }): Promise<Response> {
   const traceId = getTraceId(req.headers)

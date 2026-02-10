@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { getMyStories } from "../actions/library"
-import { listPublicResources, getPublicResourceStats, listSharedResources, getSharedResourceStats } from "../actions/public"
+import { getMyStories } from "@/server/actions/library/library"
+import { listPublicResources, getPublicResourceStats, listSharedResources, getSharedResourceStats } from "@/server/actions/library/public"
 import { MOCK_ITEMS, MOCK_COUNTS, PUBLIC_COUNTS } from "../lib/mockItems"
-import type { LibraryItem } from "../components/LibraryCard"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 import type { Scope } from "../components/ScopeTabs"
 import type { ViewMode } from "../components/LibraryToolbar"
 import {

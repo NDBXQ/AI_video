@@ -22,16 +22,7 @@ function clampWidth(value: number): number {
 
 export function WorkspaceResizeHandle({ containerRef }: WorkspaceResizeHandleProps): ReactElement {
   const [active, setActive] = useState(false)
-  const [widthPx, setWidthPx] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const stored = Number(raw)
-        if (Number.isFinite(stored)) return clampWidth(stored)
-      }
-    } catch {}
-    return DEFAULT_WIDTH
-  })
+  const [widthPx, setWidthPx] = useState(DEFAULT_WIDTH)
   const lastClientXRef = useRef(0)
   const rafRef = useRef<number | null>(null)
   const prevUserSelectRef = useRef<string | null>(null)
@@ -46,6 +37,19 @@ export function WorkspaceResizeHandle({ containerRef }: WorkspaceResizeHandlePro
     },
     []
   )
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const stored = Number(raw)
+      if (!Number.isFinite(stored)) return
+      const next = clampWidth(stored)
+      if (next === DEFAULT_WIDTH) return
+      const rafId = window.requestAnimationFrame(() => applyWidth(next))
+      return () => window.cancelAnimationFrame(rafId)
+    } catch {}
+  }, [applyWidth])
 
   useEffect(() => {
     const el = containerRef.current

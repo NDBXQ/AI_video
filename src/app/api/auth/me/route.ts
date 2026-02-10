@@ -3,8 +3,8 @@ import { z } from "zod"
 import { logger } from "@/shared/logger"
 import { SESSION_COOKIE_NAME } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { AuthService } from "@/server/services/authService"
-import { ServiceError } from "@/server/services/errors"
+import { AuthService } from "@/server/domains/auth/services/authService"
+import { ServiceError } from "@/server/shared/errors"
 
 type ApiOk<T> = {
   ok: true

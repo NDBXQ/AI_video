@@ -2,8 +2,8 @@ import Image from "next/image"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react"
 import styles from "./VideoPlayer.module.css"
 import { TwoFrameImagePreview } from "../CreatePage/TwoFrameImagePreview"
-import { createLocalPreviewSvg } from "../../utils/previewUtils"
-import type { TimelineVideoClip } from "../../utils/mediaPreviewUtils"
+import { createLocalPreviewSvg } from "@/shared/utils/previewUtils"
+import type { TimelineVideoClip } from "@/shared/utils/mediaPreviewUtils"
 
 export function SinglePlayer({
   isVideoTab,

@@ -19,8 +19,8 @@ const inputSchema = z.object({
   async: z.boolean().optional()
 })
 
-import { enqueueCozeGenerateOutlineJob, kickCozeStoryboardWorker } from "@/server/jobs/cozeStoryboardWorker"
-import { runGenerateOutline } from "@/server/coze/storyboardTasks"
+import { enqueueCozeGenerateOutlineJob, kickCozeStoryboardWorker } from "@/server/domains/storyboard/jobs/cozeStoryboardWorker"
+import { runGenerateOutline } from "@/server/domains/storyboard/integrations/cozeStoryboardTasks"
 
 export async function POST(req: Request): Promise<Response> {
   const traceId = getTraceId(req.headers)

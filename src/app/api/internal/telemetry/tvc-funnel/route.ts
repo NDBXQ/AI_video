@@ -45,25 +45,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     const opens = counts.tvc_open ?? 0
-    const styles = counts.tvc_style_selected ?? 0
-    const continues = counts.tvc_continue_clicked ?? 0
+    const generates = counts.tvc_generate_shotlist_clicked ?? 0
     const chats = counts.tvc_chat_submitted ?? 0
-
-    const topStyles = await db.execute(sql`
-      select (payload->>'styleId') as style_id, count(distinct trace_id) as uv
-      from telemetry_events
-      where page = '/tvc'
-        and event = 'tvc_style_selected'
-        and created_at >= now() - (${hours}::text || ' hours')::interval
-      group by (payload->>'styleId')
-      order by uv desc
-      limit 10
-    `)
-
-    const topStyleRows = (topStyles.rows ?? []) as Array<{ style_id: string | null; uv: unknown }>
-    const topStyleList = topStyleRows
-      .map((r) => ({ styleId: r.style_id ?? "unknown", uv: Number(r.uv ?? 0) }))
-      .filter((r) => Number.isFinite(r.uv))
 
     const rate = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 10000) / 100 : 0)
 
@@ -81,16 +64,13 @@ export async function GET(req: NextRequest): Promise<Response> {
         windowHours: hours,
         counts: {
           tvc_open: opens,
-          tvc_style_selected: styles,
-          tvc_continue_clicked: continues,
+          tvc_generate_shotlist_clicked: generates,
           tvc_chat_submitted: chats
         },
         rates: {
-          styleSelectedRate: rate(styles, opens),
-          continueRate: rate(continues, opens),
+          generateRate: rate(generates, opens),
           chatRate: rate(chats, opens)
         },
-        topStyles: topStyleList,
         updatedAt: new Date().toISOString()
       }),
       { status: 200 }
@@ -110,4 +90,3 @@ export async function GET(req: NextRequest): Promise<Response> {
     return NextResponse.json(makeApiErr(traceId, "TELEMETRY_REPORT_FAILED", "统计失败"), { status: 500 })
   }
 }
-

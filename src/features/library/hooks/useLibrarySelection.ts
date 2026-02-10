@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react"
-import { deletePublicResources } from "../actions/public"
-import type { LibraryItem } from "../components/LibraryCard"
+import { deletePublicResources } from "@/server/actions/library/public"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 import type { Scope } from "../components/ScopeTabs"
 
 export function useLibrarySelection(scope: Scope, category: string) {

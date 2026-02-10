@@ -2,6 +2,9 @@
 
 Next.js App Router 项目骨架（TypeScript + ESLint）。
 
+## 项目结构约定
+- 见 [docs/architecture.md](file:///Users/bytedance/dev/ai-video/docs/architecture.md)
+
 ## 超级管理员后台（API 测试台）
 
 ### 访问条件

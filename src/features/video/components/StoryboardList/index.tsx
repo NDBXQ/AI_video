@@ -1,4 +1,5 @@
 import { type ReactElement, useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { StoryboardItem } from "../../types"
 import { ChipEditModal } from "../ChipEditModal"
 import { ImagePreviewModal } from "../ImagePreviewModal"
@@ -17,6 +18,7 @@ import { StoryboardSidebar } from "./StoryboardSidebar"
 import { StoryboardToolbar } from "./StoryboardToolbar"
 import { StoryboardTable } from "./StoryboardTable"
 import { GenerationPanel } from "./GenerationPanel"
+import { StoryboardDetailsModal } from "./StoryboardDetailsModal"
 import { useEpisodeRegeneration } from "./hooks/useEpisodeRegeneration"
 import { useGenerationPanelModel } from "./hooks/useGenerationPanelModel"
 
@@ -33,6 +35,7 @@ export function StoryboardList({
   outlineId: initialOutlineId,
   autoGenerate
 }: StoryboardListProps): ReactElement {
+  const router = useRouter()
   // Data & State
   const {
     items,
@@ -83,6 +86,7 @@ export function StoryboardList({
   } | null>(
     null
   )
+  const [details, setDetails] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
   const [addRoleModal, setAddRoleModal] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
   const [addItemModal, setAddItemModal] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
   const [editText, setEditText] = useState<{ open: boolean; itemId: string; initialValue: string }>({ open: false, itemId: "", initialValue: "" })
@@ -91,6 +95,7 @@ export function StoryboardList({
   const [panelOpen, setPanelOpen] = useState(false)
   const autoOpenedPanelRef = useRef(false)
   const [refImageGeneratingById, setRefImageGeneratingById] = useState<Record<string, boolean>>({})
+  const [createVideoBusy, setCreateVideoBusy] = useState(false)
   const { isAutoGenerating, generationStage, generationEpisodeId, textBatchMeta, scriptSummary, promptSummary, assetSummary, episodeProgressById } = useAutoGenerateStoryboards({
     autoGenerate,
     storyId: initialStoryId,
@@ -160,6 +165,17 @@ export function StoryboardList({
   }
 
   const closePreview = () => setPreview(null)
+
+  const openDetails = (itemId: string) => {
+    setDetails({ open: true, itemId })
+  }
+
+  const closeDetails = () => setDetails({ open: false, itemId: "" })
+
+  const handleOpenEdit = (itemId: string, initialValue: string) => {
+    setEditText({ open: true, itemId, initialValue })
+    setEditTextError(null)
+  }
 
   const triggerGenerateForStoryboard = async (storyboardId: string, storyboardText: string) => {
     const base = items.find((it) => it.id === storyboardId)
@@ -257,8 +273,62 @@ export function StoryboardList({
     }
   }
 
+  const handleCreateVideo = async () => {
+    const sid = (storyId ?? "").trim()
+    if (!sid) return
+    if (createVideoBusy) return
+    setCreateVideoBusy(true)
+    setNotice(null)
+    try {
+      const outlines = Object.values(outlineById ?? {}).filter((o) => Boolean(o?.id))
+      const firstOutline = outlines.sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))[0]
+      const firstOutlineId = (firstOutline?.id ?? "").trim()
+      if (!firstOutlineId) {
+        setNotice({ type: "error", message: "未找到第一集（outlines 为空）" })
+        return
+      }
+
+      const firstEpisodeItems = await fetchStoryboards(sid, firstOutlineId)
+      const firstItem = firstEpisodeItems.sort((a, b) => a.scene_no - b.scene_no)[0]
+      const firstStoryboardId = (firstItem?.id ?? "").trim()
+      if (!firstStoryboardId) {
+        setNotice({ type: "error", message: "未找到第一集的第一分镜" })
+        return
+      }
+
+      const qs = new URLSearchParams({
+        storyId: sid,
+        outlineId: firstOutlineId,
+        storyboardId: firstStoryboardId,
+        sceneNo: "1"
+      })
+      router.push(`/video/image?${qs.toString()}`)
+    } catch (e) {
+      const anyErr = e as { message?: unknown }
+      setNotice({ type: "error", message: typeof anyErr?.message === "string" ? anyErr.message : "跳转失败" })
+    } finally {
+      setCreateVideoBusy(false)
+    }
+  }
+
   return (
     <div className={styles.wrapper}>
+      {details.open && details.itemId ? (
+        (() => {
+          const it = items.find((x) => x.id === details.itemId)
+          if (!it) return null
+          return (
+            <StoryboardDetailsModal
+              open
+              item={it}
+              previews={previewsById[it.id]}
+              onClose={closeDetails}
+              onPreviewImage={openPreview}
+              onOpenEdit={handleOpenEdit}
+            />
+          )
+        })()
+      ) : null}
       {addRoleModal.open && (
         <ChipEditModal
           open={addRoleModal.open}
@@ -341,6 +411,8 @@ export function StoryboardList({
           loadError={loadError}
           selectedCount={selectedItems.size}
           onBatchDelete={handleBatchDelete}
+          onCreateVideo={handleCreateVideo}
+          createVideoDisabled={Boolean(createVideoBusy || isLoading || isAutoGenerating || !storyId)}
           onRegenerateEpisode={handleRegenerateActiveEpisode}
           regenerateDisabled={regenStatus.status === "running" || Boolean(isLoading || isAutoGenerating) || !storyId || !activeEpisode}
           regenerateStatusText={regenStatus.status === "idle" ? null : regenStatus.message}
@@ -362,6 +434,8 @@ export function StoryboardList({
 
         <StoryboardTable
           items={items}
+          storyId={storyId}
+          outlineId={activeEpisode ?? undefined}
           updateItemById={updateItemById}
           selectedItems={selectedItems}
           scriptGenerateById={scriptGenerateById}
@@ -372,10 +446,8 @@ export function StoryboardList({
           onPreviewImage={openPreview}
           onGenerateReferenceImages={handleGenerateReferenceImages}
           refImageGeneratingById={refImageGeneratingById}
-          onOpenEdit={(itemId, initialValue) => {
-            setEditText({ open: true, itemId, initialValue })
-            setEditTextError(null)
-          }}
+          onOpenEdit={handleOpenEdit}
+          onOpenDetails={openDetails}
           onDelete={handleDelete}
         />
       </div>

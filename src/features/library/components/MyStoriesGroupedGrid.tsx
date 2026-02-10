@@ -4,6 +4,7 @@ import type { ReactElement } from "react"
 import { LibraryGrid } from "./LibraryGrid"
 import type { LibraryItem } from "./LibraryCard"
 import styles from "./MyStoriesGroupedGrid.module.css"
+import { EmptyState } from "@/components/empty-state/EmptyState"
 
 interface MyStoriesGroupedGridProps {
   items: LibraryItem[]
@@ -29,7 +30,9 @@ function Group({
   onToggleSelected,
   emptyText,
   actionLabel,
+  actionHref,
   onAction,
+  learnHref,
 }: {
   title: string
   items: LibraryItem[]
@@ -40,8 +43,13 @@ function Group({
   onToggleSelected?: (id: string) => void
   emptyText?: string
   actionLabel?: string
+  actionHref?: string
   onAction?: () => void
+  learnHref?: string
 }): ReactElement {
+  const primaryAction =
+    actionLabel && actionHref ? { label: actionLabel, href: actionHref } : actionLabel && onAction ? { label: actionLabel, onClick: onAction } : undefined
+
   return (
     <div className={styles.group}>
       <div className={styles.groupHeader}>
@@ -59,14 +67,13 @@ function Group({
           onToggleSelected={onToggleSelected}
         />
       ) : (
-        <div className={styles.emptyInGroup}>
-          <div>{emptyText ?? "暂无内容"}</div>
-          {actionLabel && onAction ? (
-            <button type="button" className={styles.actionBtn} onClick={onAction}>
-              {actionLabel}
-            </button>
-          ) : null}
-        </div>
+        <EmptyState
+          size="inline"
+          title={emptyText ?? "暂无内容"}
+          description="建议先从剧本创作开始，后续素材生成、成片导出都会沉淀在这里。"
+          primaryAction={primaryAction}
+          learnHref={learnHref}
+        />
       )}
     </div>
   )
@@ -100,6 +107,9 @@ export function MyStoriesGroupedGrid({
           selectedIds={selectedIds}
           onToggleSelected={onToggleSelected}
           emptyText={emptyStandardText ?? "暂无标准视频项目"}
+          actionLabel="去创作剧本"
+          actionHref="/script/workspace?mode=brief"
+          learnHref="/help?topic=library"
         />
       ) : null}
       {showTvc ? (
@@ -114,6 +124,7 @@ export function MyStoriesGroupedGrid({
           emptyText={emptyTvcText ?? "暂无 TVC 项目"}
           actionLabel={onCreateTvc ? "去创建" : undefined}
           onAction={onCreateTvc}
+          learnHref="/help?topic=tvc"
         />
       ) : null}
     </div>

@@ -1,8 +1,8 @@
 
 import { useRef, type ReactElement } from "react"
 import styles from "./TimelineBar.module.css"
-import { VideoTimelineEditor } from "../CreatePage/VideoTimelineEditor"
-import { normalizeDurationSeconds, TimelineSegment, Thumbnail } from "../../utils/mediaPreviewUtils"
+import { VideoTimelineEditor } from "@/shared/ui/videoTimeline/VideoTimelineEditor"
+import { normalizeDurationSeconds, TimelineSegment, Thumbnail } from "@/shared/utils/mediaPreviewUtils"
 
 type Props = {
   mode: "image" | "video"
@@ -22,6 +22,8 @@ type Props = {
   previewAllPlaying: boolean
   previewAllElapsedSeconds: number
   onSeekPreviewAllSeconds: (seconds: number) => void
+  onSeekPreviewAllStart?: () => void
+  onSeekPreviewAllEnd?: () => void
   onStopPreviewAll: () => void
   onTogglePreviewAllPlaying: () => void
   onStartPreviewAll: () => void
@@ -47,6 +49,8 @@ export function TimelineBar({
   previewAllPlaying,
   previewAllElapsedSeconds,
   onSeekPreviewAllSeconds,
+  onSeekPreviewAllStart,
+  onSeekPreviewAllEnd,
   onStopPreviewAll,
   onTogglePreviewAllPlaying,
   onStartPreviewAll,
@@ -77,6 +81,8 @@ export function TimelineBar({
             playheadActive={previewAllActive}
             playheadSeconds={previewAllActive ? previewAllElapsedSeconds : null}
             onSeekPlayheadSeconds={onSeekPreviewAllSeconds}
+            onSeekStart={onSeekPreviewAllStart}
+            onSeekEnd={onSeekPreviewAllEnd}
           />
         </div>
       ) : (

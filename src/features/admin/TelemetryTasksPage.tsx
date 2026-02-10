@@ -1,2 +1,1 @@
-export { TelemetryTasksPage } from "./telemetry/TelemetryTasksPage"
-
+export { TelemetryTasksPage } from "./telemetry"

@@ -58,6 +58,34 @@
   background: rgba(109, 94, 247, 0.12);
 }
 
+.shortDramaPanel {
+  margin: 0 0 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.shortDramaCard {
+  border-radius: 14px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+}
+
+.shortDramaCardTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.shortDramaCardBody {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .markdown {
   padding: 16px 18px 22px;
   overflow: auto;

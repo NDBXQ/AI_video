@@ -9,6 +9,8 @@ type PreviewRow = { id: string; name: string; url: string; thumbnailUrl?: string
 
 type StoryboardTableProps = {
   items: StoryboardItem[]
+  storyId?: string
+  outlineId?: string
   updateItemById: (id: string, updater: (item: StoryboardItem) => StoryboardItem) => void
   selectedItems: Set<string>
   scriptGenerateById: Record<string, ScriptGenerateState>
@@ -28,6 +30,7 @@ type StoryboardTableProps = {
   onGenerateReferenceImages?: (storyboardId: string) => void
   refImageGeneratingById?: Record<string, boolean>
   onOpenEdit: (itemId: string, initialValue: string) => void
+  onOpenDetails: (itemId: string) => void
   onDelete: (id: string) => void
 }
 
@@ -37,6 +40,8 @@ function normalizeName(name: string): string {
 
 export function StoryboardTable({
   items,
+  storyId,
+  outlineId,
   updateItemById,
   selectedItems,
   scriptGenerateById,
@@ -48,6 +53,7 @@ export function StoryboardTable({
   onGenerateReferenceImages,
   refImageGeneratingById,
   onOpenEdit,
+  onOpenDetails,
   onDelete
 }: StoryboardTableProps): ReactElement {
   const showSkeleton = isLoading && items.length === 0
@@ -162,11 +168,11 @@ export function StoryboardTable({
     })
   }, [computeNextScriptAdd, computeNextScriptRemove, items, persistScriptContent, updateItemById])
 
-  const onDeleteAsset = useCallback(async (p: { storyboardId: string; category: "role" | "item"; name: string; imageId: string; isGlobal?: boolean }) => {
+  const onDeleteAsset = useCallback(async (p: { storyboardId: string; category: "role" | "item"; name: string; imageId?: string | null; isGlobal?: boolean }) => {
     const name = normalizeName(p.name)
     if (!name) return
     await applyScriptPatch(p.storyboardId, p.category, name, "remove")
-    if (!p.isGlobal) {
+    if (!p.isGlobal && p.imageId) {
       const res = await fetch(`/api/video-creation/images/${encodeURIComponent(p.imageId)}`, { method: "DELETE" })
       const json = (await res.json().catch(() => null)) as { ok: boolean; error?: { message?: string } } | null
       if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
@@ -187,6 +193,7 @@ export function StoryboardTable({
             <th className={styles.colRole}>角色</th>
             <th className={styles.colBackground}>背景</th>
             <th className={styles.colItems}>物品</th>
+            <th className={styles.colFrames}>首尾帧图片</th>
             <th className={styles.colActions}>操作</th>
           </tr>
         </thead>
@@ -200,6 +207,7 @@ export function StoryboardTable({
                   <td className={styles.colRole}><div className={styles.skeletonBox} /></td>
                   <td className={styles.colBackground}><div className={styles.skeletonBox} /></td>
                   <td className={styles.colItems}><div className={styles.skeletonBox} /></td>
+                  <td className={styles.colFrames}><div className={styles.skeletonBox} /></td>
                   <td className={styles.colActions}><div className={styles.skeletonBox} /></td>
                 </tr>
               ))
@@ -209,13 +217,17 @@ export function StoryboardTable({
                   item={item}
                   isSelected={selectedItems.has(item.id)}
                   generationState={scriptGenerateById[item.id]}
+                  storyId={storyId}
+                  outlineId={outlineId}
                   onSelect={onSelect}
                   previews={previewsById[item.id]}
                   onPreviewImage={onPreviewImage}
                   onPickAsset={openAssetPicker}
                   onDeleteAsset={onDeleteAsset}
+                  onGenerateReferenceImages={onGenerateReferenceImages}
                   refImageGenerating={Boolean(refImageGeneratingById?.[item.id])}
                   onOpenEdit={onOpenEdit}
+                  onOpenDetails={onOpenDetails}
                   onDelete={onDelete}
                 />
               ))}
@@ -227,6 +239,7 @@ export function StoryboardTable({
           open={assetPickerOpen}
           title={assetPickerTitle}
           entityName={assetPickerEntityName}
+          storyId={storyId ?? null}
           storyboardId={assetPickerStoryboardId}
           category={assetPickerCategory}
           onPicked={({ url, generatedImageId }) => {

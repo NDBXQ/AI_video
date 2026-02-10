@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import type { ApiErr, ApiOk } from "@/shared/api"
 import type { StoryboardItem, VideoStoryboardsResponse } from "@/features/video/types"
-import type { Thumbnail } from "@/features/video/utils/mediaPreviewUtils"
+import type { Thumbnail } from "@/shared/utils/mediaPreviewUtils"
 import { normalizeShotsToItems } from "@/features/video/utils/storyboardUtils"
-import { createLocalPreviewSvg } from "@/features/video/utils/previewUtils"
+import { createLocalPreviewSvg } from "@/shared/utils/previewUtils"
 
 type EpisodeRow = {
   outlineId: string

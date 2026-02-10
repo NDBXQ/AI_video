@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactElement } from "react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ScopeTabs } from "./components/ScopeTabs"
 import { MyTypeTabs, type MyContentType } from "./components/MyTypeTabs"
@@ -14,10 +14,11 @@ import { AiGenerateResourceModal } from "./components/AiGenerateResourceModal"
 import { BulkActionBar } from "./components/BulkActionBar"
 import { PublicResourcePreviewModal } from "./components/PublicResourcePreviewModal"
 import { StoryContentModal } from "./components/StoryContentModal"
-import { ConfirmModal } from "./components/ConfirmModal"
-import { deleteStory } from "./actions/library"
-import { aiGeneratePublicResource } from "./actions/ai-generate"
-import type { LibraryItem } from "./components/LibraryCard"
+import { ConfirmModal } from "@/shared/ui/ConfirmModal"
+import { deleteStory } from "@/server/actions/library/library"
+import { deleteTvcProject } from "@/server/actions/library/tvc"
+import { aiGeneratePublicResource } from "@/server/actions/library/ai-generate"
+import type { LibraryItem } from "@/shared/contracts/library/libraryItem"
 import styles from "./ContentLibraryPage.module.css"
 import { useLibraryData } from "./hooks/useLibraryData"
 import { useLibrarySelection } from "./hooks/useLibrarySelection"
@@ -26,6 +27,8 @@ import { postFormDataWithProgress, putBlobWithProgress } from "@/shared/utils/up
 
 export function ContentLibraryPage(): ReactElement {
   const router = useRouter()
+  const gridWrapRef = useRef<HTMLDivElement | null>(null)
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null)
   
   const {
     scope, setScope,
@@ -59,7 +62,7 @@ export function ContentLibraryPage(): ReactElement {
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [myType, setMyType] = useState<MyContentType>("standard")
-  const [storyDeleteConfirm, setStoryDeleteConfirm] = useState<{ ids: string[] } | null>(null)
+  const [storyDeleteConfirm, setStoryDeleteConfirm] = useState<{ ids: string[]; tvcCount: number; standardCount: number } | null>(null)
   const [storyDeleting, setStoryDeleting] = useState(false)
   const [publicDeleteConfirm, setPublicDeleteConfirm] = useState<{ ids: string[] } | null>(null)
   const [storyContentItem, setStoryContentItem] = useState<{ id: string; title?: string } | null>(null)
@@ -74,6 +77,31 @@ export function ContentLibraryPage(): ReactElement {
   useEffect(() => {
     if (scope !== "my") setMyType("standard")
   }, [scope])
+
+  useEffect(() => {
+    if (scope !== "my") return
+    clearSelected()
+    setStoryDeleteConfirm(null)
+  }, [clearSelected, myType, query, scope])
+
+  useEffect(() => {
+    if (scope !== "library" && scope !== "shared") return
+    if (!publicHasMore) return
+    const root = gridWrapRef.current
+    const target = loadMoreSentinelRef.current
+    if (!root || !target) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry?.isIntersecting) return
+        if (loading || publicLoadingMore || !publicHasMore) return
+        void loadMorePublic()
+      },
+      { root, rootMargin: "220px 0px" }
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [loadMorePublic, loading, publicHasMore, publicLoadingMore, scope])
 
   const handleItemClick = useCallback(
     (item: LibraryItem) => {
@@ -99,10 +127,61 @@ export function ContentLibraryPage(): ReactElement {
         ? displayItems.filter((i) => i.type === "tvc")
         : displayItems.filter((i) => i.type !== "tvc")
 
+  const myItemTypeById = useMemo(() => {
+    const map = new Map<string, LibraryItem["type"]>()
+    if (scope !== "my") return map
+    for (const item of displayItems) map.set(item.id, item.type)
+    return map
+  }, [displayItems, scope])
+
+  const mySelectedCounts = useMemo(() => {
+    if (scope !== "my") return { tvcCount: 0, standardCount: 0 }
+    let tvcCount = 0
+    let standardCount = 0
+    for (const id of selectedIds) {
+      const t = myItemTypeById.get(id)
+      if (t === "tvc") tvcCount += 1
+      else standardCount += 1
+    }
+    return { tvcCount, standardCount }
+  }, [myItemTypeById, scope, selectedIds])
+
+  const myVisibleIds = useMemo(() => {
+    if (scope !== "my") return []
+    return myFilteredItems.map((i) => i.id)
+  }, [myFilteredItems, scope])
+
+  const myAllVisibleSelected = useMemo(() => {
+    if (scope !== "my") return false
+    if (myVisibleIds.length <= 0) return false
+    for (const id of myVisibleIds) {
+      if (!selectedIds.has(id)) return false
+    }
+    return true
+  }, [myVisibleIds, scope, selectedIds])
+
+  const toggleSelectAllMyVisible = useCallback(() => {
+    if (scope !== "my") return
+    if (myVisibleIds.length <= 0) return
+    if (myAllVisibleSelected) {
+      clearSelected()
+      return
+    }
+    setSelectedIds(new Set(myVisibleIds))
+  }, [clearSelected, myAllVisibleSelected, myVisibleIds, scope, setSelectedIds])
+
   const openMyStoriesDeleteConfirm = useCallback(() => {
     if (selectedIds.size <= 0) return
-    setStoryDeleteConfirm({ ids: Array.from(selectedIds) })
-  }, [selectedIds])
+    const ids = Array.from(selectedIds)
+    let tvcCount = 0
+    let standardCount = 0
+    for (const id of ids) {
+      const t = myItemTypeById.get(id)
+      if (t === "tvc") tvcCount += 1
+      else standardCount += 1
+    }
+    setStoryDeleteConfirm({ ids, tvcCount, standardCount })
+  }, [myItemTypeById, selectedIds])
 
   const confirmMyStoriesDelete = useCallback(async () => {
     const ids = storyDeleteConfirm?.ids ?? []
@@ -120,7 +199,9 @@ export function ContentLibraryPage(): ReactElement {
             if (i >= ids.length) return
             const id = ids[i]!
             try {
-              await deleteStory(id)
+              const t = myItemTypeById.get(id)
+              const res = t === "tvc" ? await deleteTvcProject(id) : await deleteStory(id)
+              if (!res.success) throw new Error("DELETE_FAILED")
             } catch {
               failedIds.push(id)
             }
@@ -134,12 +215,15 @@ export function ContentLibraryPage(): ReactElement {
       if (failedIds.length > 0) {
         setNotice({ type: "error", message: `删除完成：成功 ${okCount}/${ids.length}，失败 ${failedIds.length}` })
       } else {
-        setNotice({ type: "info", message: `已删除 ${okCount} 个剧本` })
+        const tvcCount = storyDeleteConfirm?.tvcCount ?? 0
+        const standardCount = storyDeleteConfirm?.standardCount ?? 0
+        const title = tvcCount > 0 && standardCount > 0 ? "内容" : tvcCount > 0 ? "项目" : "剧本"
+        setNotice({ type: "info", message: `已删除 ${okCount} 个${title}` })
       }
     } finally {
       setStoryDeleting(false)
     }
-  }, [loadMyStories, query, setSelectedIds, storyDeleteConfirm, storyDeleting])
+  }, [loadMyStories, myItemTypeById, query, setSelectedIds, storyDeleteConfirm, storyDeleting])
 
   const openPublicBulkDeleteConfirm = useCallback(() => {
     if (scope !== "library") return
@@ -192,11 +276,28 @@ export function ContentLibraryPage(): ReactElement {
                 variant={scope}
                 onUpload={() => setUploadModalOpen(true)}
                 onGenerate={() => setAiModalOpen(true)}
+                selectAllLabel={
+                  scope === "my"
+                    ? myVisibleIds.length > 0
+                      ? myAllVisibleSelected
+                        ? "取消全选"
+                        : "全选"
+                      : "全选"
+                    : undefined
+                }
+                selectAllDisabled={scope === "my" ? myVisibleIds.length <= 0 || storyDeleting : undefined}
+                onSelectAll={scope === "my" ? toggleSelectAllMyVisible : undefined}
                 deleteLabel={
                   scope === "my"
                     ? selectedIds.size > 0
-                      ? `删除剧本（${selectedIds.size}）`
-                      : "删除剧本"
+                      ? mySelectedCounts.tvcCount > 0 && mySelectedCounts.standardCount > 0
+                        ? `删除内容（${selectedIds.size}）`
+                        : mySelectedCounts.tvcCount > 0
+                          ? `删除项目（${selectedIds.size}）`
+                          : `删除剧本（${selectedIds.size}）`
+                      : myType === "tvc"
+                        ? "删除项目"
+                        : "删除剧本"
                     : scope === "library"
                       ? selectedIds.size > 0
                         ? `删除素材（${selectedIds.size}）`
@@ -228,7 +329,7 @@ export function ContentLibraryPage(): ReactElement {
               ) : null}
 
               <div className={styles.contentInner}>
-                <div className={styles.gridWrap}>
+                <div className={styles.gridWrap} ref={gridWrapRef}>
                   {scope === "my" ? (
                     <MyStoriesGroupedGrid
                       items={myFilteredItems}
@@ -250,22 +351,10 @@ export function ContentLibraryPage(): ReactElement {
                       onToggleSelected={toggleSelected}
                     />
                   )}
+                  {scope === "library" || scope === "shared" ? (
+                    <div ref={loadMoreSentinelRef} className={styles.loadMoreSentinel} aria-hidden />
+                  ) : null}
                 </div>
-                {scope === "library" || scope === "shared" ? (
-                  <div className={styles.loadMoreBar}>
-                    <div className={styles.loadMoreMeta}>
-                      已加载 {displayItems.length}/{publicTotal}
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.loadMoreButton}
-                      onClick={() => void loadMorePublic()}
-                      disabled={loading || publicLoadingMore || !publicHasMore}
-                    >
-                      {publicLoadingMore ? "加载中..." : publicHasMore ? "加载更多" : "没有更多了"}
-                    </button>
-                  </div>
-                ) : null}
               </div>
             </div>
           </div>
@@ -282,6 +371,9 @@ export function ContentLibraryPage(): ReactElement {
           const description = formData.get("description")
           const tags = formData.get("tags")
           const applicableScenes = formData.get("applicableScenes")
+          const durationMsRaw = formData.get("durationMs")
+          const durationMsNum =
+            typeof durationMsRaw === "string" && Number.isFinite(Number(durationMsRaw)) && Number(durationMsRaw) > 0 ? Math.round(Number(durationMsRaw)) : undefined
 
           const isLarge = file instanceof File && file.size > 8 * 1024 * 1024
           const canChunk = file instanceof File && typeof type === "string" && type.trim()
@@ -313,6 +405,7 @@ export function ContentLibraryPage(): ReactElement {
                 fileName: file.name,
                 contentType: file.type || "application/octet-stream",
                 size: file.size,
+                ...(durationMsNum !== undefined ? { durationMs: durationMsNum } : {}),
                 name: typeof name === "string" ? name : undefined,
                 description: typeof description === "string" ? description : undefined,
                 tags: typeof tags === "string" ? tags : undefined,
@@ -396,10 +489,10 @@ export function ContentLibraryPage(): ReactElement {
         onClose={() => setPreviewItem(null)}
       />
       <BulkActionBar
-        selectedCount={scope === "library" ? selectedIds.size : 0}
-        deleting={bulkDeleting}
+        selectedCount={scope === "library" || scope === "my" ? selectedIds.size : 0}
+        deleting={scope === "library" ? bulkDeleting : scope === "my" ? storyDeleting : false}
         onClear={clearSelected}
-        onDelete={scope === "library" ? openPublicBulkDeleteConfirm : undefined}
+        onDelete={scope === "library" ? openPublicBulkDeleteConfirm : scope === "my" ? openMyStoriesDeleteConfirm : undefined}
       />
       <StoryContentModal
         open={scope === "my" && storyContentItem != null}
@@ -409,8 +502,20 @@ export function ContentLibraryPage(): ReactElement {
       />
       <ConfirmModal
         open={scope === "my" && storyDeleteConfirm != null}
-        title="删除剧本"
-        message={`确定删除选中的 ${storyDeleteConfirm?.ids.length ?? 0} 个剧本吗？此操作不可恢复。`}
+        title={
+          (storyDeleteConfirm?.tvcCount ?? 0) > 0 && (storyDeleteConfirm?.standardCount ?? 0) > 0
+            ? "删除内容"
+            : (storyDeleteConfirm?.tvcCount ?? 0) > 0
+              ? "删除项目"
+              : "删除剧本"
+        }
+        message={
+          (storyDeleteConfirm?.tvcCount ?? 0) > 0 && (storyDeleteConfirm?.standardCount ?? 0) > 0
+            ? `确定删除选中的 ${storyDeleteConfirm?.ids.length ?? 0} 项内容吗？（剧本 ${storyDeleteConfirm?.standardCount ?? 0}，TVC 项目 ${storyDeleteConfirm?.tvcCount ?? 0}）此操作不可恢复。`
+            : (storyDeleteConfirm?.tvcCount ?? 0) > 0
+              ? `确定删除选中的 ${storyDeleteConfirm?.ids.length ?? 0} 个项目吗？此操作不可恢复。`
+              : `确定删除选中的 ${storyDeleteConfirm?.ids.length ?? 0} 个剧本吗？此操作不可恢复。`
+        }
         confirming={storyDeleting}
         onCancel={() => setStoryDeleteConfirm(null)}
         onConfirm={() => void confirmMyStoriesDelete()}

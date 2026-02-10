@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import type { StoryboardItem } from "@/features/video/types"
-import type { Thumbnail } from "../../utils/mediaPreviewUtils"
-import { createLocalPreviewSvg } from "../../utils/previewUtils"
+import type { Thumbnail } from "@/shared/utils/mediaPreviewUtils"
+import { createLocalPreviewSvg } from "@/shared/utils/previewUtils"
 
 export function useWorkspaceThumbnails(params: {
   items: StoryboardItem[]
@@ -50,4 +50,3 @@ export function useWorkspaceThumbnails(params: {
     })
   }, [activeStoryboardId, activeTab, items, previewImageSrcById, previewVideoSrcById, sceneNo])
 }
-

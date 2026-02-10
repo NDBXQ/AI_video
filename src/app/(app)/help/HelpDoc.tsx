@@ -47,6 +47,40 @@ export function HelpDoc(): ReactElement {
   const sectionIds = useMemo(() => sections.map((s) => s.id), [sections])
   const activeId = useActiveSection(sectionIds)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const topic = (params.get("topic") ?? "").trim()
+    if (!topic) return
+
+    const topicToAnchor: Record<string, string> = {
+      login: "login",
+      library: "library",
+      "script-start": "script-start",
+      "script-outline": "script-outline",
+      "script-storyboard": "script-storyboard",
+      "video-generate": "video-generate",
+      "video-export": "video-export",
+      "task-center": "task-center",
+      tvc: "tvc"
+    }
+
+    const preferredId = topicToAnchor[topic] ?? topic
+    const target =
+      document.getElementById(preferredId) ??
+      (topic === "script-start" || topic === "script-outline" || topic === "script-storyboard"
+        ? document.getElementById("script-workspace")
+        : topic === "video-generate" || topic === "video-export"
+          ? document.getElementById("video-creation")
+          : null)
+
+    if (!target) return
+
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "start" })
+      window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}#${target.id}`)
+    })
+  }, [])
+
   return (
     <div className={styles.doc}>
       <aside className={styles.toc} aria-label="帮助中心目录">

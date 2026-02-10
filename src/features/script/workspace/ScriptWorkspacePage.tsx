@@ -18,6 +18,7 @@ type ScriptWorkspacePageProps = Readonly<{
   storyId: string
   outline?: string
   outlines: ReadonlyArray<OutlineItem>
+  storyMetadata?: Record<string, unknown>
 }>
 
 /**
@@ -27,7 +28,7 @@ type ScriptWorkspacePageProps = Readonly<{
  * @param {string} props.storyId - 故事 ID
  * @returns {ReactElement} 页面内容
  */
-export function ScriptWorkspacePage({ mode, storyId, outline, outlines }: ScriptWorkspacePageProps): ReactElement {
+export function ScriptWorkspacePage({ mode, storyId, outline, outlines, storyMetadata }: ScriptWorkspacePageProps): ReactElement {
   const router = useRouter()
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [isCompact, setIsCompact] = useState(false)
@@ -97,6 +98,7 @@ export function ScriptWorkspacePage({ mode, storyId, outline, outlines }: Script
   )
 
   const [generatingStoryboard, setGeneratingStoryboard] = useState(false)
+  const shortDrama = (storyMetadata as any)?.shortDrama ?? null
 
   const handleGenerateStoryboardText = useCallback(async () => {
     if (!activeOutline) return
@@ -144,6 +146,7 @@ export function ScriptWorkspacePage({ mode, storyId, outline, outlines }: Script
             generatingStoryboard={generatingStoryboard}
             handleGenerateStoryboardText={handleGenerateStoryboardText}
             handleManualGenerate={handleManualGenerate}
+            shortDrama={shortDrama}
           />
 
           {!isCompact ? <WorkspaceResizeHandle containerRef={gridRef} /> : null}

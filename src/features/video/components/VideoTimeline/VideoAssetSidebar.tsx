@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react"
 import shellStyles from "./VideoAssetSidebarShell.module.css"
-import { type Asset, type AudioAsset, type MediaAsset, type TimelineSegment, type VideoAsset } from "../../utils/timelineUtils"
+import { type Asset, type AudioAsset, type MediaAsset, type TimelineSegment, type VideoAsset } from "@/shared/utils/timelineUtils"
 import { usePublicResourceAssets } from "./VideoAssetSidebarParts/usePublicResourceAssets"
 import { useScriptAudioAssets } from "./VideoAssetSidebarParts/useScriptAudioAssets"
 import { VideoAssetsTab } from "./VideoAssetSidebarParts/VideoAssetsTab"
@@ -61,7 +61,6 @@ export function VideoAssetSidebar({
     if (asset.kind === "audio") setPreviewMedia({ kind: "audio", name: asset.name, src })
     if (asset.kind === "video") setPreviewMedia({ kind: "video", name: asset.name, src })
   }, [])
-
 
   return (
     <div className={shellStyles.assetPanel} aria-label="素材面板">

@@ -4,6 +4,8 @@ import { useCallback, useState } from "react"
 import type { FormEvent, ReactElement } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import styles from "./LoginForm.module.css"
+import { apiFetchJson } from "@/shared/apiClient"
+import { useRequestState } from "@/shared/useRequestState"
 
 type LoginResult =
   | { ok: true; data: { user: { id: string; account: string }; created: boolean }; traceId: string }
@@ -23,8 +25,8 @@ type LoginFormProps = {
 export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): ReactElement {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<LoginResult | null>(null)
+  const { state: submitState, run: runSubmit } = useRequestState<{ user: { id: string; account: string }; created: boolean }>()
 
   /**
    * 提交登录请求
@@ -34,7 +36,7 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
   const onSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      if (submitting) return
+      if (submitState.status === "pending") return
 
       const form = e.currentTarget
       const fd = new FormData(form)
@@ -43,34 +45,25 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
 
       if (!account || !password) return
 
-      setSubmitting(true)
       setResult(null)
 
-      try {
-        const res = await fetch("/api/auth/login", {
+      const out = await runSubmit((signal) =>
+        apiFetchJson<{ user: { id: string; account: string }; created: boolean }>("/api/auth/login", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ account, password })
+          body: JSON.stringify({ account, password }),
+          signal
         })
-
-        const json = (await res.json()) as LoginResult
-        setResult(json)
-        if (json.ok) {
-          const next = searchParams?.get("next") ?? "/"
-          const safeNext = next.startsWith("/") ? next : "/"
-          router.replace(safeNext)
-        }
-      } catch {
-        setResult({
-          ok: false,
-          error: { code: "NETWORK_ERROR", message: "网络错误，请稍后重试" },
-          traceId: "n/a"
-        })
-      } finally {
-        setSubmitting(false)
+      )
+      if (!out) return
+      setResult(out as LoginResult)
+      if (out.ok) {
+        const next = searchParams?.get("next") ?? "/"
+        const safeNext = next.startsWith("/") ? next : "/"
+        router.replace(safeNext)
       }
     },
-    [router, searchParams, submitting]
+    [router, runSubmit, searchParams, submitState.status]
   )
 
   const containerClassName = variant === "card" ? styles.card : styles.plain
@@ -108,8 +101,8 @@ export function LoginForm({ variant = "card", buttonLabel }: LoginFormProps): Re
           />
         </div>
 
-        <button className={styles.button} type="submit" disabled={submitting}>
-          {submitting ? "提交中..." : (buttonLabel ?? "登录 / 注册")}
+        <button className={styles.button} type="submit" disabled={submitState.status === "pending"}>
+          {submitState.status === "pending" ? "提交中..." : (buttonLabel ?? "登录 / 注册")}
         </button>
       </form>
 

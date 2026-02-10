@@ -1,0 +1,111 @@
+.row {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rowHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rowTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--theme-text-strong);
+}
+
+.rowMeta {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--theme-text-muted);
+}
+
+.scroller {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.card {
+  width: 132px;
+  border-radius: 14px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--theme-border-strong);
+}
+
+.cardImg {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cardName {
+  color: var(--theme-text-strong);
+  font-size: 12px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.tag {
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(109, 94, 247, 0.28);
+  background: rgba(109, 94, 247, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 11px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.empty {
+  color: var(--theme-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}

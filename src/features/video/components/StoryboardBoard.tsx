@@ -6,8 +6,8 @@ import styles from "./StoryboardBoard.module.css"
 import sidebarStyles from "./StoryboardList/StoryboardSidebar.module.css"
 import toolbarStyles from "./StoryboardList/StoryboardToolbar.module.css"
 import { useStoryboardData } from "../hooks/useStoryboardData"
-import { createLocalPreviewSvg } from "../utils/previewUtils"
-import { ConfirmModal } from "@/features/library/components/ConfirmModal"
+import { createLocalPreviewSvg } from "@/shared/utils/previewUtils"
+import { ConfirmModal } from "@/shared/ui/ConfirmModal"
 
 type StoryboardBoardProps = {
   initialItems?: StoryboardItem[]

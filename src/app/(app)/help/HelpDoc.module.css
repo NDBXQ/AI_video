@@ -171,6 +171,13 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
+.h3 {
+  margin: 12px 0 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .p {
   margin: 0 0 10px;
   font-size: 12px;

@@ -1,0 +1,323 @@
+.editor {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+}
+
+.timelineWrap {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-surface);
+  backdrop-filter: var(--theme-blur);
+  border-radius: 14px;
+  padding: 10px 10px 12px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.timelineWrapDragOver {
+  border-color: rgba(109, 94, 247, 0.55);
+  box-shadow: 0 0 0 3px rgba(109, 94, 247, 0.16);
+}
+
+.timelineScroll {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.timeline {
+  position: relative;
+  min-height: 168px;
+  padding: 0;
+}
+
+.ruler {
+  position: sticky;
+  top: 0;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 3;
+  box-sizing: border-box;
+  padding-left: 0;
+  overflow: hidden;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  height: 26px;
+  width: 1px;
+}
+
+.tickLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tickLabel {
+  position: absolute;
+  top: 5px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.trackKonva {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.konvaWindow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.clipHitBox,
+.audioClipHitBox {
+  position: absolute;
+  top: 8px;
+  height: 32px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: grab;
+  box-sizing: border-box;
+  user-select: none;
+  z-index: 2;
+}
+
+.clipHitBoxActive {
+}
+
+.clipHitBoxSelected {
+}
+
+.audioClipHitBoxSelected {
+}
+
+.clipDragHandleHit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 26px;
+  cursor: grab;
+}
+
+.clipHandleLeftHit,
+.clipHandleRightHit {
+  position: absolute;
+  top: -2px;
+  width: 10px;
+  height: 36px;
+  cursor: ew-resize;
+  background: transparent;
+}
+
+.clipHandleLeftHit {
+  left: -1px;
+}
+
+.clipHandleRightHit {
+  right: -1px;
+}
+
+.clip,
+.audioClip {
+  position: absolute;
+  top: 8px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(109, 94, 247, 0.18);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.clipActive {
+  background: rgba(109, 94, 247, 0.26);
+  border-color: rgba(109, 94, 247, 0.55);
+}
+
+.clipSelected {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16), 0 18px 52px rgba(2, 6, 23, 0.45);
+}
+
+.clipHiddenWhileDragOut {
+  opacity: 1;
+}
+
+.audioClip {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.clipTitle {
+  position: relative;
+  z-index: 2;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.86);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.clipThumb {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  clip-path: inset(0 round 10px);
+  background-image: linear-gradient(rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0.22)), var(--clip-thumb-url);
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.clipHandleLeft,
+.clipHandleRight {
+  position: absolute;
+  top: -2px;
+  width: 10px;
+  height: 36px;
+  cursor: ew-resize;
+  background: rgba(15, 23, 42, 0.16);
+  z-index: 3;
+}
+
+.clipHandleLeft {
+  left: -1px;
+  border-radius: 10px 0 0 10px;
+}
+
+.clipHandleRight {
+  right: -1px;
+  border-radius: 0 10px 10px 0;
+}
+
+.clipDragHandle {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 14px;
+  height: 18px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  z-index: 4;
+  cursor: grab;
+  pointer-events: none;
+}
+
+.clipDragHandle:hover {
+  background: rgba(15, 23, 42, 0.32);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.clipTrashZone {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 10;
+  width: 110px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.16);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.clipTrashZoneActive {
+  border-color: rgba(239, 68, 68, 0.65);
+  background: rgba(239, 68, 68, 0.26);
+}
+
+.clipDragGhost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 18px 52px rgba(2, 6, 23, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.clipDragGhostTitle {
+  font-size: 12px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clipDragGhostMeta {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.clipDragCard {
+  position: fixed;
+  z-index: 9998;
+  pointer-events: none;
+  box-shadow: 0 18px 52px rgba(2, 6, 23, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+.dragOutOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: transparent;
+  pointer-events: none;
+}
+
+
+.konvaOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}

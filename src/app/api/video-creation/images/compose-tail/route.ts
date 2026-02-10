@@ -3,8 +3,7 @@ import { z } from "zod"
 import { makeApiErr, makeApiOk } from "@/shared/api"
 import { getSessionFromRequest } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
-import { ImageCompositionService } from "@/server/services/imageCompositionService"
-import { ServiceError } from "@/server/services/errors"
+import { composeVideoCreationTailImage } from "@/server/domains/video-creation/usecases/images/compose"
 
 const inputSchema = z.object({
   storyboardId: z.string().trim().min(1).max(200),
@@ -28,18 +27,12 @@ export async function POST(req: NextRequest): Promise<Response> {
   const parsed = inputSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json(makeApiErr(traceId, "VALIDATION_FAILED", "参数格式不正确"), { status: 400 })
 
-  try {
-    const { storyboardId } = parsed.data
-    const result = await ImageCompositionService.composeTailImage(userId, storyboardId, traceId, parsed.data.referenceImages)
-    return NextResponse.json(makeApiOk(traceId, result), { status: 200 })
-  } catch (err) {
-    if (err instanceof ServiceError) {
-      let status = 500
-      if (err.code === "STORYBOARD_NOT_FOUND" || err.code === "PROMPT_NOT_FOUND" || err.code === "NO_REFERENCE_IMAGES") status = 400
-      if (err.code === "COZE_REQUEST_FAILED" || err.code === "COZE_NO_IMAGE_URL") status = 502
-      return NextResponse.json(makeApiErr(traceId, err.code, err.message), { status })
-    }
-    const anyErr = err as { message?: string }
-    return NextResponse.json(makeApiErr(traceId, "COMPOSE_FAILED", anyErr?.message || "图片合成失败"), { status: 500 })
-  }
+  const res = await composeVideoCreationTailImage({
+    userId,
+    storyboardId: parsed.data.storyboardId,
+    traceId,
+    referenceImages: parsed.data.referenceImages
+  })
+  if (!res.ok) return NextResponse.json(makeApiErr(traceId, res.code, res.message), { status: res.status })
+  return NextResponse.json(makeApiOk(traceId, res.data), { status: 200 })
 }

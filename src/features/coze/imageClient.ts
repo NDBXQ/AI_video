@@ -56,7 +56,7 @@ export function extractCozeImageUrl(data: CozeImageResponse): string | null {
 export async function generateImageByCoze(
   prompt: string,
   imageType: "background" | "role" | "item" = "item",
-  options?: { traceId?: string; module?: string }
+  options?: { traceId?: string; module?: string; style?: string }
 ): Promise<string> {
   const apiUrl =
     readEnv("REFERENCE_IMAGE_API_URL") || "https://bx3fr9ndvs.coze.site/run"
@@ -68,6 +68,7 @@ export async function generateImageByCoze(
 
   const traceId = options?.traceId ?? "unknown"
   const moduleName = options?.module ?? "coze"
+  const style = typeof options?.style === "string" && options.style.trim() ? options.style.trim() : null
   const start = Date.now()
   let host = "unknown"
   let path = ""
@@ -94,7 +95,7 @@ export async function generateImageByCoze(
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ prompt: prompt.trim(), image_type: imageType }),
+    body: JSON.stringify({ prompt: prompt.trim(), image_type: imageType, ...(style ? { style } : {}) }),
   })
 
   if (!response.ok) {

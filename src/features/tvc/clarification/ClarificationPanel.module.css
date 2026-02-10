@@ -1,0 +1,38 @@
+.card {
+  border-radius: 16px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--theme-text-strong);
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--theme-text-muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--theme-border);
+  background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+
+.body {
+  min-width: 0;
+}
+

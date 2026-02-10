@@ -5,9 +5,16 @@ import type { MouseEvent, ReactElement } from "react"
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import styles from "./ScriptCreationDialog.module.css"
-import { UiSelect } from "@/components/ui-select/UiSelect"
+import { ListboxSelect } from "@/shared/ui/ListboxSelect"
 import { logger } from "@/shared/logger"
 import type { ApiErr, ApiOk } from "@/shared/api"
+import {
+  buildOutlineStoryTextFromShortDrama,
+  callShortDramaCharacterSettings,
+  callShortDramaPlanning,
+  callShortDramaWorldSetting,
+  patchStoryShortDramaMetadata
+} from "../api/shortDrama"
 
 export type ScriptStartMode = "source" | "brief"
 
@@ -27,7 +34,7 @@ export function ScriptCreationDialog({
   const [title, setTitle] = useState("")
   const [ratio, setRatio] = useState("16:9")
   const [resolution, setResolution] = useState("1080p")
-  const [shotStyle, setShotStyle] = useState("cinema")
+  const [shotStyle, setShotStyle] = useState("realistic")
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorText, setErrorText] = useState<string | null>(null)
@@ -92,17 +99,59 @@ export function ScriptCreationDialog({
     })
 
     try {
-      const res = await fetch("/api/coze/storyboard/generate-outline", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+      const payload = await (async () => {
+        if (mode === "source") {
+          return {
+            input_type: inputType,
+            story_text: storyText,
+            title: title.trim(),
+            ratio,
+            resolution,
+            style: shotStyle
+          }
+        }
+
+        const planningResult = await callShortDramaPlanning(storyText)
+        const anyPlanning = planningResult as any
+        const rawGenres = Array.isArray(anyPlanning?.theme_module?.genres) ? anyPlanning.theme_module.genres : []
+        const genres = rawGenres.map((v: any) => String(v ?? "").trim()).filter(Boolean).slice(0, 50)
+        const core = anyPlanning?.theme_module?.core_requirements ?? {}
+        const worldview_setting = typeof core?.worldview_setting === "string" ? core.worldview_setting : ""
+        const core_conflict = typeof core?.core_conflict === "string" ? core.core_conflict : ""
+        const protagonist_setting = typeof core?.protagonist_setting === "string" ? core.protagonist_setting : ""
+
+        const worldSetting = await callShortDramaWorldSetting({ genres, worldview_setting, core_conflict })
+        const characterSetting = await callShortDramaCharacterSettings({
+          genres,
+          worldview_setting,
+          core_conflict,
+          protagonist_setting
+        })
+
+        const outlineStoryText = buildOutlineStoryTextFromShortDrama({
+          planningResult,
+          worldSetting,
+          characterSetting,
+          maxBytes: 49_000
+        })
+
+        return {
           input_type: inputType,
-          story_text: storyText,
+          story_text: outlineStoryText,
           title: title.trim(),
           ratio,
           resolution,
-          style: shotStyle
-        })
+          style: shotStyle,
+          _shortDramaMeta: { planningResult, worldSetting, characterSetting }
+        }
+      })()
+
+      const { _shortDramaMeta, ...requestBody } = payload as any
+
+      const res = await fetch("/api/coze/storyboard/generate-outline", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(requestBody)
       })
 
       const durationMs = Math.round(performance.now() - start)
@@ -151,6 +200,10 @@ export function ScriptCreationDialog({
         status: res.status,
         durationMs
       })
+
+      if (mode !== "source" && _shortDramaMeta) {
+        await patchStoryShortDramaMetadata(storyId, _shortDramaMeta)
+      }
 
       // 跳转到工作台并带上 storyId
       const m = mode === "source" ? "source" : "brief"
@@ -224,10 +277,11 @@ export function ScriptCreationDialog({
               <div className={styles.labelRow}>
                 <div className={styles.label}>视频比例</div>
               </div>
-              <UiSelect
+              <ListboxSelect
                 ariaLabel="视频比例"
                 value={ratio}
                 onChange={setRatio}
+                portalZIndex={1100}
                 options={[
                   { value: "16:9", label: "16:9（横屏·通用）" },
                   { value: "4:3", label: "4:3（横屏·旧版）" },
@@ -242,10 +296,11 @@ export function ScriptCreationDialog({
               <div className={styles.labelRow}>
                 <div className={styles.label}>分辨率</div>
               </div>
-              <UiSelect
+              <ListboxSelect
                 ariaLabel="分辨率"
                 value={resolution}
                 onChange={setResolution}
+                portalZIndex={1100}
                 options={[
                   { value: "1080p", label: "1080p（高清）" },
                   { value: "720p", label: "720p（标清）" },
@@ -256,16 +311,16 @@ export function ScriptCreationDialog({
 
             <div className={styles.field}>
               <div className={styles.labelRow}>
-                <div className={styles.label}>镜头风格</div>
+                <div className={styles.label}>画风</div>
               </div>
-              <UiSelect
-                ariaLabel="镜头风格"
+              <ListboxSelect
+                ariaLabel="画风"
                 value={shotStyle}
                 onChange={setShotStyle}
+                portalZIndex={1100}
                 options={[
-                  { value: "cinema", label: "电影感（推荐）" },
-                  { value: "tv", label: "电视剧（纪实）" },
-                  { value: "short", label: "短视频（快节奏）" }
+                  { value: "realistic", label: "真实风" },
+                  { value: "anime", label: "动漫风" }
                 ]}
               />
             </div>
