@@ -144,6 +144,43 @@
   gap: 8px;
 }
 
+.assistantStatusCard {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.assistantStatusRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.assistantStatusLabel {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--theme-text-muted);
+  letter-spacing: 0.2px;
+}
+
+.assistantStatusValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--theme-text-strong);
+  font-size: 13px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.assistantStatusValueMuted {
+  color: var(--theme-text-muted);
+  font-weight: 700;
+}
+
 .inlineActionBtn {
   height: 30px;
   padding: 0 10px;

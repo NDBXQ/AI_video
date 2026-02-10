@@ -243,6 +243,7 @@ export async function createVibeCreatingLangChainStream(params: {
         try {
           for (let step = 0; step < maxSteps; step++) {
             ensureToolCallsOnAiMessages(messages)
+            console.log("====messages=====\n", messages)
             const ai = (await modelWithTools.invoke(messages, { signal: controllerAbort.signal } as any)) as AIMessage
             const toolCalls = extractToolCalls(ai)
 

@@ -17,7 +17,7 @@ import type { TvcAgentStreamData } from "../agent/vibeCreatingTypes"
 import { loadSkillInstructions } from "./vibeCreatingSkills"
 import { VIBE_SKILLS } from "./constants"
 import type { VibeSkillName } from "./constants"
-import { normalizeSeedreamSize, SEEDREAM_ALLOWED_SIZES } from "./validators/seedreamSize"
+import { normalizeSeedreamSize } from "./validators/seedreamSize"
 
 type ToolRuntime = {
   traceId: string
@@ -117,8 +117,7 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
               reference_image_ordinals: z.array(z.number().int().positive()).optional()
             })
           ),
-          overwrite_existing: z.boolean().optional(),
-          size: z.string().optional()
+          overwrite_existing: z.boolean().optional()
         })
       )
       const requestsRaw = args.requests
@@ -127,13 +126,8 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
         const normalized = normalizeSeedreamSize(runtime.image.size)
         return normalized.ok ? normalized.size : "2048x2048"
       })()
-      const sizeRaw = typeof args.size === "string" && args.size.trim() ? args.size.trim() : ""
-      const size = (() => {
-        if (!sizeRaw) return defaultSize
-        const normalized = normalizeSeedreamSize(sizeRaw)
-        if (normalized.ok) return normalized.size
-        throw new ServiceError("TOOL_ARGS_INVALID", `${normalized.message}，可选值：${SEEDREAM_ALLOWED_SIZES.join(" / ")}`)
-      })()
+      const referenceSize = defaultSize
+      const firstFrameSize = "2560x1440"
       const watermark = runtime.image.watermark
 
       const referenceRequests: Array<{ ordinal: number; category: "role" | "background" | "item"; name: string; description: string; prompt: string }> = []
@@ -193,7 +187,7 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
             storyId: runtime.storyId,
             state: nextState,
             requests: referenceRequests,
-            size,
+            size: referenceSize,
             watermark,
             overwriteExisting
           })
@@ -238,7 +232,7 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
             storyId: runtime.storyId,
             state: nextState,
             requests: firstFrameRequests,
-            size,
+            size: firstFrameSize,
             watermark,
             overwriteExisting
           })
@@ -376,6 +370,10 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
         const firstFrameOrdinal = r.first_frame_ordinal
         const prompt = r.prompt
         const durationSecondsRaw = r.duration_seconds
+        const durationSecondsHint = `requests[].duration_seconds 必须为 ${VIBE_VIDEO_DURATION_MIN_SECONDS}~${VIBE_VIDEO_DURATION_MAX_SECONDS} 的整数`
+        if (!Number.isInteger(durationSecondsRaw)) throw new ServiceError("TOOL_ARGS_INVALID", durationSecondsHint)
+        if (durationSecondsRaw < VIBE_VIDEO_DURATION_MIN_SECONDS) throw new ServiceError("TOOL_ARGS_INVALID", durationSecondsHint)
+        if (durationSecondsRaw > VIBE_VIDEO_DURATION_MAX_SECONDS) throw new ServiceError("TOOL_ARGS_INVALID", durationSecondsHint)
         requests.push({
           ordinal,
           firstFrameOrdinal,

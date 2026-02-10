@@ -4,6 +4,7 @@ import { Eye, X } from "lucide-react"
 import { useMemo, useState, type ReactElement } from "react"
 import styles from "./TvcAssetMediaCard.module.css"
 import { ConfirmDeleteModal } from "@/shared/ui/ConfirmDeleteModal"
+import { AspectRatio } from "@/shared/ui/shadcn/aspect-ratio"
 
 export function TvcAssetMediaCard(props: {
   mediaType: "image" | "video"
@@ -20,12 +21,15 @@ export function TvcAssetMediaCard(props: {
 }): ReactElement {
   const { mediaType, title, typeLabel, name, url, thumbnailUrl, statusTextWhenMissing, onOpen, onViewInfo, onDelete } = props
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [measuredRatio, setMeasuredRatio] = useState<number | null>(null)
 
   const openUrl = useMemo(() => (url ?? "").trim(), [url])
   const previewUrl = useMemo(() => (thumbnailUrl ?? openUrl).trim(), [thumbnailUrl, openUrl])
   const videoPoster = useMemo(() => (mediaType === "video" ? (thumbnailUrl ?? "").trim() : ""), [mediaType, thumbnailUrl])
   const clickable = Boolean(mediaType === "image" && openUrl && onOpen)
   const displayName = useMemo(() => (String(name ?? "").trim() ? String(name).trim() : title), [name, title])
+  const fallbackRatio = useMemo(() => (mediaType === "video" ? 16 / 9 : 4 / 3), [mediaType])
+  const ratio = measuredRatio ?? fallbackRatio
 
   return (
     <div
@@ -46,22 +50,42 @@ export function TvcAssetMediaCard(props: {
       aria-label={clickable ? `预览：${title}` : undefined}
     >
       <div className={styles.preview}>
-        {openUrl ? (
-          mediaType === "video" ? (
-            <video
-              className={`${styles.media} ${styles.mediaVideo}`}
-              controls
-              playsInline
-              preload="metadata"
-              poster={videoPoster || undefined}
-              src={openUrl}
-            />
+        <AspectRatio ratio={ratio}>
+          {openUrl ? (
+            mediaType === "video" ? (
+              <video
+                className={`${styles.media} ${styles.mediaVideo}`}
+                controls
+                playsInline
+                preload="metadata"
+                poster={videoPoster || undefined}
+                src={openUrl}
+                onLoadedMetadata={(e) => {
+                  const el = e.currentTarget
+                  const w = Number(el.videoWidth)
+                  const h = Number(el.videoHeight)
+                  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return
+                  setMeasuredRatio(w / h)
+                }}
+              />
+            ) : (
+              <img
+                className={`${styles.media} ${styles.mediaImage}`}
+                src={previewUrl}
+                alt={displayName}
+                onLoad={(e) => {
+                  const el = e.currentTarget
+                  const w = Number(el.naturalWidth)
+                  const h = Number(el.naturalHeight)
+                  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return
+                  setMeasuredRatio(w / h)
+                }}
+              />
+            )
           ) : (
-            <img className={`${styles.media} ${styles.mediaImage}`} src={previewUrl} alt={displayName} />
-          )
-        ) : (
-          <div className={styles.placeholder}>{statusTextWhenMissing || "素材同步中…"}</div>
-        )}
+            <div className={styles.placeholder}>{statusTextWhenMissing || "素材同步中…"}</div>
+          )}
+        </AspectRatio>
         {onViewInfo || onDelete ? (
           <div className={styles.cornerActions}>
             {onViewInfo ? (

@@ -68,6 +68,7 @@ export function StyleVibePanel({
 
   const closePreview = useCallback(() => setPreviewImage(null), [])
   const closeRichPreview = useCallback(() => setRichPreview(null), [])
+  const showClarificationSection = Boolean(clarification?.text?.trim()) || (userProvidedImages?.length ?? 0) > 0
 
   const registerSection = useCallback((id: TvcPhaseId) => {
     return (el: HTMLElement | null) => {
@@ -106,14 +107,16 @@ export function StyleVibePanel({
       { root, threshold: [0.2, 0.35, 0.5, 0.65], rootMargin: "-12% 0px -70% 0px" }
     )
 
-    const visiblePhases = phases.filter((p) => p.id === "clarification" || Boolean(agentPhaseById?.[p.id]))
+    const visiblePhases = phases.filter((p) =>
+      p.id === "clarification" ? showClarificationSection : Boolean(agentPhaseById?.[p.id])
+    )
     for (const p of visiblePhases) {
       const el = sectionElsRef.current[p.id]
       if (el) observer.observe(el)
     }
 
     return () => observer.disconnect()
-  }, [activePhase, onPhaseChange, agentPhaseById])
+  }, [activePhase, onPhaseChange, agentPhaseById, showClarificationSection])
 
   const renderAgentStep = (phaseId: TvcPhaseId, step: TvcAgentStep): ReactElement => {
     const prompt = step.content.prompt?.trim() ?? ""
@@ -427,7 +430,7 @@ export function StyleVibePanel({
           <nav className={styles.nav}>
             {phases.map((s, idx) => {
               const isActive = s.id === activePhase
-              const isAvailable = s.id === "clarification" || Boolean(agentPhaseById?.[s.id])
+              const isAvailable = s.id === "clarification" ? showClarificationSection : Boolean(agentPhaseById?.[s.id])
               return (
                 <button
                   key={s.id}
@@ -456,18 +459,27 @@ export function StyleVibePanel({
 
         <div className={styles.canvas} aria-label="画布" ref={canvasRef}>
           {phases
-            .filter((s) => s.id === "clarification" || Boolean(agentPhaseById?.[s.id]))
+            .filter((s) => (s.id === "clarification" ? showClarificationSection : Boolean(agentPhaseById?.[s.id])))
             .map((s) => {
               const agentStep = agentPhaseById?.[s.id]
               const isStreaming = Boolean(agentStep?.content.stream && Object.values(agentStep.content.stream).some(Boolean))
-              const status = s.id === "clarification" ? (clarification?.text?.trim() ? (clarification.done ? "已完成" : "收集中") : null) : isStreaming ? "生成中" : "已生成"
+              const status =
+                s.id === "clarification"
+                  ? clarification?.text?.trim()
+                    ? clarification.done
+                      ? "已完成"
+                      : "收集中"
+                    : null
+                  : isStreaming
+                    ? "生成中"
+                    : "已生成"
 
               return (
                 <section key={s.id} className={styles.section} data-phase-id={s.id} ref={registerSection(s.id)}>
                   <WorkflowPhaseCard title={s.label} status={status}>
                     {s.id === "clarification" && (userProvidedImages?.length ?? 0) > 0 ? (
                       <div className={styles.userImageBar} aria-label="用户提供的图片">
-                        <div className={styles.agentImageGrid}>
+                        <div className={styles.userImageGrid}>
                           {userProvidedImages!
                             .slice()
                             .sort((a, b) => a.ordinal - b.ordinal)
@@ -498,7 +510,9 @@ export function StyleVibePanel({
                                   }
                                   aria-label={openUrl ? `预览用户图片：${alt}` : undefined}
                                 >
-                                  {thumb ? <img className={styles.agentImageThumb} src={thumb} alt={alt} /> : <div />}
+                                  <div className={styles.agentImageThumbWrap}>
+                                    {thumb ? <img className={styles.agentImageThumb} src={thumb} alt={alt} /> : <div className={styles.agentImageThumbFallback} />}
+                                  </div>
                                   <div className={styles.agentImageMeta}>
                                     <div className={styles.agentImageLine}>用户图片 #{img.ordinal}</div>
                                   </div>
@@ -520,12 +534,9 @@ export function StyleVibePanel({
         open={Boolean(richPreview)}
         title={richPreview?.title ?? ""}
         imageSrc={richPreview?.imageSrc ?? ""}
-        tvcAsset={
-          richPreview
-            ? { storyId: projectId, kind: richPreview.kind, ordinal: richPreview.ordinal, publicType: richPreview.publicType }
-            : null
-        }
+        storyId={projectId}
         category={richPreview?.categoryRaw ?? null}
+        tvcAsset={richPreview ? { kind: richPreview.kind, ordinal: richPreview.ordinal } : null}
         description={richPreview?.description ?? null}
         prompt={richPreview?.prompt ?? null}
         onClose={closeRichPreview}

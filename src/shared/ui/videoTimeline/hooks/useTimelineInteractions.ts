@@ -18,6 +18,7 @@ interface UseTimelineInteractionsProps {
   totalSeconds: number
   pxPerSecond: number
   updateVideoClip: (id: string, patch: Partial<VideoClip>) => void
+  updateVideoClipsBulk?: (patches: Array<{ id: string; patch: Partial<VideoClip> }>) => void
   updateAudioClip: (id: string, patch: Partial<AudioClip>) => void
   timelineRef: RefObject<HTMLDivElement>
   wrapRef: RefObject<HTMLDivElement>
@@ -47,6 +48,7 @@ export function useTimelineInteractions({
   totalSeconds,
   pxPerSecond,
   updateVideoClip,
+  updateVideoClipsBulk,
   updateAudioClip,
   timelineRef,
   wrapRef,
@@ -124,8 +126,10 @@ export function useTimelineInteractions({
     pxPerSecond,
     wrapRef,
     keyboardScopeRef,
+    isInteractingRef,
     setSelectedClips,
     updateVideoClip,
+    updateVideoClipsBulk,
     updateAudioClip,
     onSelectSegment,
     onSeekPlayheadSeconds

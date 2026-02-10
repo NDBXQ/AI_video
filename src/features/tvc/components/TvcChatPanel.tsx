@@ -9,7 +9,7 @@ import { ChatThread } from "./TvcChatPanelParts/ChatThread"
 import { ChatComposer } from "./TvcChatPanelParts/ChatComposer"
 import { useTvcChatPersist } from "./TvcChatPanelParts/useTvcChatPersist"
 import { useTvcChatStream } from "./TvcChatPanelParts/useTvcChatStream"
-import { encodeUploadImagesMessage } from "@/shared/tvcChatContent"
+import { encodeUploadAssetsMessage } from "@/shared/tvcChatContent"
 import type { ClarificationEvent } from "@/features/tvc/clarification"
 
 export function TvcChatPanel({
@@ -166,7 +166,7 @@ export function TvcChatPanel({
     })
   }
 
-  const uploadFiles = useCallback(async (files: File[]): Promise<{ images: Array<{ url: string }> } | null> => {
+  const uploadFiles = useCallback(async (files: File[]): Promise<{ assets: Array<{ kind: "user_image"; ordinal: number; url: string }> } | null> => {
     if (!projectId) return null
     const fd = new FormData()
     for (const f of files) fd.append("files", f)
@@ -177,14 +177,17 @@ export function TvcChatPanel({
       const msg = String(json?.error?.message ?? "上传失败")
       throw new Error(msg)
     }
-    const images = items
+    const assets = items
       .map((it) => {
         const url = String(it?.url ?? "").trim()
         if (!url) return null
-        return { url }
+        const ordinalRaw = Number(it?.assetOrdinal)
+        const ordinal = Number.isFinite(ordinalRaw) && ordinalRaw > 0 ? Math.trunc(ordinalRaw) : 0
+        if (!ordinal) return null
+        return { kind: "user_image" as const, ordinal, url }
       })
-      .filter(Boolean) as Array<{ url: string }>
-    return { images }
+      .filter(Boolean) as Array<{ kind: "user_image"; ordinal: number; url: string }>
+    return { assets }
   }, [projectId])
 
   const sendText = useCallback(async (text: string) => {
@@ -206,7 +209,7 @@ export function TvcChatPanel({
 
     const userId = createId("m")
     const assistantId = createId("m")
-    let uploaded: { images: Array<{ url: string }> } | null = null
+    let uploaded: { assets: Array<{ kind: "user_image"; ordinal: number; url: string }> } | null = null
     if (hasFiles) {
       setUploadingImages(true)
       try {
@@ -230,17 +233,24 @@ export function TvcChatPanel({
 
     setInput("")
     const userText = trimmed
-    const images = uploaded?.images ?? []
-    const userContentToPersist = images.length ? encodeUploadImagesMessage({ text: userText, images }) : userText
+    const assets = uploaded?.assets ?? []
+    const userContentToPersist = assets.length ? encodeUploadAssetsMessage({ text: userText, assets }) : userText
     if (persist.markUserMessageOnce(userContentToPersist)) persist.enqueue({ messages: [{ role: "user", content: userContentToPersist }] })
 
     setMessages((prev) => [
       ...prev,
-      { id: userId, role: "user", text: userText, ...(images.length ? { attachments: images.map((img) => ({ kind: "image", url: img.url })) } : {}) },
+      {
+        id: userId,
+        role: "user",
+        text: userText,
+        ...(assets.length
+          ? { attachments: assets.map((a) => ({ kind: "image" as const, url: a.url, assetKind: a.kind, assetOrdinal: a.ordinal })) }
+          : {})
+      },
       { id: assistantId, role: "assistant", text: "", blocks: [] }
     ])
 
-    const userTextForCallback = userText || (images.length ? "[图片]" : "")
+    const userTextForCallback = userText || (assets.length ? "[图片]" : "")
     await stream.start({ prompt: userContentToPersist, userTextForCallback, assistantId, setMessages, scrollToBottom })
   }, [onClarificationReset, pendingFiles, persist, projectId, scrollToBottom, stream, uploadingImages, uploadFiles])
 

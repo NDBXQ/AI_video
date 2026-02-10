@@ -149,6 +149,16 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
     setVideoClips((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
   }
 
+  const updateVideoClipsBulk = (patches: Array<{ id: string; patch: Partial<VideoClip> }>) => {
+    const map = new Map<string, Partial<VideoClip>>()
+    for (const p of patches) {
+      if (!p?.id) continue
+      map.set(p.id, { ...(map.get(p.id) ?? {}), ...(p.patch ?? {}) })
+    }
+    if (map.size === 0) return
+    setVideoClips((prev) => prev.map((c) => (map.has(c.id) ? { ...c, ...(map.get(c.id) ?? {}) } : c)))
+  }
+
   const updateAudioClip = (id: string, patch: Partial<AudioClip>) => {
     setAudioClips((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
   }
@@ -171,6 +181,7 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
     totalSeconds,
     widthPx,
     updateVideoClip,
+    updateVideoClipsBulk,
     updateAudioClip
   }
 }

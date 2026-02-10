@@ -172,6 +172,7 @@ export function TvcPreviewPanel({
   })
 
   const isVideoTab = activeTab === "video"
+  const downloadableFinalVideoUrl = typeof finalVideoUrl === "string" ? finalVideoUrl.trim() : ""
   const {
     previewAllActive,
     previewAllPlaying,
@@ -276,6 +277,19 @@ export function TvcPreviewPanel({
               <Download size={16} />
               {assemblingVideo ? "合成中..." : "生成成片"}
             </button>
+          ) : null}
+          {isVideoTab && downloadableFinalVideoUrl && !assemblingVideo ? (
+            <a
+              className={styles.actionBtn}
+              href={downloadableFinalVideoUrl}
+              target="_blank"
+              rel="noreferrer"
+              download="tvc.mp4"
+              title="如未自动下载，将在新标签页打开，可右键另存为"
+            >
+              <Download size={16} />
+              下载成片
+            </a>
           ) : null}
         </div>
       </div>

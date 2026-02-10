@@ -162,7 +162,19 @@
   color: var(--theme-text-strong);
   font-size: 12px;
   font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
 }
 
 .btn:hover {
@@ -185,7 +197,20 @@
 }
 
 .btnGhost {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btnGhost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btnGhost[aria-pressed="true"] {
+  border-color: rgba(109, 94, 247, 0.34);
+  background: rgba(109, 94, 247, 0.14);
+}
+
+.btnGhost[aria-pressed="true"]:hover {
+  background: rgba(109, 94, 247, 0.18);
 }
 
 .mobileOnly {

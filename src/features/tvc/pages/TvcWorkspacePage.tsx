@@ -108,12 +108,16 @@ export function TvcWorkspacePage(): ReactElement {
 
   const createNewProjectNoArg = async () => {
     await createNewProject({
+      brief: "",
+      durationSec: 30,
       onReset: () => {
         setAgentPhaseById({})
         setInitialChatMessages(null)
         setShots([])
         setSelectedShotId(null)
         setAssetUrlByKey({})
+        setBrief("")
+        setDurationSec(30)
         resetClarification()
         setActiveDock("board")
         setActivePhase("clarification")

@@ -54,6 +54,7 @@ export function VideoTimelineEditor({
     totalSeconds,
     widthPx,
     updateVideoClip,
+    updateVideoClipsBulk,
     updateAudioClip
   } = useTimelineState({
     segments,
@@ -84,6 +85,7 @@ export function VideoTimelineEditor({
       totalSeconds,
       pxPerSecond,
       updateVideoClip,
+      updateVideoClipsBulk,
       updateAudioClip,
       timelineRef: timelineRef as React.RefObject<HTMLDivElement>,
       wrapRef: wrapRef as React.RefObject<HTMLDivElement>,

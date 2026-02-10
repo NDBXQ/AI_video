@@ -43,7 +43,10 @@ export function useTvcProjectAssets(projectId: string | null): {
     }
 
     const token = (tokenRef.current += 1)
-    schedule(() => setLoading(true))
+    schedule(() => {
+      setItems([])
+      setLoading(true)
+    })
     void (async () => {
       const out: TvcProjectAssetItem[] = []
       let cursor = ""

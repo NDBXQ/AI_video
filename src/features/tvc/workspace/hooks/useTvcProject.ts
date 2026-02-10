@@ -14,7 +14,14 @@ export function useTvcProject(): {
   durationSec: number
   setDurationSec: React.Dispatch<React.SetStateAction<number>>
   refreshProject: () => Promise<void>
-  createNewProject: (params: { onReset?: () => void }) => Promise<void>
+  createNewProject: (params: {
+    onReset?: () => void
+    title?: string
+    brief?: string
+    durationSec?: number
+    aspectRatio?: string
+    resolution?: string
+  }) => Promise<void>
 } {
   const [projectId, setProjectId] = useState("")
   const [projectError, setProjectError] = useState<string | null>(null)
@@ -152,17 +159,33 @@ export function useTvcProject(): {
       } catch {}
     }
 
-    return async (params: { onReset?: () => void }) => {
+    return async (params: {
+      onReset?: () => void
+      title?: string
+      brief?: string
+      durationSec?: number
+      aspectRatio?: string
+      resolution?: string
+    }) => {
       if (isCreatingProject) return
       setProjectError(null)
       setIsCreatingProject(true)
       params.onReset?.()
       setFinalVideoUrl(null)
       try {
+        const nextTitle = String(params.title ?? "TVC 项目").trim() || "TVC 项目"
+        const nextBrief = params.brief !== undefined ? String(params.brief) : brief
+        const nextDurationSec = params.durationSec !== undefined ? params.durationSec : durationSec
         const res = await fetch("/api/tvc/projects", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ title: "TVC 项目", durationSec, brief })
+          body: JSON.stringify({
+            title: nextTitle,
+            brief: nextBrief,
+            durationSec: nextDurationSec,
+            ...(params.aspectRatio !== undefined ? { aspectRatio: params.aspectRatio } : {}),
+            ...(params.resolution !== undefined ? { resolution: params.resolution } : {})
+          })
         })
         const json = (await res.json().catch(() => null)) as any
         if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)

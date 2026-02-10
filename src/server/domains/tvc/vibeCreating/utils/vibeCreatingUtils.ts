@@ -40,30 +40,3 @@ export function pickSequence(record: Record<string, unknown>, fallback: number):
   }
   return fallback
 }
-
-export function extractResponseText(input: unknown): string {
-  if (typeof input === "string") return input
-  if (!input) return ""
-  if (typeof input !== "object") return String(input)
-
-  const anyInput = input as Record<string, unknown>
-  const candidates = [
-    anyInput.text,
-    anyInput.content,
-    anyInput.answer,
-    anyInput.message,
-    (anyInput.output as any)?.text,
-    (anyInput.output as any)?.content,
-    (anyInput.data as any)?.text,
-    (anyInput.data as any)?.content
-  ]
-  for (const v of candidates) {
-    if (typeof v === "string" && v.trim()) return v
-  }
-
-  try {
-    return JSON.stringify(input)
-  } catch {
-    return ""
-  }
-}

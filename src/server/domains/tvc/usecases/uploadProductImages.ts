@@ -12,7 +12,7 @@ export async function uploadTvcProjectProductImages(input: {
   storyId: string
   files: File[]
 }): Promise<
-  | { ok: true; items: Array<{ url: string; key: string; assetId: string }> }
+  | { ok: true; items: Array<{ url: string; key: string; assetId: string; assetOrdinal: number }> }
   | { ok: false; code: string; message: string; status: number }
 > {
   if (input.files.length === 0) return { ok: false, code: "VALIDATION_FAILED", message: "缺少文件", status: 400 }
@@ -34,7 +34,7 @@ export async function uploadTvcProjectProductImages(input: {
     .limit(1)
   let nextIndex = Math.max(1, Math.trunc(Number(maxIndex ?? 0) + 1))
 
-  const uploadedItems: Array<{ url: string; key: string; assetId: string }> = []
+  const uploadedItems: Array<{ url: string; key: string; assetId: string; assetOrdinal: number }> = []
   for (const file of input.files) {
     const contentType = (file.type || "application/octet-stream").trim()
     if (!contentType.toLowerCase().startsWith("image/")) {
@@ -68,7 +68,7 @@ export async function uploadTvcProjectProductImages(input: {
 
     const assetId = String(inserted?.id ?? "").trim()
     const url = uploaded.url.trim()
-    if (assetId && url) uploadedItems.push({ url, key: uploaded.key, assetId })
+    if (assetId && url) uploadedItems.push({ url, key: uploaded.key, assetId, assetOrdinal: assetIndex })
   }
 
   return { ok: true, items: uploadedItems }

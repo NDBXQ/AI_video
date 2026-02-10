@@ -328,14 +328,28 @@
 
 .agentImageGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.userImageGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.userImageGrid .agentImageMeta {
+  padding: 5px 6px;
+}
+
+.userImageGrid .agentImageLine {
+  font-size: 9px;
 }
 
 .agentMediaGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .agentImageCard {
@@ -344,7 +358,13 @@
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(255, 255, 255, 0.03);
   display: grid;
-  grid-template-rows: 110px auto;
+  grid-template-rows: auto auto;
+}
+
+.agentImageThumbWrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(2, 6, 23, 0.35);
 }
 
 .agentImageCardClickable {
@@ -369,10 +389,14 @@
 
 .agentImageThumb {
   width: 100%;
-  height: 110px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  background: rgba(2, 6, 23, 0.35);
+}
+
+.agentImageThumbFallback {
+  width: 100%;
+  height: 100%;
 }
 
 .agentImageMeta {
@@ -704,11 +728,11 @@
 
 @media (max-width: 860px) {
   .agentImageGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .agentMediaGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

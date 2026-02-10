@@ -10,16 +10,16 @@ function normalizeCategory(input: unknown): "background" | "role" | "item" {
 
 export function SidePanel({
   open,
-  uiMode = "default",
   title,
   metaTitle,
   description,
   metaDescription,
   prompt,
+  storyId,
   storyboardId,
-  tvcAsset,
   category,
   frameKind,
+  tvcAsset,
   currentSrc,
   setCurrentSrc,
   currentGeneratedImageId,
@@ -38,16 +38,16 @@ export function SidePanel({
   onClose
 }: {
   open: boolean
-  uiMode?: "default" | "tvc_info"
   title: string
   metaTitle?: string | null
   description?: string | null
   metaDescription?: string | null
   prompt?: string | null
+  storyId?: string | null
   storyboardId?: string | null
-  tvcAsset?: { storyId: string; kind: "reference_image" | "first_frame"; ordinal: number; publicType?: "character" | "background" | "props" } | null
   category?: string | null
   frameKind?: "first" | "last" | null
+  tvcAsset?: { kind: "reference_image" | "first_frame"; ordinal: number } | null
   currentSrc: string
   setCurrentSrc: (v: string) => void
   currentGeneratedImageId?: string
@@ -94,7 +94,6 @@ export function SidePanel({
   }, [description, metaDescription, prompt])
 
   const normalizedCategory = useMemo(() => normalizeCategory(category), [category])
-  const tvcPublicType = useMemo(() => (tvcAsset?.publicType ?? "background"), [tvcAsset?.publicType])
 
   useEffect(() => {
     if (!open) return
@@ -143,77 +142,15 @@ export function SidePanel({
     }
   }, [currentGeneratedImageId, open])
 
-  useEffect(() => {
-    if (!open) return
-    if (!tvcAsset) return
-    let cancelled = false
-    const run = async () => {
-      try {
-        const qs = new URLSearchParams({
-          tvcStoryId: tvcAsset.storyId,
-          kind: tvcAsset.kind,
-          ordinal: String(tvcAsset.ordinal),
-          type: tvcPublicType
-        })
-        const res = await fetch(`/api/library/public-resources/lookup-tvc-asset?${qs.toString()}`, { method: "GET", cache: "no-store" })
-        const json = (await res.json().catch(() => null)) as
-          | { ok: boolean; data?: { exists?: boolean; id?: string | null }; error?: { message?: string } }
-          | null
-        if (!res.ok || !json?.ok) return
-        const id = json.data?.id ?? null
-        if (cancelled) return
-        setPublicResourceId(id)
-        if (id) setSaveDone(true)
-      } catch {}
-    }
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [open, tvcAsset, tvcPublicType])
-
+  const canTvcInpaint = Boolean(storyId && tvcAsset?.kind && tvcAsset?.ordinal)
   const canInpaint = Boolean(
-    confirmedRect && editPrompt.trim() && currentSrc && (currentGeneratedImageId || (storyboardId && frameKind) || tvcAsset)
+    confirmedRect &&
+      editPrompt.trim() &&
+      currentSrc &&
+      (currentGeneratedImageId || (storyboardId && frameKind) || canTvcInpaint)
   )
   const canReplaceFromLibrary = Boolean(storyboardId && onReplaceFromLibrary && !saving && !deleting && !regenerating)
-  const canEditMeta = Boolean((currentGeneratedImageId || tvcAsset) && !saving && !deleting && !regenerating && !inpaintLoading && !metaSaving)
-
-  if (uiMode === "tvc_info") {
-    const typeLabel = (category ?? "").trim()
-    const nameLabel = displayTitle.trim()
-    const descLabel = (description ?? "").trim() || (metaDescription ?? "").trim() || "暂无描述"
-    return (
-      <div className={styles.right}>
-        <div className={styles.rightHeader}>
-          <div className={styles.rightTitleWrap}>
-            <div className={styles.rightTitle}>{nameLabel || "图片信息"}</div>
-            {typeLabel ? <div className={styles.rightSubtitle}>类型：{typeLabel}</div> : null}
-          </div>
-          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="关闭">
-            ×
-          </button>
-        </div>
-        <div className={styles.panel}>
-          <div className={styles.infoGrid} aria-label="图片信息">
-            {typeLabel ? (
-              <>
-                <div className={styles.infoKey}>类型</div>
-                <div className={styles.infoVal}>{typeLabel}</div>
-              </>
-            ) : null}
-            {nameLabel ? (
-              <>
-                <div className={styles.infoKey}>名称</div>
-                <div className={styles.infoVal}>{nameLabel}</div>
-              </>
-            ) : null}
-            <div className={styles.infoKey}>描述</div>
-            <div className={styles.infoVal}>{descLabel}</div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const canEditMeta = Boolean(currentGeneratedImageId && !saving && !deleting && !regenerating && !inpaintLoading && !metaSaving)
 
   return (
     <div className={styles.right}>
@@ -249,12 +186,13 @@ export function SidePanel({
                 setInpaintError(null)
                 try {
                   const shouldOverwriteGenerated = Boolean(currentGeneratedImageId)
-                  const shouldInpaintTvc = Boolean(!shouldOverwriteGenerated && tvcAsset)
+                  const shouldInpaintStoryboardFrame = Boolean(!shouldOverwriteGenerated && storyboardId && frameKind)
+                  const shouldInpaintTvcAsset = Boolean(!shouldOverwriteGenerated && !shouldInpaintStoryboardFrame && canTvcInpaint)
                   const apiPath = shouldOverwriteGenerated
                     ? "/api/video-creation/images/inpaint"
-                    : shouldInpaintTvc
-                      ? `/api/tvc/projects/${encodeURIComponent(tvcAsset!.storyId)}/assets/inpaint`
-                      : "/api/video/storyboards/frames/inpaint"
+                    : shouldInpaintStoryboardFrame
+                      ? "/api/video/storyboards/frames/inpaint"
+                      : `/api/tvc/projects/${encodeURIComponent(String(storyId ?? ""))}/assets/inpaint`
                   const payload = shouldOverwriteGenerated
                     ? {
                         imageUrl: currentSrc,
@@ -263,30 +201,35 @@ export function SidePanel({
                         generatedImageId: currentGeneratedImageId ?? null,
                         prompt: editPrompt
                       }
-                    : shouldInpaintTvc
+                    : shouldInpaintStoryboardFrame
                       ? {
-                          kind: tvcAsset!.kind,
-                          ordinal: tvcAsset!.ordinal,
-                          imageUrl: currentSrc,
-                          selection: confirmedRect,
-                          prompt: editPrompt
-                        }
-                      : {
                           storyboardId,
                           frameKind,
                           imageUrl: currentSrc,
                           selection: confirmedRect,
                           prompt: editPrompt
                         }
-                  const res = await fetch(apiPath, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+                      : {
+                          kind: tvcAsset!.kind,
+                          ordinal: tvcAsset!.ordinal,
+                          imageUrl: currentSrc,
+                          selection: confirmedRect,
+                          prompt: editPrompt
+                        }
+
+                  const res = await fetch(apiPath, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                  })
                   const json = (await res.json().catch(() => null)) as
                     | { ok: boolean; data?: { url?: string; generatedImageId?: string; thumbnailUrl?: string | null }; error?: { message?: string } }
                     | null
                   if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
-                  const nextUrl = typeof json.data?.url === "string" ? json.data.url : ""
+                  const nextUrl = typeof (json as any)?.data?.url === "string" ? (json as any).data.url : ""
                   if (!nextUrl) throw new Error("生成成功但缺少图片 URL")
-                  const nextId = typeof json.data?.generatedImageId === "string" ? json.data.generatedImageId : ""
-                  const nextThumbnailUrl = typeof json.data?.thumbnailUrl === "string" ? json.data.thumbnailUrl : null
+                  const nextId = typeof (json as any)?.data?.generatedImageId === "string" ? (json as any).data.generatedImageId : ""
+                  const nextThumbnailUrl = typeof (json as any)?.data?.thumbnailUrl === "string" ? (json as any).data.thumbnailUrl : null
                   setCurrentSrc(nextUrl)
                   if (nextId) setCurrentGeneratedImageId(nextId)
                   setConfirmedRect(null)
@@ -322,28 +265,17 @@ export function SidePanel({
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={saving || saveDone || !(currentGeneratedImageId || tvcAsset)}
+              disabled={saving || saveDone || !currentGeneratedImageId}
               onClick={async () => {
-                if (!currentGeneratedImageId && !tvcAsset) return
+                if (!currentGeneratedImageId) return
                 setSaving(true)
                 setSaveError(null)
                 try {
-                  const res = currentGeneratedImageId
-                    ? await fetch("/api/library/public-resources/import-generated-image", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ generatedImageId: currentGeneratedImageId })
-                      })
-                    : await fetch("/api/library/public-resources/import-tvc-asset", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          tvcStoryId: tvcAsset!.storyId,
-                          kind: tvcAsset!.kind,
-                          ordinal: tvcAsset!.ordinal,
-                          type: tvcPublicType
-                        })
-                      })
+                  const res = await fetch("/api/library/public-resources/import-generated-image", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ generatedImageId: currentGeneratedImageId })
+                  })
                   const json = (await res.json()) as { ok: boolean; data?: any; error?: { message?: string } }
                   if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
                   const id = typeof json?.data?.id === "string" ? json.data.id : null
@@ -476,28 +408,17 @@ export function SidePanel({
                 className={styles.primaryButton}
                 disabled={metaSaving || !metaDraftTitle.trim()}
                 onClick={async () => {
-                  if (!currentGeneratedImageId && !tvcAsset) return
+                  if (!currentGeneratedImageId) return
                   const nextTitle = metaDraftTitle.trim()
                   const nextDesc = metaDraftDescription.trim()
                   setMetaSaving(true)
                   setMetaError(null)
                   try {
-                    const res = currentGeneratedImageId
-                      ? await fetch(`/api/video-creation/images/${encodeURIComponent(currentGeneratedImageId)}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ name: nextTitle, description: nextDesc ? nextDesc : null })
-                        })
-                      : await fetch(`/api/tvc/projects/${encodeURIComponent(tvcAsset!.storyId)}/assets/meta`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            kind: tvcAsset!.kind,
-                            ordinal: tvcAsset!.ordinal,
-                            title: nextTitle,
-                            description: nextDesc ? nextDesc : null
-                          })
-                        })
+                    const res = await fetch(`/api/video-creation/images/${encodeURIComponent(currentGeneratedImageId)}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ name: nextTitle, description: nextDesc ? nextDesc : null })
+                    })
                     const json = (await res.json().catch(() => null)) as { ok: boolean; error?: { message?: string } } | null
                     if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
                     setCurrentEntityName(nextTitle)
