@@ -357,7 +357,7 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
               first_frame_ordinal: z.number().int().positive(),
               description: z.string().optional(),
               prompt: z.string().trim().min(1),
-              duration_seconds: z.number().int().min(VIBE_VIDEO_DURATION_MIN_SECONDS).max(VIBE_VIDEO_DURATION_MAX_SECONDS)
+              duration_seconds: z.number()
             })
           ),
           overwrite_existing: z.boolean().optional(),
@@ -376,6 +376,24 @@ export function createVibeCreatingToolExecutor(runtime: ToolRuntime): (call: Tvc
         const firstFrameOrdinal = r.first_frame_ordinal
         const prompt = r.prompt
         const durationSecondsRaw = r.duration_seconds
+        if (!Number.isInteger(durationSecondsRaw)) {
+          throw new ServiceError(
+            "TOOL_ARGS_INVALID",
+            `requests[].duration_seconds 必须为 ${VIBE_VIDEO_DURATION_MIN_SECONDS}~${VIBE_VIDEO_DURATION_MAX_SECONDS} 的整数`
+          )
+        }
+        if (durationSecondsRaw < VIBE_VIDEO_DURATION_MIN_SECONDS) {
+          throw new ServiceError(
+            "TOOL_ARGS_INVALID",
+            `requests[].duration_seconds 必须为 ${VIBE_VIDEO_DURATION_MIN_SECONDS}~${VIBE_VIDEO_DURATION_MAX_SECONDS} 的整数`
+          )
+        }
+        if (durationSecondsRaw > VIBE_VIDEO_DURATION_MAX_SECONDS) {
+          throw new ServiceError(
+            "TOOL_ARGS_INVALID",
+            `requests[].duration_seconds 必须为 ${VIBE_VIDEO_DURATION_MIN_SECONDS}~${VIBE_VIDEO_DURATION_MAX_SECONDS} 的整数`
+          )
+        }
         requests.push({
           ordinal,
           firstFrameOrdinal,
