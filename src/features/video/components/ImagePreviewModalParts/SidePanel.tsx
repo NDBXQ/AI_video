@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import styles from "../ImagePreviewModal.module.css"
 import { startReferenceImageJob, waitReferenceImageJob } from "../../utils/referenceImageAsync"
 import type { NormalizedRect } from "./selectionUtils"
+import { ConfirmDeleteModal } from "@/shared/ui/ConfirmDeleteModal"
 
 function normalizeCategory(input: unknown): "background" | "role" | "item" {
   return input === "role" || input === "item" || input === "background" ? input : "background"
@@ -78,6 +79,7 @@ export function SidePanel({
 
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const [regenerating, setRegenerating] = useState(false)
   const [regenerateError, setRegenerateError] = useState<string | null>(null)
@@ -106,6 +108,7 @@ export function SidePanel({
     setMetaError(null)
     setDeleting(false)
     setDeleteError(null)
+    setDeleteConfirmOpen(false)
     setRegenerating(false)
     setRegenerateError(null)
     setInpaintLoading(false)
@@ -298,22 +301,7 @@ export function SidePanel({
               disabled={deleting || !publicResourceId}
               onClick={async () => {
                 if (!publicResourceId) return
-                const ok = window.confirm("确定从公共素材库删除该图片吗？")
-                if (!ok) return
-                setDeleting(true)
-                setDeleteError(null)
-                try {
-                  const res = await fetch(`/api/library/public-resources/${encodeURIComponent(publicResourceId)}`, { method: "DELETE" })
-                  const json = (await res.json().catch(() => null)) as { ok: boolean; error?: { message?: string } } | null
-                  if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
-                  setPublicResourceId(null)
-                  setSaveDone(false)
-                } catch (e) {
-                  const anyErr = e as { message?: string }
-                  setDeleteError(anyErr?.message ?? "删除失败")
-                } finally {
-                  setDeleting(false)
-                }
+                setDeleteConfirmOpen(true)
               }}
             >
               {deleting ? "删除中…" : "从公共素材库删除"}
@@ -461,6 +449,32 @@ export function SidePanel({
           </div>
         )}
       </div>
+      <ConfirmDeleteModal
+        open={deleteConfirmOpen}
+        title="从公共素材库删除"
+        itemName="该图片"
+        confirming={deleting}
+        confirmText="删除"
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={async () => {
+          if (!publicResourceId) return
+          setDeleting(true)
+          setDeleteError(null)
+          try {
+            const res = await fetch(`/api/library/public-resources/${encodeURIComponent(publicResourceId)}`, { method: "DELETE" })
+            const json = (await res.json().catch(() => null)) as { ok: boolean; error?: { message?: string } } | null
+            if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
+            setPublicResourceId(null)
+            setSaveDone(false)
+            setDeleteConfirmOpen(false)
+          } catch (e) {
+            const anyErr = e as { message?: string }
+            setDeleteError(anyErr?.message ?? "删除失败")
+          } finally {
+            setDeleting(false)
+          }
+        }}
+      />
     </div>
   )
 }

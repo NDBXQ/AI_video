@@ -21,6 +21,8 @@ import { GenerationPanel } from "./GenerationPanel"
 import { StoryboardDetailsModal } from "./StoryboardDetailsModal"
 import { useEpisodeRegeneration } from "./hooks/useEpisodeRegeneration"
 import { useGenerationPanelModel } from "./hooks/useGenerationPanelModel"
+import type { OpenStoryboardTextEditParams, StoryboardTextEditKind } from "./textEditTypes"
+import { ConfirmModal } from "@/shared/ui/ConfirmModal"
 
 type StoryboardListProps = {
   initialItems?: StoryboardItem[]
@@ -61,7 +63,17 @@ export function StoryboardList({
     handleBatchDelete,
     toggleSelectAll,
     toggleSelect
-  } = useStoryboardActions({ items, setItems, updateItemById, selectedItems, setSelectedItems, activeEpisode, reloadShots })
+  } = useStoryboardActions({
+    items,
+    setItems,
+    updateItemById,
+    selectedItems,
+    setSelectedItems,
+    activeEpisode,
+    reloadShots,
+    requestConfirm,
+    notifyError
+  })
 
   const previewsById = useStoryboardPreviews({ storyId, items })
 
@@ -75,6 +87,14 @@ export function StoryboardList({
 
   // UI States
   const [notice, setNotice] = useState<{ type: "info" | "error"; message: string } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean
+    title: string
+    message: string
+    confirmText?: string
+    cancelText?: string
+  } | null>(null)
+  const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null)
   const [preview, setPreview] = useState<{
     title: string
     imageSrc: string
@@ -89,7 +109,12 @@ export function StoryboardList({
   const [details, setDetails] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
   const [addRoleModal, setAddRoleModal] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
   const [addItemModal, setAddItemModal] = useState<{ open: boolean; itemId: string }>({ open: false, itemId: "" })
-  const [editText, setEditText] = useState<{ open: boolean; itemId: string; initialValue: string }>({ open: false, itemId: "", initialValue: "" })
+  const [editText, setEditText] = useState<{ open: boolean; itemId: string; initialValue: string; kind: StoryboardTextEditKind }>({
+    open: false,
+    itemId: "",
+    initialValue: "",
+    kind: "storyboardText"
+  })
   const [editTextSaving, setEditTextSaving] = useState(false)
   const [editTextError, setEditTextError] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -143,6 +168,31 @@ export function StoryboardList({
     return () => window.clearTimeout(t)
   }, [notice])
 
+  useEffect(() => {
+    return () => {
+      if (confirmResolverRef.current) confirmResolverRef.current(false)
+      confirmResolverRef.current = null
+    }
+  }, [])
+
+  async function requestConfirm(params: { title: string; message: string; confirmText?: string; cancelText?: string }) {
+    if (confirmResolverRef.current) confirmResolverRef.current(false)
+    return await new Promise<boolean>((resolve) => {
+      confirmResolverRef.current = resolve
+      setConfirmDelete({
+        open: true,
+        title: params.title,
+        message: params.message,
+        confirmText: params.confirmText,
+        cancelText: params.cancelText
+      })
+    })
+  }
+
+  function notifyError(message: string) {
+    setNotice({ type: "error", message })
+  }
+
   // Handlers
   const openPreview = (
     title: string,
@@ -172,8 +222,56 @@ export function StoryboardList({
 
   const closeDetails = () => setDetails({ open: false, itemId: "" })
 
-  const handleOpenEdit = (itemId: string, initialValue: string) => {
-    setEditText({ open: true, itemId, initialValue })
+  const handleSaveDetailsEdits = async (params: {
+    itemId: string
+    storyboardText: string
+    firstPrompt: string
+    lastPrompt: string
+    videoPrompt: string
+    regenerateAfterSave: boolean
+  }) => {
+    const res = await fetch("/api/video/storyboards", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storyboardId: params.itemId,
+        storyboardText: params.storyboardText,
+        frames: { first: { prompt: params.firstPrompt }, last: { prompt: params.lastPrompt } },
+        videoInfo: { prompt: params.videoPrompt }
+      })
+    })
+    const json = (await res.json().catch(() => null)) as
+      | {
+          ok: boolean
+          data?: {
+            storyboardId: string
+            storyboardText?: string
+            frames?: { first?: { prompt?: string | null }; last?: { prompt?: string | null } }
+            videoInfo?: { prompt?: string | null }
+          }
+          error?: { message?: string }
+        }
+      | null
+    if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
+
+    updateItemById(params.itemId, (it) => ({
+      ...it,
+      storyboard_text: json?.data?.storyboardText ?? params.storyboardText,
+      frames: {
+        ...(it.frames ?? {}),
+        first: { ...(it.frames?.first ?? {}), prompt: json?.data?.frames?.first?.prompt ?? params.firstPrompt },
+        last: { ...(it.frames?.last ?? {}), prompt: json?.data?.frames?.last?.prompt ?? params.lastPrompt }
+      },
+      videoInfo: { ...(it.videoInfo ?? {}), prompt: json?.data?.videoInfo?.prompt ?? params.videoPrompt }
+    }))
+
+    if (params.regenerateAfterSave) {
+      void triggerGenerateForStoryboard(params.itemId, json?.data?.storyboardText ?? params.storyboardText)
+    }
+  }
+
+  const handleOpenEdit = (params: OpenStoryboardTextEditParams) => {
+    setEditText({ open: true, itemId: params.itemId, initialValue: params.initialValue, kind: params.kind })
     setEditTextError(null)
   }
 
@@ -253,18 +351,64 @@ export function StoryboardList({
     setEditTextSaving(true)
     setEditTextError(null)
     try {
+      const body: Record<string, unknown> = { storyboardId: editText.itemId }
+      if (editText.kind === "storyboardText") {
+        body.storyboardText = value
+      } else if (editText.kind === "firstFramePrompt") {
+        body.frames = { first: { prompt: value } }
+      } else if (editText.kind === "lastFramePrompt") {
+        body.frames = { last: { prompt: value } }
+      } else if (editText.kind === "videoPrompt") {
+        body.videoInfo = { prompt: value }
+      }
+
       const res = await fetch("/api/video/storyboards", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storyboardId: editText.itemId, storyboardText: value })
+        body: JSON.stringify(body)
       })
-      const json = (await res.json()) as { ok: boolean; data?: { storyboardId: string; storyboardText: string }; error?: { message?: string } }
+      const json = (await res.json().catch(() => null)) as
+        | {
+            ok: boolean
+            data?: {
+              storyboardId: string
+              storyboardText?: string
+              frames?: { first?: { prompt?: string | null }; last?: { prompt?: string | null } }
+              videoInfo?: { prompt?: string | null }
+            }
+            error?: { message?: string }
+          }
+        | null
       if (!res.ok || !json?.ok || !json.data) {
         throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
       }
-      updateItemById(editText.itemId, (it) => ({ ...it, storyboard_text: json.data!.storyboardText }))
-      setEditText({ open: false, itemId: "", initialValue: "" })
-      void triggerGenerateForStoryboard(editText.itemId, json.data.storyboardText)
+      if (editText.kind === "storyboardText") {
+        const storyboardText = json.data.storyboardText ?? value
+        updateItemById(editText.itemId, (it) => ({ ...it, storyboard_text: storyboardText }))
+        setEditText({ open: false, itemId: "", initialValue: "", kind: "storyboardText" })
+        void triggerGenerateForStoryboard(editText.itemId, storyboardText)
+      } else if (editText.kind === "firstFramePrompt") {
+        const nextPrompt = json.data.frames?.first?.prompt ?? value
+        updateItemById(editText.itemId, (it) => ({
+          ...it,
+          frames: { ...(it.frames ?? {}), first: { ...(it.frames?.first ?? {}), prompt: nextPrompt } }
+        }))
+        setEditText({ open: false, itemId: "", initialValue: "", kind: "storyboardText" })
+      } else if (editText.kind === "lastFramePrompt") {
+        const nextPrompt = json.data.frames?.last?.prompt ?? value
+        updateItemById(editText.itemId, (it) => ({
+          ...it,
+          frames: { ...(it.frames ?? {}), last: { ...(it.frames?.last ?? {}), prompt: nextPrompt } }
+        }))
+        setEditText({ open: false, itemId: "", initialValue: "", kind: "storyboardText" })
+      } else if (editText.kind === "videoPrompt") {
+        const nextPrompt = json.data.videoInfo?.prompt ?? value
+        updateItemById(editText.itemId, (it) => ({
+          ...it,
+          videoInfo: { ...(it.videoInfo ?? {}), prompt: nextPrompt }
+        }))
+        setEditText({ open: false, itemId: "", initialValue: "", kind: "storyboardText" })
+      }
     } catch (e) {
       const anyErr = e as { message?: string }
       setEditTextError(anyErr?.message ?? "保存失败")
@@ -324,7 +468,7 @@ export function StoryboardList({
               previews={previewsById[it.id]}
               onClose={closeDetails}
               onPreviewImage={openPreview}
-              onOpenEdit={handleOpenEdit}
+              onSaveEdits={handleSaveDetailsEdits}
             />
           )
         })()
@@ -372,16 +516,43 @@ export function StoryboardList({
           onClose={closePreview}
         />
       ) : null}
+      {confirmDelete?.open ? (
+        <ConfirmModal
+          open={confirmDelete.open}
+          title={confirmDelete.title}
+          message={confirmDelete.message}
+          confirmText={confirmDelete.confirmText ?? "删除"}
+          cancelText={confirmDelete.cancelText ?? "取消"}
+          confirming={false}
+          onCancel={() => {
+            setConfirmDelete(null)
+            if (confirmResolverRef.current) confirmResolverRef.current(false)
+            confirmResolverRef.current = null
+          }}
+          onConfirm={() => {
+            setConfirmDelete(null)
+            if (confirmResolverRef.current) confirmResolverRef.current(true)
+            confirmResolverRef.current = null
+          }}
+        />
+      ) : null}
       {editText.open ? (
         <StoryboardTextModal
           open={editText.open}
-          title={`编辑分镜描述（镜号 ${items.find((it) => it.id === editText.itemId)?.scene_no ?? ""}）`}
+          title={`${(() => {
+            const sceneNo = items.find((it) => it.id === editText.itemId)?.scene_no ?? ""
+            const suffix = sceneNo ? `（镜号 ${sceneNo}）` : ""
+            if (editText.kind === "firstFramePrompt") return `编辑首帧图提示词${suffix}`
+            if (editText.kind === "lastFramePrompt") return `编辑尾帧图提示词${suffix}`
+            if (editText.kind === "videoPrompt") return `编辑视频提示词${suffix}`
+            return `编辑分镜描述${suffix}`
+          })()}`}
           initialValue={editText.initialValue}
           saving={editTextSaving}
           error={editTextError}
           onClose={() => {
             if (editTextSaving) return
-            setEditText({ open: false, itemId: "", initialValue: "" })
+            setEditText({ open: false, itemId: "", initialValue: "", kind: "storyboardText" })
             setEditTextError(null)
           }}
           onSave={handleSaveEditText}

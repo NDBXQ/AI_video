@@ -1,11 +1,10 @@
-import { useEffect, useMemo, type ReactElement } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react"
 import { createPortal } from "react-dom"
 import type { StoryboardItem } from "../../types"
 import styles from "./StoryboardDetailsModal.module.css"
 import { createPreviewSvgDataUrl } from "../../utils/svgUtils"
 import { extractReferenceImagePrompts } from "../../utils/referenceImagePrompts"
 import { StoryboardAssetRow, type StoryboardAssetRowItem } from "./StoryboardAssetRow"
-import { StoryboardPromptCard } from "./StoryboardPromptCard"
 
 type PreviewRow = { id: string; name: string; url: string; thumbnailUrl?: string | null; category?: string; storyboardId?: string | null; isGlobal?: boolean; description?: string | null; prompt?: string | null }
 
@@ -23,15 +22,30 @@ type StoryboardDetailsModalProps = {
     description?: string | null,
     prompt?: string | null
   ) => void
-  onOpenEdit: (itemId: string, initialValue: string) => void
+  onSaveEdits: (params: {
+    itemId: string
+    storyboardText: string
+    firstPrompt: string
+    lastPrompt: string
+    videoPrompt: string
+    regenerateAfterSave: boolean
+  }) => Promise<void> | void
 }
 
 function isPlaceholderId(id: string): boolean {
   return id.startsWith("placeholder:")
 }
 
-export function StoryboardDetailsModal({ open, item, previews, onClose, onPreviewImage, onOpenEdit }: StoryboardDetailsModalProps): ReactElement | null {
+export function StoryboardDetailsModal({ open, item, previews, onClose, onPreviewImage, onSaveEdits }: StoryboardDetailsModalProps): ReactElement | null {
   const canPortal = typeof document !== "undefined"
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const baselineRef = useRef<{ storyboardText: string; firstPrompt: string; lastPrompt: string; videoPrompt: string } | null>(null)
+  const storyboardTextRef = useRef<HTMLDivElement | null>(null)
+  const firstPromptRef = useRef<HTMLPreElement | null>(null)
+  const lastPromptRef = useRef<HTMLPreElement | null>(null)
+  const videoPromptRef = useRef<HTMLPreElement | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -44,6 +58,27 @@ export function StoryboardDetailsModal({ open, item, previews, onClose, onPrevie
   }, [onClose, open])
 
   const title = useMemo(() => `镜头 ${item.scene_no} · 分镜详情`, [item.scene_no])
+
+  const resetEditableContent = useCallback(() => {
+    const nextBaseline = {
+      storyboardText: (item.storyboard_text ?? "").trim(),
+      firstPrompt: (item.frames?.first?.prompt ?? "").trim(),
+      lastPrompt: (item.frames?.last?.prompt ?? "").trim(),
+      videoPrompt: (item.videoInfo?.prompt ?? "").trim()
+    }
+    baselineRef.current = nextBaseline
+    if (storyboardTextRef.current) storyboardTextRef.current.textContent = nextBaseline.storyboardText
+    if (firstPromptRef.current) firstPromptRef.current.textContent = nextBaseline.firstPrompt
+    if (lastPromptRef.current) lastPromptRef.current.textContent = nextBaseline.lastPrompt
+    if (videoPromptRef.current) videoPromptRef.current.textContent = nextBaseline.videoPrompt
+    setDirty(false)
+    setSaveError(null)
+  }, [item.frames, item.storyboard_text, item.videoInfo, setDirty])
+
+  useEffect(() => {
+    if (!open) return
+    resetEditableContent()
+  }, [item.id, open, resetEditableContent])
 
   const computeDisplayList = useMemo(() => {
     const extracted = extractReferenceImagePrompts(item.scriptContent)
@@ -127,9 +162,48 @@ export function StoryboardDetailsModal({ open, item, previews, onClose, onPrevie
     }
   }, [item.id, item.scene_no, item.scriptContent, item.shot_content, previews])
 
-  const firstPrompt = (item.frames?.first?.prompt ?? "").trim()
-  const lastPrompt = (item.frames?.last?.prompt ?? "").trim()
-  const videoPrompt = (item.videoInfo?.prompt ?? "").trim()
+  const updateDirty = useCallback(() => {
+    const baseline = baselineRef.current
+    if (!baseline) return
+    const storyboardText = (storyboardTextRef.current?.innerText ?? "").trim()
+    const firstPrompt = (firstPromptRef.current?.innerText ?? "").trim()
+    const lastPrompt = (lastPromptRef.current?.innerText ?? "").trim()
+    const videoPrompt = (videoPromptRef.current?.innerText ?? "").trim()
+    setDirty(
+      storyboardText !== baseline.storyboardText ||
+        firstPrompt !== baseline.firstPrompt ||
+        lastPrompt !== baseline.lastPrompt ||
+        videoPrompt !== baseline.videoPrompt
+    )
+  }, [])
+
+  const handleSaveAll = useCallback(async () => {
+    if (saving) return
+    const baseline = baselineRef.current
+    if (!baseline) return
+    const storyboardText = (storyboardTextRef.current?.innerText ?? "").trim()
+    const firstPrompt = (firstPromptRef.current?.innerText ?? "").trim()
+    const lastPrompt = (lastPromptRef.current?.innerText ?? "").trim()
+    const videoPrompt = (videoPromptRef.current?.innerText ?? "").trim()
+    const regenerateAfterSave =
+      storyboardText !== baseline.storyboardText &&
+      firstPrompt === baseline.firstPrompt &&
+      lastPrompt === baseline.lastPrompt &&
+      videoPrompt === baseline.videoPrompt
+
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await onSaveEdits({ itemId: item.id, storyboardText, firstPrompt, lastPrompt, videoPrompt, regenerateAfterSave })
+      baselineRef.current = { storyboardText, firstPrompt, lastPrompt, videoPrompt }
+      setDirty(false)
+    } catch (e) {
+      const anyErr = e as { message?: string }
+      setSaveError(anyErr?.message ?? "保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }, [item.id, onSaveEdits, saving])
 
   const frameItems = useMemo((): StoryboardAssetRowItem[] => {
     const out: StoryboardAssetRowItem[] = []
@@ -175,12 +249,8 @@ export function StoryboardDetailsModal({ open, item, previews, onClose, onPrevie
         <div className={styles.header}>
           <div className={styles.headerTitle}>{title}</div>
           <div className={styles.headerActions}>
-            <button
-              type="button"
-              className={styles.headerBtn}
-              onClick={() => onOpenEdit(item.id, item.storyboard_text ?? "")}
-            >
-              编辑分镜描述
+            <button type="button" className={styles.headerBtn} onClick={() => void handleSaveAll()} disabled={!dirty || saving}>
+              {saving ? "保存中…" : "保存"}
             </button>
             <button type="button" className={styles.closeBtn} onClick={() => onClose()} aria-label="关闭">
               ×
@@ -193,17 +263,79 @@ export function StoryboardDetailsModal({ open, item, previews, onClose, onPrevie
             <div className={styles.leftCol}>
               <section className={styles.section} aria-label="分镜描述">
                 <div className={styles.sectionTitle}>分镜描述</div>
-                <div className={styles.textBlock}>{(item.storyboard_text ?? "").trim() || "未填写"}</div>
+                <div className={styles.textBlockEditableWrap}>
+                  <div
+                    ref={storyboardTextRef}
+                    className={styles.textBlockEditable}
+                    contentEditable
+                    suppressContentEditableWarning
+                    role="textbox"
+                    aria-multiline="true"
+                    aria-label="分镜描述"
+                    data-placeholder="在这里编辑分镜描述…"
+                    onInput={updateDirty}
+                  />
+                </div>
               </section>
 
               <section className={styles.section} aria-label="提示词">
                 <div className={styles.sectionTitle}>提示词</div>
                 <div className={styles.promptStack}>
-                  <StoryboardPromptCard title="首帧图提示词" text={firstPrompt} />
-                  <StoryboardPromptCard title="尾帧图提示词" text={lastPrompt} />
-                  <StoryboardPromptCard title="视频提示词" text={videoPrompt} />
+                  <div className={styles.promptCard} aria-label="首帧图提示词">
+                    <div className={styles.promptCardHeader}>
+                      <div className={styles.promptCardTitle}>首帧图提示词</div>
+                    </div>
+                    <pre
+                      ref={firstPromptRef}
+                      className={styles.promptBodyEditable}
+                      contentEditable
+                      suppressContentEditableWarning
+                      role="textbox"
+                      aria-multiline="true"
+                      aria-label="首帧图提示词"
+                      data-placeholder="在这里编辑首帧图提示词…"
+                      onInput={updateDirty}
+                    />
+                  </div>
+                  <div className={styles.promptCard} aria-label="尾帧图提示词">
+                    <div className={styles.promptCardHeader}>
+                      <div className={styles.promptCardTitle}>尾帧图提示词</div>
+                    </div>
+                    <pre
+                      ref={lastPromptRef}
+                      className={styles.promptBodyEditable}
+                      contentEditable
+                      suppressContentEditableWarning
+                      role="textbox"
+                      aria-multiline="true"
+                      aria-label="尾帧图提示词"
+                      data-placeholder="在这里编辑尾帧图提示词…"
+                      onInput={updateDirty}
+                    />
+                  </div>
+                  <div className={styles.promptCard} aria-label="视频提示词">
+                    <div className={styles.promptCardHeader}>
+                      <div className={styles.promptCardTitle}>视频提示词</div>
+                    </div>
+                    <pre
+                      ref={videoPromptRef}
+                      className={styles.promptBodyEditable}
+                      contentEditable
+                      suppressContentEditableWarning
+                      role="textbox"
+                      aria-multiline="true"
+                      aria-label="视频提示词"
+                      data-placeholder="在这里编辑视频提示词…"
+                      onInput={updateDirty}
+                    />
+                  </div>
                 </div>
               </section>
+              {saveError ? (
+                <div className={styles.saveError} role="status">
+                  {saveError}
+                </div>
+              ) : null}
             </div>
 
             <div className={styles.rightCol}>

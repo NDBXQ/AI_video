@@ -8,6 +8,7 @@ import tableStyles from "./StoryboardTable.module.css"
 import { createPreviewSvgDataUrl } from "../../utils/svgUtils"
 import { extractReferenceImagePrompts } from "../../utils/referenceImagePrompts"
 import { GoGenerateMenu, type GoGenerateTarget } from "./GoGenerateMenu"
+import type { OpenStoryboardTextEditParams } from "./textEditTypes"
 
 type StoryboardTableRowProps = {
   item: StoryboardItem
@@ -34,7 +35,7 @@ type StoryboardTableRowProps = {
   onDeleteAsset?: (params: { storyboardId: string; category: "role" | "item"; name: string; imageId?: string | null; isGlobal?: boolean }) => Promise<void> | void
   onGenerateReferenceImages?: (storyboardId: string) => void
   refImageGenerating?: boolean
-  onOpenEdit: (itemId: string, initialValue: string) => void
+  onOpenEdit: (params: OpenStoryboardTextEditParams) => void
   onOpenDetails: (itemId: string) => void
   onDelete: (id: string) => void
 }
@@ -52,7 +53,6 @@ export function StoryboardTableRow({
   onDeleteAsset,
   onGenerateReferenceImages,
   refImageGenerating,
-  onOpenEdit,
   onOpenDetails,
   onDelete
 }: StoryboardTableRowProps): ReactElement {
