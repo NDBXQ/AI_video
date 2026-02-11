@@ -1,14 +1,16 @@
 "use client"
 
 import type { ReactElement } from "react"
+import { AlertTriangle, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogClose
 } from "@/shared/ui/shadcn/dialog"
 import { Button } from "@/shared/ui/shadcn/button"
+import styles from "./ConfirmModal.module.css"
 
 interface ConfirmModalProps {
   open: boolean
@@ -40,31 +42,43 @@ export function ConfirmModal({
         onCancel()
       }}
     >
-      <DialogContent className="border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] shadow-[var(--theme-shadow-strong)]">
-        <DialogHeader>
-          <DialogTitle className="text-[var(--theme-text-strong)]">{title}</DialogTitle>
+      <DialogContent className={styles.content}>
+        <DialogHeader className={styles.header}>
+          <div className={styles.icon}>
+            <AlertTriangle className="h-[18px] w-[18px]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <DialogTitle className={styles.title}>{title}</DialogTitle>
+            <div className={styles.hint}>此操作不可恢复</div>
+          </div>
+          <DialogClose asChild>
+            <button type="button" className={styles.closeBtn} aria-label="关闭" disabled={confirming}>
+              <X className="h-4 w-4" />
+            </button>
+          </DialogClose>
         </DialogHeader>
-        <div className="whitespace-pre-line text-sm text-[var(--theme-text-muted)]">
-          {message}
-        </div>
-        <DialogFooter>
-          <Button
+
+        <div className={styles.body}>{message}</div>
+
+        <div className={styles.footer}>
+          <button
             type="button"
-            variant="secondary"
+            className={`${styles.btn} ${styles.btnSecondary}`}
             onClick={onCancel}
             disabled={confirming}
+            autoFocus
           >
             {cancelText}
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="destructive"
+            className={`${styles.btn} ${styles.btnDanger}`}
             onClick={onConfirm}
             disabled={confirming}
           >
             {confirming ? "删除中..." : confirmText}
-          </Button>
-        </DialogFooter>
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   )

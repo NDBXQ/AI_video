@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import type { ChatMessage } from "@/features/tvc/types"
 import { extractClarificationMarkdown } from "@/features/tvc/workspace/creation/extractClarificationMarkdown"
 import { collectUserProvidedImages } from "@/features/tvc/workspace/creation/collectUserProvidedImages"
@@ -17,13 +17,17 @@ export function useTvcCreationHydration(params: {
   setInitialChatMessages: (messages: ChatMessage[] | null) => void
 }): void {
   const { projectId, clarificationText, hydrateClarification, notifyAssetDrivenSteps, setUserProvidedImages, setAssetUrlByKey, setInitialChatMessages } = params
+  const tokenRef = useRef(0)
 
   useEffect(() => {
     if (!projectId) return
+    const token = (tokenRef.current += 1)
     void (async () => {
       const res = await fetch(`/api/tvc/projects/${encodeURIComponent(projectId)}/creation`, { method: "GET", cache: "no-store" }).catch(() => null)
+      if (tokenRef.current !== token) return
       if (!res) return
       const json = (await res.json().catch(() => null)) as any
+      if (tokenRef.current !== token) return
       if (!res.ok || !json?.ok) return
 
       const messages = Array.isArray(json?.data?.messages) ? (json.data.messages as any[]) : []

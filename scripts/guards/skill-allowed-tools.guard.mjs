@@ -1,9 +1,8 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 import process from "node:process"
-import { fileURLToPath } from "node:url"
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
+const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..")
 const skillsRoot = path.resolve(repoRoot, "src/server/domains/tvc/vibeCreating/skills")
 
 const KNOWN_TOOLS = new Set([

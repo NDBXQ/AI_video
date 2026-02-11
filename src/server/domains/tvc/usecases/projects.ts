@@ -33,7 +33,7 @@ export async function createTvcProject(input: {
       storyType: "tvc",
       aspectRatio,
       resolution,
-      storyText: brief || "TVC brief",
+      storyText: brief,
       metadata: { tvc: { brief, durationSec } } as any
     })
     .returning({
@@ -163,7 +163,7 @@ export async function patchTvcProject(input: {
       ...(title !== undefined ? { title } : {}),
       ...(aspectRatio !== undefined ? { aspectRatio } : {}),
       ...(resolution !== undefined ? { resolution } : {}),
-      ...(brief !== undefined ? { storyText: brief || "TVC brief" } : {}),
+      ...(brief !== undefined ? { storyText: brief } : {}),
       metadata: nextMetadata as any,
       updatedAt: new Date()
     })

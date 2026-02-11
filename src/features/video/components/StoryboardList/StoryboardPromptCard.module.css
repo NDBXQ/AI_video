@@ -64,8 +64,20 @@
   overflow: hidden;
 }
 
+.bodyEditable {
+  cursor: pointer;
+}
+
+.bodyEditable:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bodyEditable:focus {
+  outline: 2px solid rgba(124, 92, 255, 0.55);
+  outline-offset: 2px;
+}
+
 .bodyExpanded {
   max-height: 360px;
   overflow: auto;
 }
-

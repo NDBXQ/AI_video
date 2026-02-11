@@ -18,32 +18,25 @@
         "name": "分镜头脚本",
         "type": "object",
         "required": true,
-        "description": "从步骤3获取的分镜头列表"
+        "description": "从阶段3获取的分镜头列表"
       },
       {
         "name": "产品图",
         "type": "string",
         "required": true,
-        "description": "从步骤0获取的用户产品图"
+        "description": "从阶段0获取的用户产品图"
       },
       {
         "name": "参考图",
         "type": "object",
         "required": true,
-        "description": "从步骤2获取的参考图（角色图、背景图）"
+        "description": "从阶段2获取的参考图（角色图、背景图）"
       },
       {
         "name": "风格偏好",
         "type": "string",
         "required": false,
         "description": "视觉风格"
-      },
-      {
-        "name": "图片尺寸",
-        "type": "string",
-        "required": false,
-        "default": "1024x576",
-        "description": "图片分辨率"
       }
     ],
     "output": {

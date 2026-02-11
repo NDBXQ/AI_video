@@ -29,7 +29,6 @@
 
 .preview {
   width: 100%;
-  aspect-ratio: 16 / 9;
   background: rgba(2, 6, 23, 0.35);
   display: grid;
   place-items: center;

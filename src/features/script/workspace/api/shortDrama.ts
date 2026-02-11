@@ -128,7 +128,6 @@ export async function patchStoryShortDramaMetadata(storyId: string, input: {
   planningResult: unknown
   worldSetting: unknown
   characterSetting: unknown
-  planningConfirmedAt?: number
 }): Promise<void> {
   const res = await fetch(`/api/library/stories/${encodeURIComponent(storyId)}/metadata`, {
     method: "PATCH",
@@ -137,8 +136,7 @@ export async function patchStoryShortDramaMetadata(storyId: string, input: {
       shortDrama: {
         planningResult: input.planningResult,
         worldSetting: input.worldSetting,
-        characterSetting: input.characterSetting,
-        ...(typeof input.planningConfirmedAt === "number" ? { planningConfirmedAt: Math.max(0, Math.trunc(input.planningConfirmedAt)) } : {})
+        characterSetting: input.characterSetting
       }
     })
   })

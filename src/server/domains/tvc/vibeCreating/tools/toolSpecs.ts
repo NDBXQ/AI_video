@@ -1,7 +1,6 @@
 import type { TvcToolSpec } from "../llm/llmTypes"
 import { VIBE_VIDEO_DURATION_MAX_SECONDS, VIBE_VIDEO_DURATION_MIN_SECONDS } from "../vibeCreatingConfig"
 import { VIBE_SKILLS } from "./constants"
-import { SEEDREAM_ALLOWED_SIZES } from "./validators/seedreamSize"
 
 export function getVibeCreatingToolSpecs(): TvcToolSpec[] {
   return [
@@ -46,13 +45,7 @@ export function getVibeCreatingToolSpecs(): TvcToolSpec[] {
                 additionalProperties: false
               }
             },
-            overwrite_existing: { type: "boolean" },
-            size: {
-              type: "string",
-              enum: [...SEEDREAM_ALLOWED_SIZES],
-              description:
-                "图片尺寸。可填比例：1:1/4:3/3:4/16:9/9:16/3:2/2:3/21:9；或填分辨率：2048x2048/2304x1728/1728x2304/2560x1440/1440x2560/2496x1664/1664x2496/3024x1296"
-            }
+            overwrite_existing: { type: "boolean" }
           },
           required: ["requests"],
           additionalProperties: false

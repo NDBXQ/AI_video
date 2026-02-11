@@ -20,8 +20,10 @@ export function useTimelineTrackInteractions(params: {
   pxPerSecond: number
   wrapRef: React.RefObject<HTMLDivElement>
   keyboardScopeRef: React.RefObject<HTMLDivElement>
+  isInteractingRef?: React.RefObject<boolean>
   setSelectedClips: React.Dispatch<React.SetStateAction<SelectedKey[]>>
   updateVideoClip: (id: string, patch: Partial<VideoClip>) => void
+  updateVideoClipsBulk?: (patches: Array<{ id: string; patch: Partial<VideoClip> }>) => void
   updateAudioClip: (id: string, patch: Partial<AudioClip>) => void
   onSelectSegment: (id: string) => void
   onSeekPlayheadSeconds?: (seconds: number) => void
@@ -33,8 +35,10 @@ export function useTimelineTrackInteractions(params: {
     pxPerSecond,
     wrapRef,
     keyboardScopeRef,
+    isInteractingRef,
     setSelectedClips,
     updateVideoClip,
+    updateVideoClipsBulk,
     updateAudioClip,
     onSelectSegment,
     onSeekPlayheadSeconds
@@ -108,6 +112,7 @@ export function useTimelineTrackInteractions(params: {
       keyboardScopeRef.current?.focus()
 
       const pointerId = typeof e.pointerId === "number" ? e.pointerId : null
+      if (isInteractingRef) isInteractingRef.current = true
 
       const clip = hit.clip
       const wrap = wrapRef.current
@@ -135,6 +140,7 @@ export function useTimelineTrackInteractions(params: {
       const moveCtx =
         mode === "move"
           ? (() => {
+              const epsMove = 1 / pxPerSecond
               const selectedSet = new Set(selectedVideoIds)
               const allClips = latestVideoRef.current
               const selected = allClips.filter((c) => selectedSet.has(c.id))
@@ -157,9 +163,9 @@ export function useTimelineTrackInteractions(params: {
               const groupEnd0 = Math.max(...selectedVisible.map((c) => c.visibleEnd))
 
               const othersVisible = allClips.filter((c) => !selectedSet.has(c.id)).map(toVisible)
-              const leftSide = othersVisible.filter((c) => c.visibleEnd <= groupStart0 + EPS)
-              const rightSide = othersVisible.filter((c) => c.visibleStart >= groupEnd0 - EPS)
-              const movedRipple = [...selectedVisible, ...rightSide]
+              const leftSide = othersVisible.filter((c) => c.visibleEnd <= groupStart0 + epsMove)
+              const rightCandidates = othersVisible.filter((c) => c.visibleStart >= groupStart0 - epsMove)
+              const movedRipple = [...selectedVisible, ...rightCandidates]
 
               let minDeltaNoRipple = Math.max(...selectedVisible.map((c) => -c.trimStart - c.start0))
               if (leftSide.length > 0) {
@@ -167,9 +173,9 @@ export function useTimelineTrackInteractions(params: {
               }
 
               let maxDeltaNoRipple = Number.POSITIVE_INFINITY
-              if (rightSide.length > 0) {
-                const nextStart = Math.min(...rightSide.map((c) => c.visibleStart))
-                maxDeltaNoRipple = Math.min(maxDeltaNoRipple, nextStart - groupEnd0)
+              if (rightCandidates.length > 0) {
+                const nextStart = Math.min(...rightCandidates.map((c) => c.visibleStart))
+                maxDeltaNoRipple = Math.min(maxDeltaNoRipple, Math.max(0, nextStart - groupEnd0))
               }
 
               let minDeltaRipple = Math.max(...movedRipple.map((c) => -c.trimStart - c.start0))
@@ -192,6 +198,7 @@ export function useTimelineTrackInteractions(params: {
               return {
                 groupStart0,
                 groupEnd0,
+                selectedCount: selectedVisible.length,
                 noRipple: {
                   minDelta: minDeltaNoRipple,
                   maxDelta: maxDeltaNoRipple,
@@ -203,13 +210,15 @@ export function useTimelineTrackInteractions(params: {
                   maxDelta: Number.POSITIVE_INFINITY,
                   anchors: anchorsLeft,
                   targets: movedRipple.map((c) => ({ id: c.id, start0: c.start0 }))
-                }
+                },
+                rightTargets: rightCandidates.map((c) => ({ id: c.id, start0: c.start0 }))
               }
             })()
           : null
 
       let raf = 0
       let lastClientX = e.clientX
+      let lastMoveMode: "ripple" | "noRipple" = "noRipple"
       const applyFrame = () => {
         raf = 0
         const nowSeconds = getSecondsFast(lastClientX)
@@ -263,7 +272,51 @@ export function useTimelineTrackInteractions(params: {
         }
 
         if (!moveCtx) return
-        const ctx = dx < 0 ? moveCtx.ripple : moveCtx.noRipple
+        if (moveCtx.selectedCount <= 1 && dx > 0) {
+          const ctx = moveCtx.ripple
+          const baseDelta = dx
+          const snappedDelta = (() => {
+            const afterStart = moveCtx.groupStart0 + baseDelta
+            const afterEnd = moveCtx.groupEnd0 + baseDelta
+            let best: number | null = null
+            let bestAbs = Number.POSITIVE_INFINITY
+            for (const a of ctx.anchors) {
+              const d1 = a - afterStart
+              if (Math.abs(d1) <= snapThresholdSeconds && Math.abs(d1) < bestAbs) {
+                bestAbs = Math.abs(d1)
+                best = baseDelta + d1
+              }
+              const d2 = a - afterEnd
+              if (Math.abs(d2) <= snapThresholdSeconds && Math.abs(d2) < bestAbs) {
+                bestAbs = Math.abs(d2)
+                best = baseDelta + d2
+              }
+            }
+            return best
+          })()
+          const deltaSelected = snappedDelta ?? baseDelta
+          const overflow = Number.isFinite(moveCtx.noRipple.maxDelta) ? Math.max(0, deltaSelected - moveCtx.noRipple.maxDelta) : 0
+          const patches = [
+            ...moveCtx.noRipple.targets.map((t) => ({ id: t.id, patch: { start: t.start0 + deltaSelected } })),
+            ...moveCtx.rightTargets.map((t) => ({ id: t.id, patch: { start: t.start0 + overflow } }))
+          ]
+          if (updateVideoClipsBulk) updateVideoClipsBulk(patches)
+          else for (const p of patches) updateVideoClip(p.id, p.patch)
+          return
+        }
+        const deadzoneSeconds = 2 / pxPerSecond
+        const desiredMode: "ripple" | "noRipple" =
+          dx < 0
+            ? "ripple"
+            : moveCtx.selectedCount <= 1
+              ? dx > moveCtx.noRipple.maxDelta - deadzoneSeconds
+                ? "ripple"
+                : "noRipple"
+              : "noRipple"
+        if (Math.abs(dx) > deadzoneSeconds) {
+          lastMoveMode = desiredMode
+        }
+        const ctx = lastMoveMode === "ripple" ? moveCtx.ripple : moveCtx.noRipple
         const baseDelta = clamp(dx, ctx.minDelta, ctx.maxDelta)
 
         const snappedDelta = (() => {
@@ -287,8 +340,12 @@ export function useTimelineTrackInteractions(params: {
         })()
 
         const actualDelta = clamp(snappedDelta ?? baseDelta, ctx.minDelta, ctx.maxDelta)
-        for (const t of ctx.targets) {
-          updateVideoClip(t.id, { start: t.start0 + actualDelta })
+        if (updateVideoClipsBulk) {
+          updateVideoClipsBulk(ctx.targets.map((t) => ({ id: t.id, patch: { start: t.start0 + actualDelta } })))
+        } else {
+          for (const t of ctx.targets) {
+            updateVideoClip(t.id, { start: t.start0 + actualDelta })
+          }
         }
       }
 
@@ -303,14 +360,17 @@ export function useTimelineTrackInteractions(params: {
         if (pointerId !== null && ev.pointerId !== pointerId) return
         window.removeEventListener("pointermove", onMove)
         window.removeEventListener("pointerup", onUp)
+        window.removeEventListener("pointercancel", onUp)
         if (raf) window.cancelAnimationFrame(raf)
         raf = 0
+        if (isInteractingRef) isInteractingRef.current = false
       }
 
       window.addEventListener("pointermove", onMove)
       window.addEventListener("pointerup", onUp)
+      window.addEventListener("pointercancel", onUp)
     },
-    [keyboardScopeRef, markers, onSeekPlayheadSeconds, onSelectSegment, pxPerSecond, setSelection, updateVideoClip, wrapRef]
+    [isInteractingRef, keyboardScopeRef, markers, onSeekPlayheadSeconds, onSelectSegment, pxPerSecond, setSelection, updateVideoClip, updateVideoClipsBulk, wrapRef]
   )
 
   const beginAudioDrag = useCallback(
@@ -318,6 +378,7 @@ export function useTimelineTrackInteractions(params: {
       keyboardScopeRef.current?.focus()
 
       const pointerId = typeof e.pointerId === "number" ? e.pointerId : null
+      if (isInteractingRef) isInteractingRef.current = true
 
       const clip = hit.clip
       const wrap = wrapRef.current
@@ -373,14 +434,17 @@ export function useTimelineTrackInteractions(params: {
         if (pointerId !== null && ev.pointerId !== pointerId) return
         window.removeEventListener("pointermove", onMove)
         window.removeEventListener("pointerup", onUp)
+        window.removeEventListener("pointercancel", onUp)
         if (raf) window.cancelAnimationFrame(raf)
         raf = 0
+        if (isInteractingRef) isInteractingRef.current = false
       }
 
       window.addEventListener("pointermove", onMove)
       window.addEventListener("pointerup", onUp)
+      window.addEventListener("pointercancel", onUp)
     },
-    [keyboardScopeRef, pxPerSecond, setSelection, updateAudioClip, wrapRef]
+    [isInteractingRef, keyboardScopeRef, pxPerSecond, setSelection, updateAudioClip, wrapRef]
   )
 
   const onVideoTrackPointerDown = useCallback(

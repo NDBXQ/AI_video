@@ -35,36 +35,65 @@ export async function generateFirstFramesFromReferencesBatch(params: {
     }
   })()
 
-  const resolveUrlsByOrdinals = async (ordinals: number[]): Promise<string[]> => {
+  const sanitizeImageName = (input: unknown): string => {
+    const raw = String(input ?? "").trim()
+    if (!raw) return ""
+    const compact = raw.replace(/\s+/g, " ").replace(/\u0000/g, "").trim()
+    const limited = compact.length > 50 ? compact.slice(0, 50) : compact
+    return limited
+  }
+
+  const resolveReferenceImagesByOrdinals = async (
+    ordinals: number[]
+  ): Promise<Array<{ ordinal: number; url: string; displayName: string }>> => {
     const cleaned: number[] = Array.from(
       new Set(ordinals.map((n) => Math.trunc(Number(n))).filter((n) => Number.isFinite(n) && n > 0))
-    )
+    ).sort((a, b) => a - b)
+
+    const resolveUrlFromRow = async (row: { storageKey: string; meta: unknown }): Promise<string> => {
+      const storageKey = String(row.storageKey ?? "")
+      let url = ""
+      if (storage) {
+        try {
+          url = await resolveStorageUrl(storage, storageKey)
+        } catch {
+        }
+      }
+      if (!url) url = String((row.meta as any)?.url ?? "").trim()
+      if (!url) {
+        try {
+          url = buildDirectBucketUrl(storageKey)
+        } catch {
+        }
+      }
+      return url
+    }
+
+    const resolveDisplayNameFromMeta = (meta: unknown, ordinal: number): string => {
+      const title = sanitizeImageName((meta as any)?.title)
+      if (title) return title
+      const name = sanitizeImageName((meta as any)?.name)
+      if (name) return name
+      return `参考图${ordinal}`
+    }
+
     if (cleaned.length === 0) {
       const rows = await db
-        .select({ storageKey: tvcAssets.storageKey, meta: tvcAssets.meta })
+        .select({ assetOrdinal: tvcAssets.assetOrdinal, storageKey: tvcAssets.storageKey, meta: tvcAssets.meta })
         .from(tvcAssets)
         .where(and(eq(tvcAssets.storyId, params.storyId), eq(tvcAssets.kind, "reference_image")))
         .orderBy(desc(tvcAssets.assetOrdinal))
         .limit(8)
-      const urls: string[] = []
+
+      const out: Array<{ ordinal: number; url: string; displayName: string }> = []
       for (const r of rows) {
-        let url = ""
-        if (storage) {
-          try {
-            url = await resolveStorageUrl(storage, r.storageKey)
-          } catch {
-          }
-        }
-        if (!url) url = String((r.meta as any)?.url ?? "").trim()
-        if (!url) {
-          try {
-            url = buildDirectBucketUrl(r.storageKey)
-          } catch {
-          }
-        }
-        if (url) urls.push(url)
+        const ordinal = Number.isFinite(Number(r.assetOrdinal)) ? Math.trunc(Number(r.assetOrdinal)) : 0
+        if (!ordinal || ordinal <= 0) continue
+        const url = await resolveUrlFromRow({ storageKey: r.storageKey, meta: r.meta })
+        if (!url) continue
+        out.push({ ordinal, url, displayName: resolveDisplayNameFromMeta(r.meta, ordinal) })
       }
-      return urls
+      return out
     }
 
     const rows = await db
@@ -73,34 +102,22 @@ export async function generateFirstFramesFromReferencesBatch(params: {
       .where(and(eq(tvcAssets.storyId, params.storyId), eq(tvcAssets.kind, "reference_image"), inArray(tvcAssets.assetOrdinal, cleaned)))
       .limit(cleaned.length)
 
-    const byIndex = new Map<number, { storageKey: string; meta: Record<string, unknown> }>()
+    const byOrdinal = new Map<number, { storageKey: string; meta: unknown }>()
     for (const r of rows) {
-      const idx = Number(r.assetOrdinal)
-      if (!Number.isFinite(idx) || idx <= 0) continue
-      byIndex.set(Math.trunc(idx), { storageKey: String(r.storageKey ?? ""), meta: (r.meta ?? {}) as any })
+      const ordinal = Number.isFinite(Number(r.assetOrdinal)) ? Math.trunc(Number(r.assetOrdinal)) : 0
+      if (!ordinal || ordinal <= 0) continue
+      byOrdinal.set(ordinal, { storageKey: String(r.storageKey ?? ""), meta: r.meta })
     }
 
-    const urls: string[] = []
-    for (const idx of cleaned) {
-      const r = byIndex.get(idx)
+    const out: Array<{ ordinal: number; url: string; displayName: string }> = []
+    for (const ordinal of cleaned) {
+      const r = byOrdinal.get(ordinal)
       if (!r?.storageKey) continue
-      let url = ""
-      if (storage) {
-        try {
-          url = await resolveStorageUrl(storage, r.storageKey)
-        } catch {
-        }
-      }
-      if (!url) url = String((r.meta as any)?.url ?? "").trim()
-      if (!url) {
-        try {
-          url = buildDirectBucketUrl(r.storageKey)
-        } catch {
-        }
-      }
-      if (url) urls.push(url)
+      const url = await resolveUrlFromRow({ storageKey: r.storageKey, meta: r.meta })
+      if (!url) continue
+      out.push({ ordinal, url, displayName: resolveDisplayNameFromMeta(r.meta, ordinal) })
     }
-    return urls
+    return out
   }
 
   const nextState = params.state
@@ -143,10 +160,13 @@ export async function generateFirstFramesFromReferencesBatch(params: {
         }
       }
 
-      const urls = await resolveUrlsByOrdinals(meta.referenceImageOrdinals)
+      const refs = await resolveReferenceImagesByOrdinals(meta.referenceImageOrdinals)
+      const mapping = refs.map((r) => `图${r.ordinal}是${r.displayName}`).join("，")
+      const finalPrompt = mapping ? `${mapping}\n${String(meta.prompt ?? "")}` : String(meta.prompt ?? "")
+      const urls = refs.map((r) => r.url)
       const generated = await arkGenerateImage({
         model,
-        prompt: meta.prompt,
+        prompt: finalPrompt,
         image: urls.length === 0 ? undefined : urls.length === 1 ? urls[0] : urls,
         size: params.size,
         watermark: params.watermark

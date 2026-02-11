@@ -45,7 +45,7 @@ allowed_tools:
 使用 `generate_images_batch` 工具批量生成首帧图（kind="first_frame"，并传 reference_image_ordinals）。
 
 **参数设置**：
-- 宽高比：根据分镜头类型选择（全景用16:9，特写用4:3等）
+- 宽高比：固定 16:9（无需传参）
 - 并发数：使用默认值（2-3），提高生成效率
 
 ## 输出要求

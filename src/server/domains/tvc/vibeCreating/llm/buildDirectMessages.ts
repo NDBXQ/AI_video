@@ -24,15 +24,30 @@ function buildUserContent(raw: string): string | TvcLlmContentPart[] {
   const normalizedText = normalizeText(text)
   const images = attachments
     .filter((a) => a.kind === "image")
-    .map((a) => String((a as any).url ?? "").trim())
-    .filter((url) => /^https?:\/\//i.test(url))
+    .map((a) => {
+      const url = String((a as any).url ?? "").trim()
+      const assetKind = (a as any)?.assetKind as string | undefined
+      const assetOrdinal = (a as any)?.assetOrdinal as number | undefined
+      return { url, assetKind, assetOrdinal }
+    })
+    .filter((a) => /^https?:\/\//i.test(a.url))
 
   if (images.length === 0) return normalizedText
 
+  const metaLines = images
+    .map((img, i) => {
+      const kind = typeof img.assetKind === "string" ? img.assetKind.trim() : ""
+      const ord = typeof img.assetOrdinal === "number" && Number.isFinite(img.assetOrdinal) ? Math.trunc(img.assetOrdinal) : 0
+      if (kind && ord > 0) return `- 图片${i + 1}: kind=${kind} ordinal=${ord}`
+      return `- 图片${i + 1}: 用户上传图片`
+    })
+    .join("\n")
+  const metaHint = `用户上传了图片（用于多模态理解；可用 kind+ordinal 做稳定引用；不要对用户输出 URL）：\n${metaLines}`
+
   const parts: TvcLlmContentPart[] = []
-  if (normalizedText) parts.push({ type: "text", text: normalizedText })
-  else parts.push({ type: "text", text: "用户上传了图片，请结合图片内容理解用户需求并回答。" })
-  for (const url of images) parts.push({ type: "image_url", image_url: { url } })
+  if (normalizedText) parts.push({ type: "text", text: `${normalizedText}\n\n${metaHint}` })
+  else parts.push({ type: "text", text: metaHint })
+  for (const img of images) parts.push({ type: "image_url", image_url: { url: img.url } })
   return parts
 }
 

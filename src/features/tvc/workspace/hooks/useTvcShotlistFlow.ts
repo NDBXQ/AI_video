@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { TimelineShot } from "@/features/tvc/components/TvcTimelinePanel"
 
 export function useTvcShotlistFlow(params: {
@@ -21,15 +21,19 @@ export function useTvcShotlistFlow(params: {
   const [shots, setShots] = useState<TimelineShot[]>([])
   const [shotlistLoading, setShotlistLoading] = useState(false)
   const [isGeneratingShotlist, setIsGeneratingShotlist] = useState(false)
+  const refreshTokenRef = useRef(0)
 
   const refreshShotlist = useCallback(async () => {
     if (!projectId) return
+    const token = (refreshTokenRef.current += 1)
     setShotlistLoading(true)
     try {
       const res = await fetch(`/api/tvc/projects/${encodeURIComponent(projectId)}/shotlist`, { method: "GET", cache: "no-store" })
       const json = (await res.json().catch(() => null)) as any
+      if (refreshTokenRef.current !== token) return
       if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
       const list = Array.isArray(json.data.shots) ? (json.data.shots as any[]) : []
+      if (refreshTokenRef.current !== token) return
       setShots(
         list.map((s) => ({
           id: String(s.id ?? ""),
@@ -42,10 +46,16 @@ export function useTvcShotlistFlow(params: {
         }))
       )
     } catch {
+      if (refreshTokenRef.current !== token) return
       setShots([])
     } finally {
+      if (refreshTokenRef.current !== token) return
       setShotlistLoading(false)
     }
+  }, [projectId])
+
+  useEffect(() => {
+    setShots([])
   }, [projectId])
 
   useEffect(() => {
@@ -102,4 +112,3 @@ export function useTvcShotlistFlow(params: {
 
   return { shots, setShots, shotlistLoading, isGeneratingShotlist, handleGenerateShotlist, refreshShotlist }
 }
-

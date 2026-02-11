@@ -1,19 +1,21 @@
-import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactElement, type KeyboardEvent as ReactKeyboardEvent } from "react"
 import styles from "./StoryboardPromptCard.module.css"
 
 type StoryboardPromptCardProps = {
   title: string
   text: string
   emptyText?: string
+  onEdit?: () => void
 }
 
-export function StoryboardPromptCard({ title, text, emptyText = "未生成" }: StoryboardPromptCardProps): ReactElement {
+export function StoryboardPromptCard({ title, text, emptyText = "未生成", onEdit }: StoryboardPromptCardProps): ReactElement {
   const content = (text ?? "").trim()
   const value = content || emptyText
 
   const canExpand = useMemo(() => value !== emptyText && value.length > 140, [emptyText, value])
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
+  const canEdit = Boolean(onEdit)
 
   useEffect(() => {
     const t = window.setTimeout(() => setExpanded(false), 0)
@@ -48,6 +50,13 @@ export function StoryboardPromptCard({ title, text, emptyText = "未生成" }: S
     }
   }, [emptyText, value])
 
+  const onBodyKeyDown = (e: ReactKeyboardEvent<HTMLPreElement>) => {
+    if (!canEdit) return
+    if (e.key !== "Enter" && e.key !== " ") return
+    e.preventDefault()
+    onEdit?.()
+  }
+
   return (
     <div className={styles.card} aria-label={title}>
       <div className={styles.header}>
@@ -63,7 +72,16 @@ export function StoryboardPromptCard({ title, text, emptyText = "未生成" }: S
           ) : null}
         </div>
       </div>
-      <pre className={`${styles.body} ${expanded ? styles.bodyExpanded : ""}`}>{value}</pre>
+      <pre
+        className={`${styles.body} ${expanded ? styles.bodyExpanded : ""} ${canEdit ? styles.bodyEditable : ""}`}
+        role={canEdit ? "button" : undefined}
+        tabIndex={canEdit ? 0 : undefined}
+        aria-label={canEdit ? `${title}（双击或回车编辑）` : undefined}
+        onDoubleClick={() => onEdit?.()}
+        onKeyDown={onBodyKeyDown}
+      >
+        {value}
+      </pre>
     </div>
   )
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import type { ReactElement } from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import styles from "./OnboardingChecklistCard.module.css"
 import { useTelemetry } from "@/shared/useTelemetry"
+import { buildOnboardingDismissedCookie } from "@/shared/onboardingDismissed"
 
 type ChecklistStep = Readonly<{
   id: string
@@ -17,18 +18,16 @@ type ChecklistStep = Readonly<{
 
 type OnboardingChecklistCardProps = Readonly<{
   steps: ReadonlyArray<ChecklistStep>
+  initialDismissed?: boolean
 }>
 
 const DISMISS_KEY = "ai-video:onboarding:dismissed"
 
-export function OnboardingChecklistCard({ steps }: OnboardingChecklistCardProps): ReactElement | null {
-  const [dismissed, setDismissed] = useState<boolean>(() => {
-    try {
-      return window.localStorage.getItem(DISMISS_KEY) === "1"
-    } catch {
-      return false
-    }
-  })
+export function OnboardingChecklistCard({
+  steps,
+  initialDismissed
+}: OnboardingChecklistCardProps): ReactElement | null {
+  const [dismissed, setDismissed] = useState<boolean>(() => Boolean(initialDismissed))
   const [creatingSample, setCreatingSample] = useState(false)
   const [sampleError, setSampleError] = useState<string>("")
 
@@ -39,10 +38,27 @@ export function OnboardingChecklistCard({ steps }: OnboardingChecklistCardProps)
   const shouldOfferSample = useMemo(() => steps.some((s) => s.id === "create_story" && !s.done), [steps])
   const sendTelemetry = useTelemetry({ page: "/" })
 
+  useEffect(() => {
+    if (dismissed) return
+    try {
+      const legacyDismissed = window.localStorage.getItem(DISMISS_KEY) === "1"
+      if (!legacyDismissed) return
+      document.cookie = buildOnboardingDismissedCookie({
+        dismissed: true,
+        secure: window.location.protocol === "https:"
+      })
+      setDismissed(true)
+    } catch {}
+  }, [dismissed])
+
   const handleDismiss = (): void => {
     setDismissed(true)
     try {
       window.localStorage.setItem(DISMISS_KEY, "1")
+      document.cookie = buildOnboardingDismissedCookie({
+        dismissed: true,
+        secure: window.location.protocol === "https:"
+      })
     } catch {
       // ignore
     }

@@ -9,6 +9,8 @@ type UseStoryboardActionsProps = {
   setSelectedItems: React.Dispatch<React.SetStateAction<Set<string>>>
   activeEpisode?: string
   reloadShots?: (targetOutlineId?: string) => Promise<void>
+  requestConfirm?: (params: { title: string; message: string; confirmText?: string; cancelText?: string }) => Promise<boolean>
+  notifyError?: (message: string) => void
 }
 
 export function useStoryboardActions({
@@ -18,7 +20,9 @@ export function useStoryboardActions({
   selectedItems,
   setSelectedItems,
   activeEpisode,
-  reloadShots
+  reloadShots,
+  requestConfirm,
+  notifyError
 }: UseStoryboardActionsProps) {
   const handleAddRole = useCallback((itemId: string, roleName: string) => {
     updateItemById(itemId, (it) => {
@@ -93,7 +97,10 @@ export function useStoryboardActions({
 
   const handleDelete = useCallback(
     async (id: string) => {
-      if (!confirm("确定要删除这个分镜吗？")) return
+      const ok = requestConfirm
+        ? await requestConfirm({ title: "删除分镜", message: "确定要删除这个分镜吗？\n此操作不可恢复。", confirmText: "删除", cancelText: "取消" })
+        : await Promise.resolve((window.confirm("确定要删除这个分镜吗？") as unknown) as boolean)
+      if (!ok) return
       try {
         await deleteFromServer([id])
         if (reloadShots) await reloadShots(activeEpisode)
@@ -105,15 +112,25 @@ export function useStoryboardActions({
         })
       } catch (e) {
         const anyErr = e as { message?: string }
-        alert(anyErr?.message ?? "删除失败")
+        const msg = anyErr?.message ?? "删除失败"
+        if (notifyError) notifyError(msg)
+        else alert(msg)
       }
     },
-    [activeEpisode, deleteFromServer, reloadShots, setItems, setSelectedItems]
+    [activeEpisode, deleteFromServer, notifyError, reloadShots, requestConfirm, setItems, setSelectedItems]
   )
 
   const handleBatchDelete = useCallback(async () => {
     if (selectedItems.size === 0) return
-    if (!confirm(`确定要删除选中的 ${selectedItems.size} 个分镜吗？`)) return
+    const ok = requestConfirm
+      ? await requestConfirm({
+          title: "删除分镜",
+          message: `确定要删除选中的 ${selectedItems.size} 个分镜吗？\n此操作不可恢复。`,
+          confirmText: "删除",
+          cancelText: "取消"
+        })
+      : await Promise.resolve((window.confirm(`确定要删除选中的 ${selectedItems.size} 个分镜吗？`) as unknown) as boolean)
+    if (!ok) return
     const ids = Array.from(selectedItems)
     try {
       await deleteFromServer(ids)
@@ -122,9 +139,11 @@ export function useStoryboardActions({
       setSelectedItems(new Set())
     } catch (e) {
       const anyErr = e as { message?: string }
-      alert(anyErr?.message ?? "删除失败")
+      const msg = anyErr?.message ?? "删除失败"
+      if (notifyError) notifyError(msg)
+      else alert(msg)
     }
-  }, [activeEpisode, deleteFromServer, reloadShots, selectedItems, setItems, setSelectedItems])
+  }, [activeEpisode, deleteFromServer, notifyError, reloadShots, requestConfirm, selectedItems, setItems, setSelectedItems])
 
   const toggleSelectAll = useCallback(() => {
     if (selectedItems.size === items.length) {

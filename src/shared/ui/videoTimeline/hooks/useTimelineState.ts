@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { PX_PER_SECOND, TRACK_OFFSET_PX, TRACK_RIGHT_PADDING_PX, safeDuration, type AudioClip, type TimelineSegment, type VideoClip } from "@/shared/utils/timelineUtils"
+import { MIN_CLIP_SECONDS, PX_PER_SECOND, TRACK_OFFSET_PX, TRACK_RIGHT_PADDING_PX, safeDuration, type AudioClip, type TimelineSegment, type VideoClip } from "@/shared/utils/timelineUtils"
 
 interface UseTimelineStateProps {
   segments: TimelineSegment[]
@@ -42,6 +42,12 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
   const [selectedClips, setSelectedClips] = useState<Array<{ type: "video" | "audio"; id: string }>>([])
 
   const appliedKeyRef = useRef<string>("")
+  const latestVideoClipsRef = useRef<VideoClip[]>(videoClips)
+  useEffect(() => {
+    latestVideoClipsRef.current = videoClips
+  }, [videoClips])
+
+  const durationSyncKeyRef = useRef<string>("")
 
   useEffect(() => {
     const schedule =
@@ -132,6 +138,88 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
   }, [initialTimeline, initialVideoClips])
 
   useEffect(() => {
+    const key = timelineKey ?? "default"
+    const durationKey = segments
+      .map((s) => {
+        const raw = Number(s.durationSeconds ?? 0)
+        return `${s.id}:${Number.isFinite(raw) && raw > 0 ? raw : ""}`
+      })
+      .join("|")
+    const combinedKey = `${key}::${durationKey}`
+    if (durationSyncKeyRef.current === combinedKey) return
+    durationSyncKeyRef.current = combinedKey
+
+    if (!segments.length) return
+    if (selectedClips.length > 0) return
+    if (dragOver) return
+
+    const clips = latestVideoClipsRef.current
+    if (clips.length !== segments.length) return
+
+    const segById = new Map<string, TimelineSegment>()
+    for (const s of segments) segById.set(s.id, s)
+
+    const clipBySegId = new Map<string, VideoClip>()
+    for (const c of clips) {
+      if (!c?.segmentId) return
+      if (clipBySegId.has(c.segmentId)) return
+      if (!segById.has(c.segmentId)) return
+      clipBySegId.set(c.segmentId, c)
+    }
+    if (clipBySegId.size !== segments.length) return
+
+    const EPS = 1e-3
+    let t0 = 0
+    for (const s of segments) {
+      const c = clipBySegId.get(s.id)!
+      if (typeof c.start !== "number" || !Number.isFinite(c.start)) return
+      if (typeof c.duration !== "number" || !Number.isFinite(c.duration) || c.duration <= 0) return
+      if (Math.abs(c.start - t0) > EPS) return
+      if (Math.max(0, c.trimStart) > EPS || Math.max(0, c.trimEnd) > EPS) return
+      t0 += c.duration
+    }
+
+    const desiredDurBySeg = new Map<string, number>()
+    for (const s of segments) {
+      const raw = Number(s.durationSeconds ?? 0)
+      if (Number.isFinite(raw) && raw > 0) desiredDurBySeg.set(s.id, raw)
+    }
+    if (desiredDurBySeg.size === 0) return
+
+    const hasMismatch = segments.some((s) => {
+      const desired = desiredDurBySeg.get(s.id)
+      if (!desired) return false
+      const cur = clipBySegId.get(s.id)!.duration
+      return Math.abs(cur - desired) > 1e-3
+    })
+    if (!hasMismatch) return
+
+    let t = 0
+    const next = segments.map((s) => {
+      const cur = clipBySegId.get(s.id)!
+      const desired = desiredDurBySeg.get(s.id)
+      const duration = desired ?? cur.duration
+      const trimStart0 = Math.max(0, cur.trimStart)
+      const trimEnd0 = Math.max(0, cur.trimEnd)
+      const maxTrimStart = Math.max(0, duration - trimEnd0 - MIN_CLIP_SECONDS)
+      const trimStart = Math.min(trimStart0, maxTrimStart)
+      const maxTrimEnd = Math.max(0, duration - trimStart - MIN_CLIP_SECONDS)
+      const trimEnd = Math.min(trimEnd0, maxTrimEnd)
+      const src = typeof s.videoSrc === "string" && s.videoSrc.trim() ? s.videoSrc.trim() : cur.src
+      const out: VideoClip = { ...cur, start: t, duration, trimStart, trimEnd, ...(src ? { src } : {}) }
+      t += duration
+      return out
+    })
+    const schedule =
+      typeof queueMicrotask === "function"
+        ? queueMicrotask
+        : (cb: () => void) => {
+            void Promise.resolve().then(cb)
+          }
+    schedule(() => setVideoClips(next))
+  }, [dragOver, segments, selectedClips.length, timelineKey])
+
+  useEffect(() => {
     onTimelineChange?.({ videoClips, audioClips })
   }, [audioClips, onTimelineChange, videoClips])
 
@@ -147,6 +235,16 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
 
   const updateVideoClip = (id: string, patch: Partial<VideoClip>) => {
     setVideoClips((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+  }
+
+  const updateVideoClipsBulk = (patches: Array<{ id: string; patch: Partial<VideoClip> }>) => {
+    const map = new Map<string, Partial<VideoClip>>()
+    for (const p of patches) {
+      if (!p?.id) continue
+      map.set(p.id, { ...(map.get(p.id) ?? {}), ...(p.patch ?? {}) })
+    }
+    if (map.size === 0) return
+    setVideoClips((prev) => prev.map((c) => (map.has(c.id) ? { ...c, ...(map.get(c.id) ?? {}) } : c)))
   }
 
   const updateAudioClip = (id: string, patch: Partial<AudioClip>) => {
@@ -171,6 +269,7 @@ export function useTimelineState({ segments, timelineKey, initialTimeline, onTim
     totalSeconds,
     widthPx,
     updateVideoClip,
+    updateVideoClipsBulk,
     updateAudioClip
   }
 }

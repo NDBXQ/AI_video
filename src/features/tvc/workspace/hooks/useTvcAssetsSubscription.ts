@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { buildAssetMetaKey } from "@/features/tvc/workspace/hooks/assetMetaKey"
 import type { TvcAgentStep } from "@/features/tvc/agent/types"
 import type { TvcPhaseId } from "@/features/tvc/types"
@@ -15,9 +15,11 @@ export function useTvcAssetsSubscription(params: {
   setAssetUrlByKey: React.Dispatch<React.SetStateAction<Record<string, string>>>
 }): void {
   const { projectId, clarificationText, hydrateClarification, notifyAssetDrivenSteps, setAgentPhaseById, setUserProvidedImages, setAssetUrlByKey } = params
+  const tokenRef = useRef(0)
 
   useEffect(() => {
     if (!projectId) return
+    const token = (tokenRef.current += 1)
     let disposed = false
     let cursor = ""
     let inFlight = false
@@ -28,6 +30,7 @@ export function useTvcAssetsSubscription(params: {
     let es: EventSource | null = null
 
     const applyItems = (items: any[]) => {
+      if (disposed || tokenRef.current !== token) return
       if (!Array.isArray(items) || items.length === 0) return
       const clarificationMarkdown = (() => {
         for (const a of items) {
@@ -151,7 +154,7 @@ export function useTvcAssetsSubscription(params: {
     }
 
     const fetchDelta = async () => {
-      if (disposed) return
+      if (disposed || tokenRef.current !== token) return
       if (inFlight) {
         pending = true
         return
@@ -162,8 +165,10 @@ export function useTvcAssetsSubscription(params: {
         const base = `/api/tvc/projects/${encodeURIComponent(projectId)}/assets`
         const url = cursor ? `${base}?cursor=${encodeURIComponent(cursor)}` : base
         const res = await fetch(url, { method: "GET", cache: "no-store" }).catch(() => null)
+        if (disposed || tokenRef.current !== token) return
         if (!res) return
         const json = (await res.json().catch(() => null)) as any
+        if (disposed || tokenRef.current !== token) return
         if (!res.ok || !json?.ok) return
         const items = Array.isArray(json?.data?.items) ? (json.data.items as any[]) : []
         const nextCursor = String(json?.data?.cursor ?? "").trim()

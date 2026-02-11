@@ -4,6 +4,7 @@ import type { ScriptGenerateState } from "../../hooks/useScriptGeneration"
 import styles from "./StoryboardTable.module.css"
 import { StoryboardTableRow } from "./StoryboardTableRow"
 import { ImageAssetPickerModal } from "../ImagePreview/ImageAssetPickerModal"
+import type { OpenStoryboardTextEditParams } from "./textEditTypes"
 
 type PreviewRow = { id: string; name: string; url: string; thumbnailUrl?: string | null; category?: string; storyboardId?: string | null; isGlobal?: boolean; description?: string | null; prompt?: string | null }
 
@@ -29,7 +30,7 @@ type StoryboardTableProps = {
   ) => void
   onGenerateReferenceImages?: (storyboardId: string) => void
   refImageGeneratingById?: Record<string, boolean>
-  onOpenEdit: (itemId: string, initialValue: string) => void
+  onOpenEdit: (params: OpenStoryboardTextEditParams) => void
   onOpenDetails: (itemId: string) => void
   onDelete: (id: string) => void
 }

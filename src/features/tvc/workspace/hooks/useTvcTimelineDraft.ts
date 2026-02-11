@@ -21,6 +21,7 @@ export function useTvcTimelineDraft(storyId: string | null): {
     if (!storyId) return
     let ignore = false
     timelineLoadedRef.current = false
+    setTimelineDraft(null)
     setTimelineLoaded(false)
     const load = async () => {
       try {
@@ -84,4 +85,3 @@ export function useTvcTimelineDraft(storyId: string | null): {
 
   return { timelineDraft, queueSaveTimeline, timelineLoaded }
 }
-

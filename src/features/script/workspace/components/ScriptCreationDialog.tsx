@@ -120,10 +120,13 @@ export function ScriptCreationDialog({
         const core_conflict = typeof core?.core_conflict === "string" ? core.core_conflict : ""
         const protagonist_setting = typeof core?.protagonist_setting === "string" ? core.protagonist_setting : ""
 
-        const [worldSetting, characterSetting] = await Promise.all([
-          callShortDramaWorldSetting({ genres, worldview_setting, core_conflict }),
-          callShortDramaCharacterSettings({ genres, worldview_setting, core_conflict, protagonist_setting })
-        ])
+        const worldSetting = await callShortDramaWorldSetting({ genres, worldview_setting, core_conflict })
+        const characterSetting = await callShortDramaCharacterSettings({
+          genres,
+          worldview_setting,
+          core_conflict,
+          protagonist_setting
+        })
 
         const outlineStoryText = buildOutlineStoryTextFromShortDrama({
           planningResult,

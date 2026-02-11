@@ -15,8 +15,7 @@ const patchSchema = z.object({
   shortDrama: z.object({
     planningResult: z.any(),
     worldSetting: z.any(),
-    characterSetting: z.any(),
-    planningConfirmedAt: z.number().int().nonnegative().optional()
+    characterSetting: z.any()
   })
 })
 

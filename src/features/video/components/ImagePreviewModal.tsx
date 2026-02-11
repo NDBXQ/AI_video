@@ -8,15 +8,14 @@ import { ImageAssetPickerModal } from "./ImagePreview/ImageAssetPickerModal"
 
 type ImagePreviewModalProps = {
   open: boolean
-  uiMode?: "default" | "tvc_info"
   title: string
   imageSrc: string
   generatedImageId?: string
   storyId?: string | null
   storyboardId?: string | null
-  tvcAsset?: { storyId: string; kind: "reference_image" | "first_frame"; ordinal: number; publicType?: "character" | "background" | "props" } | null
   category?: string | null
   frameKind?: "first" | "last" | null
+  tvcAsset?: { kind: "reference_image" | "first_frame"; ordinal: number } | null
   description?: string | null
   prompt?: string | null
   onStoryboardFrameUpdated?: (p: { storyboardId: string; frameKind: "first" | "last"; url: string; thumbnailUrl: string | null }) => void
@@ -25,35 +24,34 @@ type ImagePreviewModalProps = {
 
 export function ImagePreviewModal({
   open,
-  uiMode = "default",
   title,
   imageSrc,
   generatedImageId,
   storyId,
   storyboardId,
-  tvcAsset,
   category,
   frameKind,
+  tvcAsset,
   description,
   prompt,
   onStoryboardFrameUpdated,
   onClose
 }: ImagePreviewModalProps): ReactElement | null {
   if (!open) return null
-  const tvcKey = tvcAsset ? `${tvcAsset.storyId}_${tvcAsset.kind}_${tvcAsset.ordinal}` : ""
-  const modalKey = [uiMode, title, imageSrc, generatedImageId, storyboardId, frameKind, tvcKey].filter(Boolean).join("|")
+  const modalKey = [title, imageSrc, generatedImageId, storyboardId, frameKind, tvcAsset?.kind, tvcAsset?.ordinal]
+    .filter(Boolean)
+    .join("|")
   return (
     <ImagePreviewModalInner
       key={modalKey}
-      uiMode={uiMode}
       title={title}
       imageSrc={imageSrc}
       generatedImageId={generatedImageId}
       storyId={storyId}
       storyboardId={storyboardId}
-      tvcAsset={tvcAsset}
       category={category}
       frameKind={frameKind}
+      tvcAsset={tvcAsset}
       description={description}
       prompt={prompt}
       onStoryboardFrameUpdated={onStoryboardFrameUpdated}
@@ -63,15 +61,14 @@ export function ImagePreviewModal({
 }
 
 function ImagePreviewModalInner({
-  uiMode,
   title,
   imageSrc,
   generatedImageId,
   storyId,
   storyboardId,
-  tvcAsset,
   category,
   frameKind,
+  tvcAsset,
   description,
   prompt,
   onStoryboardFrameUpdated,
@@ -92,7 +89,7 @@ function ImagePreviewModalInner({
     open,
     imageSize,
     frameRef,
-    disabled: uiMode === "tvc_info"
+    disabled: false
   })
 
   useEffect(() => {
@@ -127,7 +124,7 @@ function ImagePreviewModalInner({
           currentSrc={currentSrc}
           imageSize={imageSize}
           frameRef={frameRef}
-          canEdit={uiMode !== "tvc_info" && selection.canEdit}
+          canEdit={selection.canEdit}
           isEditing={selection.isEditing}
           setIsEditing={selection.setIsEditing}
           confirmedRect={selection.confirmedRect}
@@ -148,16 +145,16 @@ function ImagePreviewModalInner({
 
         <SidePanel
           open={open}
-          uiMode={uiMode}
           title={currentEntityName}
           metaTitle={currentMetaTitle}
           description={description}
           metaDescription={currentMetaDescription}
           prompt={prompt}
+          storyId={storyId ?? null}
           storyboardId={storyboardId ?? null}
-          tvcAsset={tvcAsset ?? null}
           category={category ?? null}
           frameKind={frameKind ?? null}
+          tvcAsset={tvcAsset ?? null}
           currentSrc={currentSrc}
           setCurrentSrc={setCurrentSrc}
           currentGeneratedImageId={currentGeneratedImageId}

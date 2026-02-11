@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactElement } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactElement } from "react"
 import type { ChatMessage, TvcPhaseId } from "@/features/tvc/types"
 import type { TvcAgentStep } from "@/features/tvc/agent/types"
 import { useTvcTelemetry } from "@/features/tvc/workspace/hooks/useTvcTelemetry"
@@ -36,6 +36,7 @@ export function TvcWorkspacePage(): ReactElement {
   const sendTelemetry = useTvcTelemetry()
   const { taskQueue, onAgentTask, externalSend, externalDraft, requestChatSend, requestChatDraft } = useTvcTaskQueue({ assetUrlByKey, resetClarification })
   const { shots, setShots, shotlistLoading, isGeneratingShotlist, handleGenerateShotlist } = useTvcShotlistFlow({ projectId, brief, durationSec, setProjectError, sendTelemetry })
+  const prevProjectIdRef = useRef<string | null>(null)
 
   useTvcCreationHydration({
     projectId,
@@ -58,6 +59,31 @@ export function TvcWorkspacePage(): ReactElement {
   })
 
   const { displayShots, activeShot, selectedShotId, setSelectedShotId } = useTvcShotsPreview({ shots, agentStepByCanvasId: agentPhaseById, assetUrlByKey })
+
+  useEffect(() => {
+    if (!projectId) return
+    const prev = prevProjectIdRef.current
+    prevProjectIdRef.current = projectId
+    if (!prev) return
+    if (prev === projectId) return
+    let t: number | null = null
+    t = window.setTimeout(() => {
+      setAgentPhaseById({})
+      setInitialChatMessages(null)
+      setUserProvidedImages([])
+      setAssetUrlByKey({})
+      setShots([])
+      setSelectedShotId(null)
+      resetClarification()
+      setActiveDock("board")
+      setActivePhase("clarification")
+      setActiveTab("shotlist")
+    }, 0)
+    return () => {
+      if (t != null) window.clearTimeout(t)
+    }
+  }, [projectId, resetClarification, setActiveDock, setActivePhase, setActiveTab, setAssetUrlByKey, setSelectedShotId, setShots])
+
   const { previewImages, previewVideos } = useTvcMediaPreview({ agentStepByCanvasId: agentPhaseById, assetUrlByKey })
   const { timelineDraft, queueSaveTimeline } = useTvcTimelineDraft(projectId)
   const { items: projectAssets } = useTvcProjectAssets(projectId)
@@ -108,12 +134,17 @@ export function TvcWorkspacePage(): ReactElement {
 
   const createNewProjectNoArg = async () => {
     await createNewProject({
+      brief: "",
+      durationSec: 30,
       onReset: () => {
         setAgentPhaseById({})
         setInitialChatMessages(null)
         setShots([])
         setSelectedShotId(null)
+        setUserProvidedImages([])
         setAssetUrlByKey({})
+        setBrief("")
+        setDurationSec(30)
         resetClarification()
         setActiveDock("board")
         setActivePhase("clarification")

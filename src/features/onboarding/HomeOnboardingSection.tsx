@@ -7,6 +7,7 @@ import { stories, storyOutlines, storyboards } from "@/shared/schema/story"
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/shared/session"
 import { getTraceId } from "@/shared/trace"
 import { OnboardingChecklistCard } from "@/features/onboarding/components/OnboardingChecklistCard"
+import { ONBOARDING_DISMISSED_COOKIE_NAME } from "@/shared/onboardingDismissed"
 
 type StepId = "login" | "create_story" | "generate_outline" | "generate_storyboard" | "generate_assets" | "export_video"
 
@@ -26,7 +27,10 @@ function storyModeFromType(storyType: string | null | undefined): string {
 export async function HomeOnboardingSection(): Promise<ReactElement | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value
+  const isDismissed = cookieStore.get(ONBOARDING_DISMISSED_COOKIE_NAME)?.value === "1"
   const traceId = getTraceId(new Headers())
+
+  if (isDismissed) return null
 
   if (!token) {
     const steps: ChecklistStep[] = [
@@ -39,7 +43,7 @@ export async function HomeOnboardingSection(): Promise<ReactElement | null> {
         helpTopic: "login"
       }
     ]
-    return <OnboardingChecklistCard steps={steps} />
+    return <OnboardingChecklistCard steps={steps} initialDismissed={false} />
   }
 
   const session = await verifySessionToken(token, traceId)
@@ -149,5 +153,5 @@ export async function HomeOnboardingSection(): Promise<ReactElement | null> {
   const shouldShow = steps.some((s) => !s.done)
   if (!shouldShow) return null
 
-  return <OnboardingChecklistCard steps={steps} />
+  return <OnboardingChecklistCard steps={steps} initialDismissed={false} />
 }

@@ -14,7 +14,14 @@ export function useTvcProject(): {
   durationSec: number
   setDurationSec: React.Dispatch<React.SetStateAction<number>>
   refreshProject: () => Promise<void>
-  createNewProject: (params: { onReset?: () => void }) => Promise<void>
+  createNewProject: (params: {
+    onReset?: () => void
+    title?: string
+    brief?: string
+    durationSec?: number
+    aspectRatio?: string
+    resolution?: string
+  }) => Promise<void>
 } {
   const [projectId, setProjectId] = useState("")
   const [projectError, setProjectError] = useState<string | null>(null)
@@ -26,6 +33,13 @@ export function useTvcProject(): {
   useEffect(() => {
     let cancelled = false
     const initialDurationSec = 30
+    const normalizeProjectId = (raw: unknown): string => {
+      const id = String(raw ?? "").trim()
+      if (!id) return ""
+      const lower = id.toLowerCase()
+      if (lower === "undefined" || lower === "null" || lower === "nan" || lower === "0") return ""
+      return id
+    }
     const syncUrlProjectId = (projectId: string) => {
       const id = String(projectId ?? "").trim()
       if (!id) return
@@ -33,6 +47,7 @@ export function useTvcProject(): {
         const url = new URL(window.location.href)
         if ((url.searchParams.get("projectId") ?? "").trim() === id) return
         url.searchParams.set("projectId", id)
+        url.searchParams.delete("new")
         window.history.replaceState({}, "", url.toString())
       } catch {}
     }
@@ -69,7 +84,14 @@ export function useTvcProject(): {
     const fetchProject = async (id: string) => {
       const res = await fetch(`/api/tvc/projects/${encodeURIComponent(id)}`, { method: "GET", cache: "no-store" })
       const json = (await res.json().catch(() => null)) as any
-      if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)
+      if (!res.ok || !json?.ok) {
+        const err = {
+          status: res.status,
+          code: String(json?.error?.code ?? ""),
+          message: String(json?.error?.message ?? `HTTP ${res.status}`)
+        }
+        throw err
+      }
       return json.data.project as any
     }
 
@@ -87,9 +109,37 @@ export function useTvcProject(): {
     void (async () => {
       setProjectError(null)
       const forceNew = shouldForceNewProject()
-      const candidate = forceNew ? "" : readProjectIdFromUrl() || readCachedId()
       try {
-        const proj = candidate ? await fetchProject(candidate) : await createProject()
+        const rawUrlId = forceNew ? "" : readProjectIdFromUrl()
+        const rawCachedId = forceNew ? "" : readCachedId()
+        const urlId = normalizeProjectId(rawUrlId)
+        const cachedId = normalizeProjectId(rawCachedId)
+
+        if (rawUrlId && !urlId) {
+          try {
+            const url = new URL(window.location.href)
+            url.searchParams.delete("projectId")
+            window.history.replaceState({}, "", url.toString())
+          } catch {}
+        }
+        if (rawCachedId && !cachedId) {
+          try {
+            window.localStorage.removeItem("last_tvc_project_id")
+          } catch {}
+        }
+
+        const candidate = urlId || cachedId
+        const proj = candidate
+          ? await fetchProject(candidate).catch(async (e: unknown) => {
+              const anyErr = e as { status?: number; code?: string }
+              const status = Number(anyErr?.status ?? 0)
+              const code = String(anyErr?.code ?? "")
+              if (status === 404 || status === 400 || code === "NOT_FOUND" || code === "VALIDATION_FAILED") {
+                return await createProject()
+              }
+              throw e
+            })
+          : await createProject()
         if (cancelled) return
         const id = String(proj.id ?? "").trim()
         if (id) {
@@ -152,17 +202,33 @@ export function useTvcProject(): {
       } catch {}
     }
 
-    return async (params: { onReset?: () => void }) => {
+    return async (params: {
+      onReset?: () => void
+      title?: string
+      brief?: string
+      durationSec?: number
+      aspectRatio?: string
+      resolution?: string
+    }) => {
       if (isCreatingProject) return
       setProjectError(null)
       setIsCreatingProject(true)
       params.onReset?.()
       setFinalVideoUrl(null)
       try {
+        const nextTitle = String(params.title ?? "TVC 项目").trim() || "TVC 项目"
+        const nextBrief = params.brief !== undefined ? String(params.brief) : brief
+        const nextDurationSec = params.durationSec !== undefined ? params.durationSec : durationSec
         const res = await fetch("/api/tvc/projects", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ title: "TVC 项目", durationSec, brief })
+          body: JSON.stringify({
+            title: nextTitle,
+            brief: nextBrief,
+            durationSec: nextDurationSec,
+            ...(params.aspectRatio !== undefined ? { aspectRatio: params.aspectRatio } : {}),
+            ...(params.resolution !== undefined ? { resolution: params.resolution } : {})
+          })
         })
         const json = (await res.json().catch(() => null)) as any
         if (!res.ok || !json?.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`)

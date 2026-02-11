@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2, Download, LoaderCircle, Pause, PenLine, Play, XCircle } from "lucide-react"
-import { useMemo, useState, type ReactElement } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactElement } from "react"
 import styles from "./TvcPreviewPanel.module.css"
 import type { TvcPreviewTab } from "@/features/tvc/types"
 import type { TimelineShot } from "@/features/tvc/components/TvcTimelinePanel"
@@ -71,9 +71,9 @@ export function TvcPreviewPanel({
     onSeekEnd: () => void
   }
 }): ReactElement {
-  const taskList = tasks ?? []
-  const imageList = images ?? []
-  const videoList = videos ?? []
+  const taskList = useMemo(() => tasks ?? [], [tasks])
+  const imageList = useMemo(() => images ?? [], [images])
+  const videoList = useMemo(() => videos ?? [], [videos])
   const selected = activeShot ?? null
   const selectedVideoUrl = useMemo(() => {
     if (!selected) return ""
@@ -159,6 +159,9 @@ export function TvcPreviewPanel({
 
   const [promptOpen, setPromptOpen] = useState(false)
   const [promptDraft, setPromptDraft] = useState("")
+  const [taskPanelOpen, setTaskPanelOpen] = useState(false)
+  const taskPanelRef = useRef<HTMLDivElement | null>(null)
+  const taskBadgeRef = useRef<HTMLButtonElement | null>(null)
 
   const openPrompt = () => {
     setPromptDraft(selectedImage.prompt || "")
@@ -172,6 +175,9 @@ export function TvcPreviewPanel({
   })
 
   const isVideoTab = activeTab === "video"
+  const downloadableFinalVideoUrl = typeof finalVideoUrl === "string" ? finalVideoUrl.trim() : ""
+  const runningTaskCount = useMemo(() => taskList.filter((t) => t.status === "running" || t.status === "queued").length, [taskList])
+  const failedTaskCount = useMemo(() => taskList.filter((t) => t.status === "failed").length, [taskList])
   const {
     previewAllActive,
     previewAllPlaying,
@@ -217,6 +223,29 @@ export function TvcPreviewPanel({
     return Boolean(isVideoTab && previewAll.hasAnyPlayableVideo)
   }, [isVideoTab, previewAll.hasAnyPlayableVideo])
 
+  useEffect(() => {
+    if (!taskPanelOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      const el = taskPanelRef.current
+      const badge = taskBadgeRef.current
+      if (!el) return
+      if (e.target instanceof Node && (el.contains(e.target) || badge?.contains(e.target))) return
+      setTaskPanelOpen(false)
+    }
+    window.addEventListener("pointerdown", onPointerDown, { capture: true })
+    return () => window.removeEventListener("pointerdown", onPointerDown, { capture: true })
+  }, [taskPanelOpen])
+
+  useEffect(() => {
+    if (!taskPanelOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setTaskPanelOpen(false)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [taskPanelOpen])
+
   return (
     <div className={styles.panel}>
       <div className={styles.topbar}>
@@ -248,11 +277,18 @@ export function TvcPreviewPanel({
 
         <div className={styles.actions}>
           {taskList.length > 0 ? (
-            <div className={styles.taskBadge} aria-label="生成任务">
+            <button
+              type="button"
+              className={styles.taskBadge}
+              aria-label="生成任务"
+              aria-expanded={taskPanelOpen}
+              ref={taskBadgeRef}
+              onClick={() => setTaskPanelOpen((v) => !v)}
+            >
               <LoaderCircle size={16} className={styles.taskBadgeIcon} />
-              {taskList.filter((t) => t.status === "running" || t.status === "queued").length > 0 ? "生成中" : taskList.filter((t) => t.status === "failed").length > 0 ? "有失败" : "已完成"}
-              <span className={styles.taskBadgeCount}>{taskList.filter((t) => t.status === "running" || t.status === "queued").length}</span>
-            </div>
+              {runningTaskCount > 0 ? "生成中" : failedTaskCount > 0 ? "有失败" : "已完成"}
+              <span className={styles.taskBadgeCount}>{runningTaskCount}</span>
+            </button>
           ) : null}
           {isVideoTab ? (
             <button type="button" className={styles.actionBtn} onClick={handlePreviewAllClick} disabled={!previewAllActive && !hasAnyPlayableVideo}>
@@ -277,12 +313,27 @@ export function TvcPreviewPanel({
               {assemblingVideo ? "合成中..." : "生成成片"}
             </button>
           ) : null}
+          {isVideoTab && downloadableFinalVideoUrl && !assemblingVideo ? (
+            <a
+              className={styles.actionBtn}
+              href={downloadableFinalVideoUrl}
+              target="_blank"
+              rel="noreferrer"
+              download="tvc.mp4"
+              title="如未自动下载，将在新标签页打开，可右键另存为"
+            >
+              <Download size={16} />
+              下载成片
+            </a>
+          ) : null}
         </div>
-      </div>
-
-      <div className={styles.canvas}>
         {taskList.length > 0 ? (
-          <div className={styles.taskPanel} aria-label="任务队列">
+          <div
+            ref={taskPanelRef}
+            className={`${styles.taskPanelOverlay} ${taskPanelOpen ? styles.taskPanelOverlayOpen : ""}`}
+            aria-label="任务队列"
+            aria-hidden={!taskPanelOpen}
+          >
             <div className={styles.taskHeader}>
               <div className={styles.taskTitle}>任务</div>
               <button
@@ -311,11 +362,15 @@ export function TvcPreviewPanel({
                   {t.status === "failed" ? (
                     <button
                       type="button"
-                      className={styles.taskActionBtn}
+                      className={styles.taskRetryBtn}
                       onClick={() => {
                         const kindLabel = t.kind === "reference_image" ? "参考图" : t.kind === "first_frame" ? "首帧" : "视频片段"
                         const suffix = t.targetOrdinal ? ` #${t.targetOrdinal}` : ""
-                        onTaskAction?.({ kind: "send", text: `重做${kindLabel}${suffix}`.trim(), meta: { kind: t.kind, ...(t.targetOrdinal ? { targetOrdinal: t.targetOrdinal } : {}) } })
+                        onTaskAction?.({
+                          kind: "send",
+                          text: `重做${kindLabel}${suffix}`.trim(),
+                          meta: { kind: t.kind, ...(t.targetOrdinal ? { targetOrdinal: t.targetOrdinal } : {}) }
+                        })
                       }}
                       aria-label="重试该任务"
                     >
@@ -328,6 +383,9 @@ export function TvcPreviewPanel({
             </div>
           </div>
         ) : null}
+      </div>
+
+      <div className={styles.canvas}>
         <div className={styles.stage}>
           <div className={styles.stageContent}>
             <div className={styles.stagePane}>
