@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import type { ReactElement } from "react"
 import { ScriptWorkspacePage } from "@/features/script/workspace/ScriptWorkspacePage"
 import { stories, storyOutlines } from "@/shared/schema"
@@ -30,6 +30,16 @@ type ScriptWorkspaceStoryRouteProps = Readonly<{
 
 export const dynamic = "force-dynamic"
 
+function isShortDramaReady(metadata: Record<string, unknown>): boolean {
+  const shortDrama = (metadata as any)?.shortDrama
+  if (!shortDrama || typeof shortDrama !== "object") return false
+  if (typeof (shortDrama as any).planningConfirmedAt !== "number") return false
+  if (!(shortDrama as any).planningResult) return false
+  if (!(shortDrama as any).worldSetting) return false
+  if (!(shortDrama as any).characterSetting) return false
+  return true
+}
+
 export default async function ScriptWorkspaceStoryRoutePage({
   params,
   searchParams
@@ -49,6 +59,12 @@ export default async function ScriptWorkspaceStoryRoutePage({
   const db = await getDb({ storyOutlines, stories })
   const storyRows = await db.select({ metadata: stories.metadata }).from(stories).where(eq(stories.id, storyId)).limit(1)
   const storyMetadata = (storyRows[0]?.metadata ?? {}) as Record<string, unknown>
+  if (mode !== "source" && !isShortDramaReady(storyMetadata)) {
+    const qs = new URLSearchParams()
+    const next = `/script/workspace/${encodeURIComponent(storyId)}${outline ? `?mode=brief&outline=${encodeURIComponent(outline)}` : "?mode=brief"}`
+    qs.set("next", next)
+    redirect(`/script/short-drama/${encodeURIComponent(storyId)}?${qs.toString()}`)
+  }
   const rows = await db
     .select()
     .from(storyOutlines)

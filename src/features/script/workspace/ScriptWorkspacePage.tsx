@@ -98,11 +98,6 @@ export function ScriptWorkspacePage({ mode, storyId, outline, outlines, storyMet
   )
 
   const [generatingStoryboard, setGeneratingStoryboard] = useState(false)
-  const [shortDrama, setShortDrama] = useState<any>(() => (storyMetadata as any)?.shortDrama ?? null)
-
-  useEffect(() => {
-    setShortDrama((storyMetadata as any)?.shortDrama ?? null)
-  }, [storyId, storyMetadata])
 
   const handleGenerateStoryboardText = useCallback(async () => {
     if (!activeOutline) return
@@ -151,8 +146,6 @@ export function ScriptWorkspacePage({ mode, storyId, outline, outlines, storyMet
             handleGenerateStoryboardText={handleGenerateStoryboardText}
             handleManualGenerate={handleManualGenerate}
             storyId={storyId}
-            shortDrama={shortDrama}
-            onShortDramaUpdate={setShortDrama}
           />
 
           {!isCompact ? <WorkspaceResizeHandle containerRef={gridRef} /> : null}

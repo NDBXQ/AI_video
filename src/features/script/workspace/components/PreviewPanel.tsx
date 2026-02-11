@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState } from "react"
+import { useCallback } from "react"
+import { useRouter } from "next/navigation"
 import styles from "./PreviewPanel.module.css"
 import type { RewriteState, OutlineItem } from "../utils"
 import { deriveLiveRewrite } from "../utils"
-import { ShortDramaPanel } from "./shortDrama/ShortDramaPanel"
 
 type PreviewPanelProps = Readonly<{
   activeOutline: OutlineItem | null
@@ -18,8 +18,6 @@ type PreviewPanelProps = Readonly<{
   handleGenerateStoryboardText: () => void
   handleManualGenerate: () => void
   storyId: string
-  shortDrama?: any
-  onShortDramaUpdate?: (next: any) => void
 }>
 
 /**
@@ -37,13 +35,20 @@ export function PreviewPanel({
   generatingStoryboard,
   handleGenerateStoryboardText,
   handleManualGenerate,
-  storyId,
-  shortDrama,
-  onShortDramaUpdate
+  storyId
 }: PreviewPanelProps) {
-  const [showShortDrama, setShowShortDrama] = useState(false)
-  const hasShortDrama = Boolean(shortDrama && typeof shortDrama === "object")
-  const shortDramaObj = hasShortDrama ? (shortDrama as any) : {}
+  const router = useRouter()
+  const openShortDrama = useCallback(() => {
+    const next = (() => {
+      try {
+        return `${window.location.pathname}${window.location.search}`
+      } catch {
+        return ""
+      }
+    })()
+    const qs = next ? `?next=${encodeURIComponent(next)}` : ""
+    router.push(`/script/short-drama/${encodeURIComponent(storyId)}${qs}`)
+  }, [router, storyId])
 
   return (
     <section className={styles.preview}>
@@ -71,9 +76,8 @@ export function PreviewPanel({
           ) : null}
           <button
             type="button"
-            className={showShortDrama ? `${styles.toggleButton} ${styles.toggleButtonActive}` : styles.toggleButton}
-            disabled={!hasShortDrama}
-            onClick={() => setShowShortDrama((v) => !v)}
+            className={styles.toggleButton}
+            onClick={openShortDrama}
           >
             短剧信息
           </button>
@@ -82,70 +86,52 @@ export function PreviewPanel({
       </div>
 
       <article className={styles.markdown}>
-        {showShortDrama && hasShortDrama ? (
-          <div className={styles.shortDramaPanel}>
-            <div className={styles.shortDramaCard}>
-              <div className={styles.shortDramaCardTitle}>短剧信息</div>
-              <ShortDramaPanel
-                storyId={storyId}
-                shortDrama={shortDramaObj}
-                onShortDramaUpdate={(next) => {
-                  onShortDramaUpdate?.(next)
-                }}
-              />
-            </div>
-          </div>
-        ) : null}
-        {!showShortDrama ? (
-          activeOutline ? (
-            (() => {
-              if (previewMode === "rewrite") {
-                if (activeRewrite?.status === "streaming") {
-                  if (activeRewrite?.raw) {
-                    const live = deriveLiveRewrite(activeRewrite.raw)
-                    return <div className={styles.streamText}>{live.content ?? activeRewrite.raw}</div>
-                  }
-                  return <div className={styles.originalEmpty}>改写中…</div>
+        {activeOutline ? (
+          (() => {
+            if (previewMode === "rewrite") {
+              if (activeRewrite?.status === "streaming") {
+                if (activeRewrite?.raw) {
+                  const live = deriveLiveRewrite(activeRewrite.raw)
+                  return <div className={styles.streamText}>{live.content ?? activeRewrite.raw}</div>
                 }
-                const content = activeDraft?.content?.trim() || activeRewrite?.result?.new_content?.trim() || ""
-                return content ? <div className={styles.streamText}>{content}</div> : <div className={styles.originalEmpty}>暂无改写内容</div>
+                return <div className={styles.originalEmpty}>改写中…</div>
               }
-              return <div className={styles.originalText}>{activeOutline.originalText}</div>
-            })()
-          ) : (
-            <div className={styles.originalEmpty}>暂无可展示内容</div>
-          )
-        ) : null}
+              const content = activeDraft?.content?.trim() || activeRewrite?.result?.new_content?.trim() || ""
+              return content ? <div className={styles.streamText}>{content}</div> : <div className={styles.originalEmpty}>暂无改写内容</div>
+            }
+            return <div className={styles.originalText}>{activeOutline.originalText}</div>
+          })()
+        ) : (
+          <div className={styles.originalEmpty}>暂无可展示内容</div>
+        )}
       </article>
 
-      {!showShortDrama ? (
-        <div className={styles.nextStep}>
-          <div className={styles.nextStepCard}>
-            <div className={styles.nextStepText}>
-              <div className={styles.nextStepTitle}>下一步：生成分镜文本</div>
-              <div className={styles.nextStepDesc}>基于当前大纲生成更细的场景描述与镜头文本，准备进入视频创作。</div>
-            </div>
-            <div className={styles.nextStepAction}>
-              <button
-                type="button"
-                className={styles.nextStepButton}
-                onClick={handleGenerateStoryboardText}
-                disabled={!activeOutline || generatingStoryboard}
-              >
-                {generatingStoryboard ? "生成中…" : "一键生成"}
-              </button>
-              <button
-                type="button"
-                className={styles.nextStepButtonSecondary}
-                onClick={handleManualGenerate}
-                disabled={!activeOutline || generatingStoryboard}
-              >
-                手动生成
-              </button>
-            </div>
+      <div className={styles.nextStep}>
+        <div className={styles.nextStepCard}>
+          <div className={styles.nextStepText}>
+            <div className={styles.nextStepTitle}>下一步：生成分镜文本</div>
+            <div className={styles.nextStepDesc}>基于当前大纲生成更细的场景描述与镜头文本，准备进入视频创作。</div>
+          </div>
+          <div className={styles.nextStepAction}>
+            <button
+              type="button"
+              className={styles.nextStepButton}
+              onClick={handleGenerateStoryboardText}
+              disabled={!activeOutline || generatingStoryboard}
+            >
+              {generatingStoryboard ? "生成中…" : "一键生成"}
+            </button>
+            <button
+              type="button"
+              className={styles.nextStepButtonSecondary}
+              onClick={handleManualGenerate}
+              disabled={!activeOutline || generatingStoryboard}
+            >
+              手动生成
+            </button>
           </div>
         </div>
-      ) : null}
+      </div>
     </section>
   )
 }
