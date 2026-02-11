@@ -6,10 +6,26 @@ import { makeApiErr, makeApiOk } from "@/shared/api"
 import { logger } from "@/shared/logger"
 import { getTraceId } from "@/shared/trace"
 
+function safeJsonText(v: unknown): string {
+  try {
+    return JSON.stringify(v)
+  } catch {
+    return ""
+  }
+}
+
+function objectOrText(maxChars: number) {
+  return z.union([z.string().trim().max(maxChars), z.any()]).refine((v) => {
+    if (typeof v === "string") return v.trim().length <= maxChars
+    const raw = safeJsonText(v)
+    return Boolean(raw) && raw.length <= maxChars
+  }, "too_large")
+}
+
 const inputSchema = z.object({
-  planning_result: z.string().trim().max(200_000),
-  world_setting: z.string().trim().max(200_000),
-  character_setting: z.string().trim().max(200_000)
+  planning_result: objectOrText(200_000),
+  world_setting: objectOrText(200_000),
+  character_setting: objectOrText(200_000)
 })
 
 export async function POST(req: Request): Promise<Response> {
@@ -40,7 +56,7 @@ export async function POST(req: Request): Promise<Response> {
       traceId,
       message: "短剧大纲入参校验失败"
     })
-    return NextResponse.json(makeApiErr(traceId, "COZE_VALIDATION_FAILED", "入参格式不正确"), {
+    return NextResponse.json(makeApiErr(traceId, "COZE_VALIDATION_FAILED", "入参格式不正确（planning_result/world_setting/character_setting 需为 object 或 string）"), {
       status: 400
     })
   }

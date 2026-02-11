@@ -205,9 +205,13 @@ export function ScriptCreationDialog({
         await patchStoryShortDramaMetadata(storyId, _shortDramaMeta)
       }
 
-      // 跳转到工作台并带上 storyId
-      const m = mode === "source" ? "source" : "brief"
-      router.push(`/script/workspace/${encodeURIComponent(storyId)}?mode=${m}`)
+      // brief 流程：先进入短剧信息页作为前置条件；source 流程保持不变
+      if (mode === "source") {
+        router.push(`/script/workspace/${encodeURIComponent(storyId)}?mode=source`)
+      } else {
+        const next = `/script/workspace/${encodeURIComponent(storyId)}?mode=brief`
+        router.push(`/script/short-drama/${encodeURIComponent(storyId)}?next=${encodeURIComponent(next)}`)
+      }
       onClose()
       
     } catch (err) {
